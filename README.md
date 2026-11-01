@@ -23,7 +23,8 @@ master the whole song.
 
 **Stem balance** — optionally split the song into vocals, drums, bass and other,
 rebalance them, master each stem with its own EQ, compression and (for vocals)
-de-essing, then recombine. The limiter always runs last on the summed mix, so
+de-essing, then recombine. The app measures each stem against the full mix and
+suggests level moves for the chosen genre (rules of thumb, not reference-matched). The limiter always runs last on the summed mix, so
 the balance you set is the balance you hear.
 
 **Controls**

@@ -67,6 +67,14 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .bar i{display:block;height:100%;width:0;background:var(--ac);transition:width .2s}
 #sst{font-size:14px;color:var(--mut);min-height:20px;word-break:break-word}
 #sst.err{color:var(--warn)}
+#sugg{margin-top:12px;font-size:13.5px;color:var(--mut);border-top:1px solid var(--ln);padding-top:10px}
+#sugg table{width:100%;border-collapse:collapse;margin-bottom:8px}
+#sugg td{padding:2px 0}
+#sugg td:nth-child(2),#sugg td:nth-child(3){text-align:right;font-variant-numeric:tabular-nums}
+#sugg td:nth-child(3){font-weight:600;color:var(--ink)}
+#sugg .ok{color:var(--mut);font-weight:400}
+#applyS{border:1px solid var(--ac);background:transparent;color:var(--ac);border-radius:8px;padding:8px 12px;font:inherit;font-weight:600;font-size:14px;cursor:pointer}
+#applyS:disabled{opacity:.45;cursor:not-allowed}
 .srow{display:grid;grid-template-columns:62px 1fr 56px 34px;gap:8px;align-items:center;margin-top:8px;font-size:14px}
 .srow b{font-weight:600;text-transform:capitalize}
 .srow input[type=range]{margin:0;width:100%}
@@ -79,7 +87,7 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .hint{color:var(--mut);font-size:13px;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v13</small></h1>
+<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v14</small></h1>
 <p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded.</p>
 <p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or get the stems as files from the <a href="stems.html" style="color:var(--ac)">Stem Splitter</a>.</p>
 
@@ -98,6 +106,7 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
  <div id="sst" role="status"></div>
  <div id="mix" hidden>
   <div id="mixRows"></div>
+  <div id="sugg"></div>
   <label class="chk" style="margin:10px 0 0"><input type="checkbox" id="useStems" checked><span>Master the rebalanced mix<small>Uncheck to master the original audio instead.</small></span></label>
   <label class="chk" style="margin:0"><input type="checkbox" id="perStem" checked><span>Master each stem separately, then recombine<small>Each stem gets its own EQ and compression before they are summed. The limiter always runs last on the combined mix, so the stems stay in balance.</small></span></label>
  </div>
@@ -513,6 +522,40 @@ function mixRows(){
   $('sm-'+s).onchange=e=>{smute[s]=!e.target.checked};
  });
  $('mix').hidden=false;
+ if(stemData)analyzeStems();
+}
+/* typical stem-to-mix loudness ranges, in dB relative to the full mix.
+   These are rules of thumb, not measured from reference recordings. */
+const BALTGT={
+ auto:{vocals:[-9,-5],drums:[-7,-3],bass:[-13,-8],other:[-9,-4]},
+ rock:{vocals:[-9,-5],drums:[-7,-3],bass:[-13,-8],other:[-8,-3]},
+ pop:{vocals:[-8,-4],drums:[-8,-4],bass:[-12,-7],other:[-10,-5]},
+ hiphop:{vocals:[-8,-4],drums:[-6,-2],bass:[-9,-4],other:[-12,-6]},
+ electronic:{vocals:[-10,-5],drums:[-6,-2],bass:[-9,-4],other:[-8,-3]},
+ acoustic:{vocals:[-7,-3],drums:[-9,-5],bass:[-14,-9],other:[-8,-3]},
+ voice:{vocals:[-5,-1],drums:[-14,-8],bass:[-18,-11],other:[-14,-8]}};
+let suggested={};
+function analyzeStems(){
+ const fs=src.sampleRate,ch=chans(src);
+ const mixL=lufs(kseg([ch[0].subarray(stemStart,stemStart+stemLen),ch[1].subarray(stemStart,stemStart+stemLen)],fs));
+ const tgt=BALTGT[genre]||BALTGT.auto;
+ suggested={};const rows=[];let any=false;
+ for(const s of STEMS){
+  if(!stemData[s]){rows.push([s,'—','']);continue}
+  const l=lufs(kseg(stemData[s],fs)),rel=l-mixL,[lo,hi]=tgt[s];
+  let d=rel<lo?lo-rel:rel>hi?hi-rel:0;
+  d=Math.max(-6,Math.min(6,Math.round(d*2)/2));
+  suggested[s]=d;if(d)any=true;
+  rows.push([s,rel.toFixed(1),d?(d>0?'+':'')+d:'ok',`typical ${lo} to ${hi}`]);
+ }
+ $('sugg').innerHTML='<div style="margin-bottom:6px">Measured balance against the full mix'+(genre!=='auto'?' ('+genre+' targets)':'')+':</div>'+
+  '<table>'+rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]==='—'?'—':r[1]+' dB'}</td><td class="${r[2]==='ok'?'ok':''}">${r[2]}</td></tr>`).join('')+'</table>'+
+  `<button id="applyS" ${any?'':'disabled'}>${any?'Apply suggested levels':'Balance already in range'}</button>`+
+  '<p class="hint" style="margin-top:8px">Rules of thumb, not measured from reference tracks, and they ignore arrangement. Treat them as a starting point and trust your ears.</p>';
+ if(any)$('applyS').onclick=()=>{
+  for(const s of STEMS)if(suggested[s]){sgain[s]=Math.max(-24,Math.min(12,sgain[s]+suggested[s]));}
+  mixRows();
+ };
 }
 function stemsCover(start,len){return stemData&&start>=stemStart&&start+len<=stemStart+stemLen}
 let stemNotes=[];
@@ -694,7 +737,7 @@ const sel=(id,v)=>[...$(id).children].forEach(x=>x.setAttribute('aria-pressed',x
 const chip=(id,fn)=>{$(id).onclick=e=>{const v=e.target.dataset&&e.target.dataset.v;if(v==null)return;fn(+v);sel(id,v)}};
 chip('pu',v=>pumpDb=v);chip('vc',v=>vocAmt=v);
 $('wd').onclick=e=>{const v=e.target.dataset&&e.target.dataset.v;if(v==null)return;widthSel=v==='auto'?'auto':+v;sel('wd',v)};
-$('gen').onclick=e=>{const g=e.target.dataset&&e.target.dataset.g;if(!g)return;genre=g;[...$('gen').children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.g===g));if(PRESETS[g].lufs!=null)sync(PRESETS[g].lufs)};
+$('gen').onclick=e=>{const g=e.target.dataset&&e.target.dataset.g;if(!g)return;genre=g;if(stemData)analyzeStems();[...$('gen').children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.g===g));if(PRESETS[g].lufs!=null)sync(PRESETS[g].lufs)};
 
 function show(i,t,o,pk,fmt,size,notes,pv){
  const lo=-24,hi=-6,x=v=>(Math.max(lo,Math.min(hi,v))-lo)/(hi-lo)*100+'%';
