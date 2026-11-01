@@ -21,6 +21,11 @@ master the whole song.
 - **Light polish** — fixed EQ plus gentle glue compression.
 - **Loudness only** — no tone changes, just level matching and limiting.
 
+**Stem balance** — optionally split the song into vocals, drums, bass and other,
+rebalance them, master each stem with its own EQ, compression and (for vocals)
+de-essing, then recombine. The limiter always runs last on the summed mix, so
+the balance you set is the balance you hear.
+
 **Controls**
 
 | Control | Options |
@@ -49,6 +54,7 @@ for the lossy formats, leaving headroom for encoder overshoot.
 ## Roadmap
 
 - [x] Stem separation in the browser — `stems.html` (see `docs/stem-separation.md`)
+- [x] Stem balance and per-stem mastering inside the main app
 - [ ] Reference-track matching
 - [ ] Manual tone/compression sliders
 - [ ] Background (worker thread) processing

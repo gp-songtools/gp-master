@@ -63,6 +63,15 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .prow{display:flex;gap:10px;align-items:center}
 .prow input{flex:1;margin:0}.prow span{font-size:13px;color:var(--mut);min-width:84px;text-align:right}
 .ppb{min-width:76px}
+.bar{height:6px;background:var(--ln);border-radius:3px;overflow:hidden;margin:8px 0}
+.bar i{display:block;height:100%;width:0;background:var(--ac);transition:width .2s}
+#sst{font-size:14px;color:var(--mut);min-height:20px;word-break:break-word}
+#sst.err{color:var(--warn)}
+.srow{display:grid;grid-template-columns:62px 1fr 56px 34px;gap:8px;align-items:center;margin-top:8px;font-size:14px}
+.srow b{font-weight:600;text-transform:capitalize}
+.srow input[type=range]{margin:0;width:100%}
+.srow span{text-align:right;color:var(--mut)}
+.srow input[type=checkbox]{accent-color:var(--ac);width:18px;height:18px;justify-self:center}
 .spw{margin-top:16px;border-top:1px solid var(--ln);padding-top:14px}
 .spw svg{width:100%;height:auto;display:block}
 .sg{stroke:var(--ln);stroke-width:1}.sb{fill:none;stroke:var(--mut);stroke-width:2}.sa{fill:none;stroke:var(--ac);stroke-width:2.5}
@@ -70,13 +79,29 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .hint{color:var(--mut);font-size:13px;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v11</small></h1>
+<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v13</small></h1>
 <p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded.</p>
-<p class="sub" style="margin-top:-12px">Need the parts separately? <a href="stems.html" style="color:var(--ac)">Stem Splitter</a> pulls out vocals, drums and bass.</p>
+<p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or get the stems as files from the <a href="stems.html" style="color:var(--ac)">Stem Splitter</a>.</p>
 
 <div class="drop"><span id="fl">Tap to choose an audio file</span><input type="file" id="file" accept="audio/*" aria-label="Choose an audio file"></div>
 <p class="hint" style="margin:10px 0 0">Nothing happens when you tap the box? Use this picker instead:<br><input type="file" id="file2" accept="audio/*" style="margin-top:6px;max-width:100%;font:inherit;color:var(--ink)"></p>
 <div id="inStats"></div>
+
+<section class="card">
+ <span class="lbl">Stem balance <span style="font-weight:400;color:var(--mut)">(optional)</span></span>
+ <p class="hint" style="margin:0 0 10px">Splits the song into vocals, drums, bass and other, lets you rebalance them, then masters the rebalanced mix. Separating is slow and downloads 123 MB of models the first time, so start with the 30-second section.</p>
+ <div class="two" style="margin-bottom:8px">
+  <button class="go alt" id="sepPv" disabled>Separate 30 s section</button>
+  <button class="go alt" id="sepAll" disabled>Separate whole song</button>
+ </div>
+ <div class="bar"><i id="sbar"></i></div>
+ <div id="sst" role="status"></div>
+ <div id="mix" hidden>
+  <div id="mixRows"></div>
+  <label class="chk" style="margin:10px 0 0"><input type="checkbox" id="useStems" checked><span>Master the rebalanced mix<small>Uncheck to master the original audio instead.</small></span></label>
+  <label class="chk" style="margin:0"><input type="checkbox" id="perStem" checked><span>Master each stem separately, then recombine<small>Each stem gets its own EQ and compression before they are summed. The limiter always runs last on the combined mix, so the stems stay in balance.</small></span></label>
+ </div>
+</section>
 
 <section class="card">
  <span class="lbl">Genre preset</span>
@@ -433,11 +458,116 @@ $('file').onchange=async e=>{
   await tick();
   const L=lufs(kseg(chans(src),src.sampleRate));
   $('inStats').textContent=fmtT(src.duration)+', '+(src.sampleRate/1000)+' kHz, '+(src.numberOfChannels>1?'stereo':'mono')+', currently '+L.toFixed(1)+' LUFS';
-  src.inL=L;$('go').disabled=false;$('pv').disabled=false;say('');
+  src.inL=L;clearStems();$('go').disabled=false;$('pv').disabled=false;$('sepPv').disabled=false;$('sepAll').disabled=false;say('');
  }catch{src=null;$('inStats').textContent='';say('That file couldn’t be decoded. Try an MP3, WAV, M4A or FLAC.',1)}
 };
 
-const busy=b=>{$('go').disabled=b||!src;$('pv').disabled=b||!src;if(b){stopP();$('res').hidden=true}};
+/* ---- per-stem mastering ---- */
+function stemFX(name,ch,fs){
+ const n=ch[0].length,o=[new Float32Array(n),new Float32Array(n)];
+ let eqs,C;
+ if(name==='vocals'){eqs=[['hp',90,0,.7071],['pk',3000,1.5,.9],['hs',11000,1,.7]];C={r:2.5,a:.01,rl:.12,off:5,max:4,ds:5};}
+ else if(name==='drums'){eqs=[['hp',30,0,.7071],['pk',65,1,1],['hs',9000,1,.7]];C={r:2,a:.004,rl:.08,off:6,max:4};}
+ else if(name==='bass'){eqs=[['hp',28,0,.7071],['pk',90,.8,1]];C={r:3,a:.02,rl:.18,off:4,max:5,mono:150};}
+ else {eqs=[['hp',40,0,.7071],['pk',320,-1,1.2]];C={r:1.8,a:.02,rl:.15,off:6,max:3};}
+ const F=[0,1].map(()=>({eq:eqs.map(e=>bqc(e[0],e[1],e[2],e[3],fs)),ds:C.ds?bqc('bp',7000,0,1.2,fs):null,sh:C.mono?bqc('hp',C.mono,0,.7071,fs):null}));
+ const aE=Math.exp(-1/(.0005*fs)),rE=Math.exp(-1/(.05*fs)),aC=1-Math.exp(-1/(C.a*fs)),rC=1-Math.exp(-1/(C.rl*fs)),c0=1/(3*fs);
+ const aD=1-Math.exp(-1/(.001*fs)),rD=1-Math.exp(-1/(.04*fs));
+ let env=0,pw=0,rms=-60,gr=0,gsum=0,de=0,dp=0,drms=-60,dg=0,dsum=0;
+ const x=[0,0];
+ for(let i=0;i<n;i++){
+  const ca=Math.max(1/(i+1),c0);
+  for(let c=0;c<2;c++){let v=ch[c][i];for(const q of F[c].eq)v=bq(q,v);x[c]=v}
+  if(C.mono){const m=(x[0]+x[1])/2,s=bq(F[0].sh,(x[0]-x[1])/2);x[0]=m+s;x[1]=m-s}
+  const lv=Math.max(Math.abs(x[0]),Math.abs(x[1]));
+  env=lv>env?lv+(env-lv)*aE:lv+(env-lv)*rE;pw+=(lv*lv-pw)*ca;
+  if((i&63)===0)rms=10*Math.log10(pw+1e-12);
+  const ov=20*Math.log10(env+1e-9)-(rms+C.off),t=ov>0?Math.min(C.max,ov*(1-1/C.r)):0;
+  gr+=(t-gr)*(t>gr?aC:rC);gsum+=gr;
+  const g=Math.exp(-gr*.1151293);x[0]*=g;x[1]*=g;
+  if(C.ds){
+   const s0=bq(F[0].ds,x[0]),s1=bq(F[1].ds,x[1]),l2=Math.max(Math.abs(s0),Math.abs(s1));
+   de=l2>de?l2+(de-l2)*aE:l2+(de-l2)*rE;dp+=(l2*l2-dp)*ca;
+   if((i&63)===0)drms=10*Math.log10(dp+1e-12);
+   const o2=20*Math.log10(de+1e-9)-(drms+9),t2=o2>0?Math.min(C.ds,o2*.7):0;
+   dg+=(t2-dg)*(t2>dg?aD:rD);dsum+=dg;
+   const q=1-Math.exp(-dg*.1151293);x[0]-=s0*q;x[1]-=s1*q;
+  }
+  o[0][i]=x[0];o[1][i]=x[1];
+ }
+ return{ch:o,note:`${name}: comp avg ${(gsum/n).toFixed(1)} dB`+(C.ds?`, de-ess ${(dsum/n).toFixed(1)} dB`:'')};
+}
+
+/* ---- stem balance ---- */
+const STEMS=['vocals','drums','bass','other'];
+let stemData=null,stemStart=0,stemLen=0,stemWorker=null;
+const sgain={},smute={};
+STEMS.forEach(s=>{sgain[s]=0;smute[s]=false});
+const ssay=(t,e)=>{$('sst').textContent=t;$('sst').className=e?'err':''};
+const exRange=()=>{const fs=src.sampleRate,len=Math.min(src.length,Math.round(fs*30));return{start:Math.min(Math.round(src.length*.35),src.length-len),len}};
+function clearStems(){stemData=null;$('mix').hidden=true;$('sbar').style.width='0';ssay('');STEMS.forEach(s=>{sgain[s]=0;smute[s]=false})}
+function mixRows(){
+ $('mixRows').innerHTML=STEMS.map(s=>`<div class="srow"><b>${s}</b><input type="range" id="sg-${s}" min="-24" max="12" step="0.5" value="${sgain[s]}" aria-label="${s} level"><span id="sv-${s}">${sgain[s]>0?'+':''}${sgain[s]} dB</span><input type="checkbox" id="sm-${s}" ${smute[s]?'':'checked'} aria-label="${s} on"></div>`).join('');
+ STEMS.forEach(s=>{
+  $('sg-'+s).oninput=e=>{sgain[s]=+e.target.value;$('sv-'+s).textContent=(sgain[s]>0?'+':'')+sgain[s]+' dB'};
+  $('sm-'+s).onchange=e=>{smute[s]=!e.target.checked};
+ });
+ $('mix').hidden=false;
+}
+function stemsCover(start,len){return stemData&&start>=stemStart&&start+len<=stemStart+stemLen}
+let stemNotes=[];
+function buildFromStems(start,len){
+ const fs=src.sampleRate,b=new AudioBuffer({length:len,numberOfChannels:2,sampleRate:fs}),off=start-stemStart;
+ const per=$('perStem').checked;
+ const acc=[new Float32Array(len),new Float32Array(len)];
+ stemNotes=[];
+ for(const s of STEMS){
+  if(smute[s]||!stemData[s])continue;
+  let ch=[stemData[s][0].subarray(off,off+len),stemData[s][1].subarray(off,off+len)];
+  if(per){const r=stemFX(s,ch,fs);ch=r.ch;stemNotes.push(r.note)}
+  const g=Math.pow(10,sgain[s]/20);
+  for(let c=0;c<2;c++){const a=acc[c],v=ch[c];for(let i=0;i<len;i++)a[i]+=v[i]*g}
+ }
+ for(let c=0;c<2;c++)b.copyToChannel(acc[c],c);
+ return b;
+}
+function sourceFor(start,len){
+ if($('useStems').checked&&stemsCover(start,len))return{buf:buildFromStems(start,len),stems:true};
+ const ch=chans(src),b=new AudioBuffer({length:len,numberOfChannels:2,sampleRate:src.sampleRate});
+ b.copyToChannel(ch[0].subarray(start,start+len),0);b.copyToChannel(ch[1].subarray(start,start+len),1);
+ return{buf:b,stems:false};
+}
+function runSeparation(scope){
+ if(!src)return;
+ const r=scope==='preview'?exRange():{start:0,len:src.length};
+ busy(true);$('sepPv').disabled=true;$('sepAll').disabled=true;$('mix').hidden=true;$('sbar').style.width='0';
+ const ch=chans(src),mix=[new Float32Array(ch[0].subarray(r.start,r.start+r.len)),new Float32Array(ch[1].subarray(r.start,r.start+r.len))];
+ const t0=performance.now();
+ stemWorker=new Worker('./sep-worker.js');
+ stemWorker.onmessage=ev=>{
+  const m=ev.data;
+  if(m.type==='status')ssay(m.text);
+  else if(m.type==='progress'){
+   const n=3,i=['vocals','drums','bass'].indexOf(m.stem);
+   $('sbar').style.width=Math.min(100,((i+m.done/m.total)/n)*100).toFixed(1)+'%';
+   ssay(`${m.stem}: chunk ${m.done} of ${m.total}`);
+  }
+  else if(m.type==='error'){ssay('Separation failed: '+m.message,1);stemWorker.terminate();$('sepPv').disabled=false;$('sepAll').disabled=false;busy(false)}
+  else if(m.type==='done'){
+   stemData=m.result;stemStart=r.start;stemLen=r.len;
+   $('sbar').style.width='100%';
+   ssay(`Separated ${scope==='preview'?'the 30-second section':'the whole song'} in ${((performance.now()-t0)/60000).toFixed(1)} min.`);
+   mixRows();stemWorker.terminate();$('sepPv').disabled=false;$('sepAll').disabled=false;busy(false);
+  }
+ };
+ stemWorker.onerror=e=>{ssay('Worker failed: '+(e.message||'could not start'),1);$('sepPv').disabled=false;$('sepAll').disabled=false;busy(false)};
+ stemWorker.postMessage({mix,stems:STEMS,baseUrl:location.href.replace(/[^/]*$/,''),sampleRate:src.sampleRate},[mix[0].buffer,mix[1].buffer]);
+ ssay('Starting…');
+}
+$('sepPv').onclick=()=>runSeparation('preview');
+$('sepAll').onclick=()=>runSeparation('full');
+
+const busy=b=>{$('go').disabled=b||!src;$('pv').disabled=b||!src;$('sepPv').disabled=b||!src;$('sepAll').disabled=b||!src;if(b){stopP();$('res').hidden=true}};
 const opts=()=>({T:+$('lufs').value,fmt:document.querySelector('input[name=f]:checked').value,pm:document.querySelector('input[name=p]:checked').value});
 async function pipeline(b,T,fmt,pm){
  const fs=b.sampleRate;let base,notes=[];
@@ -459,22 +589,27 @@ async function pipeline(b,T,fmt,pm){
 $('go').onclick=async()=>{
  if(!src)return;busy(true);
  try{
-  const{T,fmt,pm}=opts(),r=await pipeline(src,T,fmt,pm);
+  const{T,fmt,pm}=opts();
+  const useS=$('useStems').checked&&stemsCover(0,src.length);
+  if($('useStems').checked&&stemData&&!useS)say('Stems only cover the 30-second section, so the full master uses the original audio. Separate the whole song to apply the balance.',1);
+  const sb=useS?buildFromStems(0,src.length):src;
+  const li=useS?lufs(kseg(chans(sb),sb.sampleRate)):src.inL;
+  const r=await pipeline(sb,T,fmt,pm);
   say('Encoding '+fmt.toUpperCase()+'…');await tick();
   const blob=fmt==='wav'?wav24(r.o[0],r.o[1],r.fs):fmt==='mp3'?await mp3(r.o,r.fs):await m4a(r.o,r.fs);
-  res={fmt,blob};setPlayer(src,src.inL,r.o,r.L);
-  show(src.inL,T,r.L,r.pk,fmt,blob.size,r.notes);say('');
+  res={fmt,blob};setPlayer(sb,li,r.o,r.L);
+  show(li,T,r.L,r.pk,fmt,blob.size,r.notes.concat(useS?[['Stem balance',STEMS.filter(s=>!smute[s]).map(s=>s+' '+(sgain[s]>0?'+':'')+sgain[s]).join(', ')+(STEMS.some(s=>smute[s])?'; muted: '+STEMS.filter(s=>smute[s]).join(', '):'')+' dB']].concat(stemNotes.map(t=>['Stem chain',t])):[]));say('');
  }catch(e){say(e.message||'Something went wrong while processing.',1)}
  busy(false);
 };
 $('pv').onclick=async()=>{
  if(!src)return;busy(true);
  try{
-  const{T,fmt,pm}=opts(),fs=src.sampleRate,len=Math.min(src.length,Math.round(fs*30)),start=Math.min(Math.round(src.length*.35),src.length-len);
-  const ex=new AudioBuffer({length:len,numberOfChannels:2,sampleRate:fs}),ch=chans(src);
-  ex.copyToChannel(ch[0].subarray(start,start+len),0);ex.copyToChannel(ch[1].subarray(start,start+len),1);
+  const{T,fmt,pm}=opts(),fs=src.sampleRate,{start,len}=exRange();
+  const{buf:ex,stems:useS}=sourceFor(start,len);
   const li=lufs(kseg(chans(ex),fs)),r=await pipeline(ex,T,fmt,pm);
-  res=null;setPlayer(ex,li,r.o,r.L);show(li,T,r.L,r.pk,fmt,0,r.notes,true);say('');
+  res=null;setPlayer(ex,li,r.o,r.L);
+  show(li,T,r.L,r.pk,fmt,0,r.notes.concat(useS?[['Stem balance',STEMS.filter(s=>!smute[s]).map(s=>s+' '+(sgain[s]>0?'+':'')+sgain[s]).join(', ')+' dB']].concat(stemNotes.map(t=>['Stem chain',t])):[]),true);say('');
  }catch(e){say(e.message||'Something went wrong while processing.',1)}
  busy(false);
 };
