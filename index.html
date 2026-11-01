@@ -94,6 +94,18 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 #setList button.del{color:var(--warn)}
 #ioMsg{font-size:13px;color:var(--mut);margin-top:8px;min-height:18px}
 #ioMsg.err{color:var(--warn)}
+.lbl{display:flex;align-items:baseline;gap:6px}
+.q{border:1px solid var(--ln);background:transparent;color:var(--mut);border-radius:50%;width:17px;height:17px;min-width:17px;padding:0;font:inherit;font-size:11px;font-weight:700;line-height:15px;cursor:pointer;text-align:center}
+.q:hover{border-color:var(--ac);color:var(--ac)}
+.q[aria-expanded=true]{background:var(--ac);color:var(--acf);border-color:var(--ac)}
+.hx{font-size:13.5px;color:var(--mut);background:var(--card);border:1px solid var(--ln);border-left:3px solid var(--ac);border-radius:8px;padding:10px 12px;margin:0 0 12px}
+.hx[hidden]{display:none}
+.hx p{margin:0 0 7px}.hx p:last-child{margin:0}
+.hx b{color:var(--ink)}
+.hx a{color:var(--ac)}
+#helpTop{display:flex;gap:8px;margin-bottom:18px}
+#helpTop a,#helpTop button{flex:1;text-align:center;border:1px solid var(--ln);background:transparent;color:var(--ink);border-radius:8px;padding:9px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;text-decoration:none}
+#helpTop a:hover,#helpTop button:hover{border-color:var(--ac);color:var(--ac)}
 #refList div.out #refName::after{content:' — outlier';color:var(--warn)}
 #refList{font-size:14px;margin:8px 0 0}
 #refList div{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--ln)}
@@ -112,9 +124,11 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .hint{color:var(--mut);font-size:13px;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v19</small></h1>
+<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v22</small></h1>
 <p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded.</p>
 <p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or get the stems as files from the <a href="stems.html" style="color:var(--ac)">Stem Splitter</a>.</p>
+
+<div id="helpTop"><a href="help.html">Full guide</a><button type="button" id="helpAll">Show all hints</button></div>
 
 <div class="drop"><span id="fl">Tap to choose an audio file</span><input type="file" id="file" accept="audio/*" aria-label="Choose an audio file"></div>
 <p class="hint" style="margin:10px 0 0">Nothing happens when you tap the box? Use this picker instead:<br><input type="file" id="file2" accept="audio/*" style="margin-top:6px;max-width:100%;font:inherit;color:var(--ink)"></p>
@@ -187,7 +201,7 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
  <span class="lbl">Pumper <span style="font-weight:400;color:var(--mut)">(kick ducks the mids and highs)</span></span>
  <div class="chips" id="pu"><button type="button" data-v="0" aria-pressed="true">Off</button><button type="button" data-v="2" aria-pressed="false">Light</button><button type="button" data-v="4" aria-pressed="false">Medium</button><button type="button" data-v="6" aria-pressed="false">Heavy</button></div>
  <p class="hint" style="margin:0 0 18px">Clarity, width, vocal enhancer and pumper only apply in Full master.</p>
- <span class="lbl">Processing</span>
+ <span class="lbl">Processing mode</span>
  <div class="seg" style="margin-bottom:8px">
   <label><input type="radio" name="p" value="full" checked>Full master<small>listens to the song</small></label>
   <label><input type="radio" name="p" value="polish">Light polish<small>fixed EQ</small></label>
@@ -930,7 +944,13 @@ function paintSpec(){
   let s=0;for(let i=5;i<25;i++)s+=refAvg.ltas[i]-b[i];const off=s/20;rf=refAvg.ltas.map(v=>v-off);
   if(refs.length>1)rfi=refs.map(r=>{let t=0;for(let i=5;i<25;i++)t+=r.ltas[i]-b[i];const o2=t/20;return r.ltas.map(v=>v-o2)});
  }
- const d=b.map((v,i)=>v-a[i]);let s='';
+ const d=b.map((v,i)=>v-a[i]);
+ /* Bands far below the loudest band hold no audible content — a lowpassed
+    source leaves the top band 80 dB down, where saturation harmonics read as a
+    huge boost that is inaudible. Exclude those from the scale and the summary
+    so one empty band cannot flatten every real bar. */
+ const pkA=Math.max(...a),aud=a.map(v=>v>pkA-40),audIdx=d.map((_,i)=>i).filter(i=>aud[i]);
+ let s='';
  if(spMode==='s'){
   const top=Math.ceil((Math.max(...a,...b)+2)/10)*10,bot=top-60,y=v=>T+(top-Math.max(bot,Math.min(top,v)))/(top-bot)*ih;
   for(let v=bot;v<=top;v+=10)s+='<line class="sg" x1="'+L+'" x2="'+(W-R)+'" y1="'+y(v)+'" y2="'+y(v)+'"/><text class="st" x="'+(L-4)+'" y="'+(y(v)+4)+'" text-anchor="end">'+v+'</text>';
@@ -941,15 +961,19 @@ function paintSpec(){
   if(rf)s+='<path class="sr" d="'+path(rf)+'"/>';
   s+='<text class="st" x="'+(W-R)+'" y="'+(T+12)+'" text-anchor="end">gray: before, color: after'+(rf?', dashed: reference':'')+'</text>';
  }else{
-  const r=Math.max(4,Math.ceil(Math.max(...d.map(Math.abs)))),y=v=>T+(r-v)/(2*r)*ih,bw=iw/n*.7;
+  const r=Math.max(4,Math.ceil(Math.max(...audIdx.map(i=>Math.abs(d[i])),0))),cv=v=>Math.max(-r,Math.min(r,v)),y=v=>T+(r-cv(v))/(2*r)*ih,bw=iw/n*.7;
   for(let v=-r;v<=r;v+=r>=8?4:2)s+='<line class="sg" x1="'+L+'" x2="'+(W-R)+'" y1="'+y(v)+'" y2="'+y(v)+'"/><text class="st" x="'+(L-4)+'" y="'+(y(v)+4)+'" text-anchor="end">'+(v>0?'+':'')+v+'</text>';
   [[5,'100'],[15,'1k'],[25,'10k']].forEach(([i,t])=>{s+='<text class="st" x="'+x(i)+'" y="'+(H-6)+'" text-anchor="middle">'+t+'</text>'});
-  d.forEach((v,i)=>{s+='<rect class="'+(v>=0?'up':'dn')+'" x="'+(x(i)-bw/2).toFixed(1)+'" y="'+Math.min(y(v),y(0)).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(1,Math.abs(y(v)-y(0))).toFixed(1)+'"/>'});
+  d.forEach((v,i)=>{s+='<rect class="'+(v>=0?'up':'dn')+'"'+(aud[i]?'':' opacity="0.3"')+' x="'+(x(i)-bw/2).toFixed(1)+'" y="'+Math.min(y(v),y(0)).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(1,Math.abs(y(v)-y(0))).toFixed(1)+'"/>'});
   s+='<text class="st" x="'+(W-R)+'" y="'+(T+12)+'" text-anchor="end">dB change, after minus before</text>';
  }
  $('sp').innerHTML=s;
- let mi=0,ma=0;d.forEach((v,i)=>{if(v>d[ma])ma=i;if(v<d[mi])mi=i});
- $('sp-n').textContent='Largest boost: '+sg(d[ma])+' dB near '+fq(SPC[ma])+'. Largest cut: '+sg(d[mi])+' dB near '+fq(SPC[mi])+'.'+($('sp-m').checked?'':' Levels are not matched, so the master looks louder overall.');
+ let mi=audIdx[0],ma=audIdx[0];
+ for(const i of audIdx){if(d[i]>d[ma])ma=i;if(d[i]<d[mi])mi=i}
+ const quiet=d.map((_,i)=>i).filter(i=>!aud[i]&&Math.abs(d[i])>3);
+ $('sp-n').textContent=(ma===undefined?'':'Largest boost: '+sg(d[ma])+' dB near '+fq(SPC[ma])+'. Largest cut: '+sg(d[mi])+' dB near '+fq(SPC[mi])+'.')
+  +($('sp-m').checked?'':' Levels are not matched, so the master looks louder overall.')
+  +(quiet.length?' '+(quiet.length===1?fq(SPC[quiet[0]])+' changed more':'Some bands above '+fq(SPC[quiet[0]])+' changed more')+', but that range is over 40 dB below the rest of the mix — too quiet to hear, and shown faded.':'');
 }
 $('sp-s').onclick=()=>{spMode='s';$('sp-s').setAttribute('aria-pressed',true);$('sp-d').setAttribute('aria-pressed',false);paintSpec()};
 $('sp-d').onclick=()=>{spMode='d';$('sp-d').setAttribute('aria-pressed',true);$('sp-s').setAttribute('aria-pressed',false);paintSpec()};
@@ -1017,19 +1041,37 @@ function show(i,t,o,pk,fmt,size,mono,notes,pv){
  for(let v=-24;v<=-6;v+=3)h+='<span class="tk" style="left:'+x(v)+'">'+v+'</span>';
  h+='<div class="m t" style="left:'+x(t)+'"><i></i></div><div class="m in" style="left:'+x(i)+'">before<i></i></div><div class="m o" style="left:'+x(o)+'">after<i></i></div>';
  $('mt').innerHTML=h;
- const rows=[['Loudness before',i.toFixed(1)+' LUFS'],['Loudness after',o.toFixed(1)+' LUFS (target '+t+')'],['True peak (est.)',pk.toFixed(1)+' dBTP']['Mono fold',mono.drop.toFixed(1)+' dB quieter'+(mono.drop>1.2?' — check mono':'')]].concat(pv?[]:[['File size',(size/1048576).toFixed(1)+' MB']]);
+ const rows=[['Loudness before',i.toFixed(1)+' LUFS'],['Loudness after',o.toFixed(1)+' LUFS (target '+t+')'],['True peak (est.)',pk.toFixed(1)+' dBTP'],['Mono fold',mono.drop.toFixed(1)+' dB quieter'+(mono.drop>1.2?' — check mono':'')]].concat(pv?[]:[['File size',(size/1048576).toFixed(1)+' MB']]);
  $('dl').innerHTML=rows.concat(notes||[]).map(r=>'<dt>'+r[0]+'</dt><dd>'+r[1]+'</dd>').join('');
- $('hint').textContent=fmt==='m4a'?'M4A is saved as .mp4 (the same AAC audio). Rename it to .m4a if you prefer.':'Your browser’s save dialog only accepts certain file types, so the '+fmt.toUpperCase()+' is saved inside a .zip. Unzip it to get the audio file.';
- if(Math.abs(o-t)>.5)$('hint').textContent='The target was too loud to reach without heavy limiting, so this is the closest result. '+$('hint').textContent;
- $('hint').textContent=(mono.drop>1.2?`Summing to mono loses ${mono.drop.toFixed(1)} dB, so some elements will thin out or disappear on a phone speaker or other mono output. Press "Listen in mono" below and check it before you release this. Reducing the stereo width is the usual fix. `:'')+$('hint').textContent;
- $('save').hidden=!!pv;if(pv)$('hint').textContent='This is a 30-second excerpt from the middle of the song. Choose Master full song to render the whole track.';
+ const parts=[];
+ if(pv)parts.push('This is a 30-second excerpt from the middle of the song. Choose Master full song to render the whole track.');
+ if(mono.drop>1.2)parts.push(`Summing to mono loses ${mono.drop.toFixed(1)} dB, so some elements will thin out or disappear on a phone speaker or other mono output. Press "Listen in mono" below and check it before you release. Reducing the stereo width is the usual fix.`);
+ if(Math.abs(o-t)>.5)parts.push('The target was too loud to reach without heavy limiting, so this is the closest result.');
+ if(!pv&&hosted()&&fmt==='m4a')parts.push('M4A is saved as .mp4 — the same AAC audio. Rename it to .m4a if you prefer.');
+ if(!pv&&!hosted())parts.push('This page\u2019s save dialog only accepts certain file types, so the '+fmt.toUpperCase()+' is saved inside a .zip. Unzip it to get the audio file.');
+ $('hint').textContent=parts.join(' ');
+ $('save').hidden=!!pv;
  $('res').hidden=false;$('res').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
+/* On a normal web page a plain anchor download works and needs no zip. The
+   claude.ai artifact host instead exposes a downloads capability whose dialog
+   accepts only certain extensions, hence the zip wrapper there. */
+const hosted=()=>!!(window.claude&&window.claude.use);
 $('save').onclick=async()=>{
  if(!res)return;
- const dl=await (window.claude&&window.claude.use?window.claude.use('downloads'):null);
- if(!dl){say('Saving isn’t available in this view. Open the artifact link in a browser tab.',1);return}
+ if(!hosted()){
+  try{
+   const a=document.createElement('a');a.href=URL.createObjectURL(res.blob);
+   a.download=name+'_master.'+(res.fmt==='m4a'?'m4a':res.fmt);
+   document.body.appendChild(a);a.click();
+   setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},0);
+   say('Saved '+a.download+'.');
+  }catch(e){say('Could not save the file: '+(e.message||'unknown error'),1)}
+  return;
+ }
+ const dl=await window.claude.use('downloads');
+ if(!dl){say('Saving is not available in this view.',1);return}
  try{
   let fn,data;
   if(res.fmt==='m4a'){fn=name+'_master.mp4';data=res.blob}
@@ -1042,5 +1084,65 @@ $('useRef').onchange=()=>{refSave();cfgSave()};
 $('lufs').addEventListener('change',cfgSave);
 document.querySelectorAll('input[name=f],input[name=p],#useStems,#perStem').forEach(e=>e.addEventListener('change',cfgSave));
 try{setupsLoad();setupsRender();cfgLoad();refLoad()}catch(e){}
+/* ---- inline hints ---- */
+const HELP={
+'Reference tracks':`<p>Load songs whose balance you like. The app measures their tone curve, stereo width and low-mid side energy, averages them, and aims for that instead of its own built-in target. <b>This is the single biggest quality improvement available here</b> — without references the app aims at a hand-chosen curve that may not suit your material.</p>
+<p>Pick by similarity to your song, not by taste: it copies tone and width, so instrumentation and arrangement density need to be comparable. Use lossless downloads or CD rips, not streaming or YouTube rips. Two or three is safer than one, and the app tells you if they disagree.</p>
+<p>Only the measurements are kept — about 300 bytes each. The audio is analyzed and discarded.</p>`,
+'Saved setups':`<p>A setup stores your loaded references plus every setting on this page, under a name. Your current settings are also saved automatically, so the app reopens where you left it.</p>
+<p>Export writes everything to a JSON file. That is the only durable copy: browser storage never syncs between devices and is erased when you clear site data. Import merges a file back and renames on collision rather than overwriting.</p>`,
+'Genre preset':`<p>Sets several things at once: loudness target, a tilt on the tone curve, compression firmness, saturation, de-esser ceiling, how far auto width may move, and the stem balance targets.</p>
+<p>Choosing a preset moves the loudness slider to its target — Rock −10, Pop −9.5, Hip-hop −9, Electronic −8.5, Acoustic −14, Voice −16 LUFS. You can move it back afterwards. Auto leaves your target alone.</p>
+<p>With references loaded, they replace the preset's tone curve entirely; the preset still controls dynamics and saturation.</p>`,
+'Target loudness':`<p>Integrated loudness per ITU-R BS.1770, the same standard streaming services use. The app iterates until the output lands within 0.1 LU of your target.</p>
+<p><b>−14</b> is the streaming reference point and keeps the most dynamics. <b>−11 to −9</b> is competitively loud and matches most modern releases. <b>−16</b> suits spoken word.</p>
+<p>Streaming services turn loud masters down rather than rewarding them, so a −9 master on Spotify is quieter <i>and</i> more squashed than a −14 one. Loud masters still make sense for downloads and local playback.</p>`,
+'Output format':`<p>WAV is 24-bit with triangular dither and a −1.0 dBTP ceiling. MP3 (320 kbps) and M4A (AAC 256 kbps) get −1.5 dBTP, because lossy encoders overshoot — the decoded file can peak higher than what was fed in.</p>
+<p>Use WAV for anything you will distribute or process further. Peaks are measured as true peak with 4× oversampling, so the reported number includes inter-sample peaks.</p>`,
+'Stem balance':`<p>Splits the song into vocals, drums, bass and other, lets you rebalance them, then masters the result. Optionally each stem gets its own EQ and compression first; the limiter always stays on the summed mix so your balance survives.</p>
+<p>Separation downloads about 123 MB of models the first time and is slow — several times the length of the audio. <b>Use the 30-second option first</b>, and use a desktop browser: a full song needs more memory than most phones have.</p>
+<p>Stems only apply to the section you separated. Separated audio carries artifacts; real stems from your session are always better if you have them.</p>`,
+'Processing mode':`<p><b>Full master</b> analyzes the song and adapts every stage to it. <b>Light polish</b> applies one fixed EQ and compressor, identical for every song. <b>Loudness only</b> changes no tone at all.</p>
+<p>Loudness only is the honest choice when you trust your mix. It is also the best way to hear what the other modes are doing: master once each way and compare.</p>
+<p>Clarity, width, the vocal enhancer, the pumper and the processing amount apply to Full master only.</p>`,
+'Processing amount':`<p>Scales every automatic decision at once. Gentle also raises the dynamic EQ and de-esser thresholds by 3 dB so they react only to clear problems instead of working constantly.</p>
+<p>On real material, Gentle made four tone moves up to 1.4 dB with the dynamic EQ averaging 0.0 dB; Strong made seven moves up to 3.5 dB averaging 0.8 dB.</p>
+<p><b>Gentle is the default because over-processing is harder to hear than under-processing</b>, and much harder to undo. Start here and move up only if the result sounds under-cooked.</p>`,
+'Clarity':`<p>Fixes one specific problem: wide low-mid content making a mix sound muddy. When reverb, wide guitars or pads spread energy across 150–500 Hz in the stereo field, you get congestion that a plain EQ cut cannot fix without thinning the track.</p>
+<p>It high-passes the <b>side</b> signal only, pulling that content toward the centre while leaving the centre's weight alone. Light 160 Hz, Medium 200 Hz, Strong 320 Hz plus a −1.5 dB centre cut at 140 Hz.</p>
+<p>This <b>improves</b> mono compatibility, so it is safe to push. If the muddiness is instruments fighting in the centre, this will not help — that is a mix problem.</p>`,
+'Stereo width':`<p>Scales the side signal of the mid and high bands. Bass below 150 Hz is always summed to mono, which keeps the low end solid.</p>
+<p><b>This is the control most likely to ruin your master on a phone.</b> The side signal is L−R and cancels completely on mono playback, so anything widened gets quieter or vanishes. Measured on a real track, mono loss went from 0.31 dB at Narrow to 1.12 dB at Extra wide.</p>
+<p>After raising width, check the Mono fold figure in the results and press "Listen in mono".</p>`,
+'Vocal enhancer':`<p>Centre-channel only, so it does not brighten what sits in the sides. Adds presence at 3 kHz (+1/+2/+3 dB), half that much air above 11 kHz, and levels the 1–4 kHz range when it lunges forward.</p>
+<p><b>Without separated stems it cannot tell a vocal from anything else centred</b> — it also lifts the snare crack, kick click and centred guitars. If it turns harsh, drop a level. For true vocal-only work, use Stem balance with per-stem mastering.</p>`,
+'Pumper':`<p>Ducks the mid and high bands each time the kick hits, for the rhythmic pumping common in dance music. Bass and kick stay at full level.</p>
+<p>It triggers from the kick itself rather than a tempo grid, so it needs no BPM and does not drift on loose timing. Maximum duck 2, 4 or 6 dB; attack 3 ms, release 150 ms.</p>
+<p>A creative effect, not a corrective one. Start at Light.</p>`};
+(function(){
+ const keys=Object.keys(HELP).sort((a,b)=>b.length-a.length);
+ let n=0;
+ document.querySelectorAll('.lbl').forEach(el=>{
+  const t=el.textContent.trim(),key=keys.find(k=>t.startsWith(k));
+  if(!key||el.querySelector('.q'))return;
+  const id='hx'+(++n);
+  const btn=document.createElement('button');
+  btn.type='button';btn.className='q';btn.textContent='?';
+  btn.setAttribute('aria-expanded','false');btn.setAttribute('aria-controls',id);
+  btn.title='What does '+key+' do?';
+  btn.setAttribute('aria-label','Explain '+key);
+  const box=document.createElement('div');
+  box.className='hx';box.id=id;box.hidden=true;box.innerHTML=HELP[key];
+  btn.onclick=()=>{box.hidden=!box.hidden;btn.setAttribute('aria-expanded',String(!box.hidden))};
+  el.appendChild(btn);
+  el.parentNode.insertBefore(box,el.nextSibling);
+ });
+ $('helpAll').onclick=()=>{
+  const boxes=[...document.querySelectorAll('.hx')],open=boxes.some(b=>b.hidden);
+  boxes.forEach(b=>{b.hidden=!open});
+  document.querySelectorAll('.q').forEach(q=>q.setAttribute('aria-expanded',String(open)));
+  $('helpAll').textContent=open?'Hide all hints':'Show all hints';
+ };
+})();
 window.addEventListener('error',e=>say('Error: '+e.message,1));
 </script></body></html>

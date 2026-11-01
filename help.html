@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Loudness Master — Help</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e9edf0;--card:#f7f9fa;--ink:#11161b;--mut:#56626d;--ln:#c4ccd3;--ac:#00796b;--acf:#fff;--warn:#b3261e;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1317;--card:#161d23;--ink:#e8edf1;--mut:#92a0ab;--ln:#2a343c;--ac:#3ccfbf;--acf:#06201d;--warn:#ff8a80}}
+:root[data-theme="dark"]{--bg:#0e1317;--card:#161d23;--ink:#e8edf1;--mut:#92a0ab;--ln:#2a343c;--ac:#3ccfbf;--acf:#06201d;--warn:#ff8a80}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:680px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:30px;line-height:1.1;margin:8px 0 6px;letter-spacing:-.02em}
+h2{font-size:21px;margin:34px 0 10px;letter-spacing:-.01em;padding-top:12px;border-top:1px solid var(--ln)}
+h3{font-size:16.5px;margin:22px 0 6px}
+h4{font-size:15px;margin:16px 0 4px;color:var(--mut)}
+p,li{margin:0 0 10px}
+ul,ol{padding-left:22px;margin:0 0 12px}
+a{color:var(--ac)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13.5px;background:var(--card);border:1px solid var(--ln);border-radius:4px;padding:1px 4px}
+.sub{color:var(--mut);margin:0 0 20px;font-size:15px}
+.toc{background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.toc ol{margin:0;padding-left:20px;font-size:15px}
+.toc li{margin:0 0 3px}
+table{width:100%;border-collapse:collapse;margin:0 0 14px;font-size:14.5px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--ln);vertical-align:top}
+th{font-weight:600;color:var(--mut);font-size:13px}
+td:first-child{white-space:nowrap;font-weight:600}
+.note{background:var(--card);border:1px solid var(--ln);border-left:3px solid var(--ac);border-radius:8px;padding:12px 14px;margin:0 0 14px;font-size:15px}
+.note.w{border-left-color:var(--warn)}
+.note p:last-child{margin:0}
+.top{display:inline-block;margin-top:6px;font-size:13.5px;color:var(--mut);text-decoration:none}
+.chain{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:12px 14px;margin:0 0 14px;font-size:14.5px;line-height:1.7}
+.chain b{display:inline-block;min-width:22px;color:var(--ac)}
+</style></head>
+<body><main>
+
+<h1>Loudness Master — Help</h1>
+<p class="sub">What every control does, the actual numbers behind it, and how to tell when it is working against you. <a href="./">Back to the app</a></p>
+
+<nav class="toc"><ol>
+<li><a href="#flow">What the app does, in order</a></li>
+<li><a href="#workflow">A workflow that avoids the usual mistakes</a></li>
+<li><a href="#refs">Reference tracks</a></li>
+<li><a href="#setups">Saved setups</a></li>
+<li><a href="#genre">Genre preset</a></li>
+<li><a href="#loud">Target loudness</a></li>
+<li><a href="#fmt">Output format</a></li>
+<li><a href="#stems">Stem balance</a></li>
+<li><a href="#mode">Processing mode</a></li>
+<li><a href="#amount">Processing amount</a></li>
+<li><a href="#clarity">Clarity</a></li>
+<li><a href="#width">Stereo width</a></li>
+<li><a href="#vocal">Vocal enhancer</a></li>
+<li><a href="#pump">Pumper</a></li>
+<li><a href="#results">Reading the results panel</a></li>
+<li><a href="#ab">The A/B player and the mono check</a></li>
+<li><a href="#spec">The spectrum view</a></li>
+<li><a href="#cant">What this tool cannot do</a></li>
+<li><a href="#trouble">Troubleshooting</a></li>
+</ol></nav>
+
+<h2 id="flow">1. What the app does, in order</h2>
+<p>Everything runs in your browser on your own machine. No audio is uploaded, and there is no account, server or API key involved.</p>
+<p>In <b>Full master</b> mode the signal passes through these stages, in this order:</p>
+<div class="chain">
+<b>1</b> Analysis — measures the song's tone across eight octave bands, its stereo width, and how much low-mid energy sits in the sides<br>
+<b>2</b> Static EQ — a 25 Hz high-pass plus up to eight corrective filters aiming at the target curve<br>
+<b>3</b> Dynamic EQ — four bands that cut only when they jump above their own running average<br>
+<b>4</b> Vocal enhancer — centre-channel leveling, presence and air (off unless you turn it on)<br>
+<b>5</b> Clarity — a high-pass on the side signal, and a small centre cut at 140 Hz<br>
+<b>6</b> Band split — below 150 Hz, 150 Hz to 2.5 kHz, above 2.5 kHz<br>
+<b>7</b> Multiband compression — each band compressed against its own average level<br>
+<b>8</b> Pumper — the kick ducks the mid and high bands (off unless you turn it on)<br>
+<b>9</b> Stereo stage — bass summed to mono, mid and high width adjusted<br>
+<b>10</b> De-esser — reduces 5–9 kHz when it spikes<br>
+<b>11</b> Saturation — soft clipping for density<br>
+<b>12</b> Loudness match and limiter — iterates gain until the target is hit, then true-peak limits<br>
+<b>13</b> Dither — triangular, applied on conversion to 24-bit or 16-bit
+</div>
+<p>If <b>Stem balance</b> is active, separation and the per-stem chains happen before stage 1, and what reaches stage 1 is your rebalanced mix rather than the original file.</p>
+<a class="top" href="#">↑ top</a>
+
+<h2 id="workflow">2. A workflow that avoids the usual mistakes</h2>
+<ol>
+<li><b>Load reference tracks first.</b> Without them the app aims at a hand-chosen curve that may not suit your material. With them it aims at something measured. This is the single biggest quality difference available to you.</li>
+<li><b>Use Preview 30 s, not Master full song.</b> It renders a 30-second section from the middle of the track in a fraction of the time, and the A/B player and spectrum view work identically on it.</li>
+<li><b>Start on Gentle.</b> Move up only if the result sounds under-processed to you.</li>
+<li><b>A/B with loudness matching on.</b> Louder reliably sounds better to human ears, which is exactly why a fair comparison needs the levels matched.</li>
+<li><b>Press "Listen in mono" before you commit.</b> This is where stereo processing goes wrong, and it will not be obvious on headphones.</li>
+<li><b>Then render the full song</b> and check the Mono fold figure in the results.</li>
+</ol>
+<div class="note"><p>Automatic mastering improves some material and makes other material worse. There is no setting that removes the need to listen. Treat every number this app reports as a measurement, and every suggestion as an opinion.</p></div>
+<a class="top" href="#">↑ top</a>
+
+<h2 id="refs">3. Reference tracks</h2>
+<p>Load up to five songs whose balance you like. The app measures each one and aims for the average of those measurements instead of its built-in target.</p>
+
+<h3>What it measures, and what it ignores</h3>
+<table>
+<tr><th>Measured and copied</th><th>Not measured</th></tr>
+<tr><td>Octave-band tone curve, level-normalized</td><td>Arrangement and instrumentation</td></tr>
+<tr><td>Overall stereo width (side-to-mid ratio)</td><td>Loudness or dynamic range</td></tr>
+<tr><td>Low-mid side energy, 160–450 Hz</td><td>Anything time-varying</td></tr>
+</table>
+<p>Only those measurements are kept. The reference audio is analyzed and immediately discarded, which is why stored references take about 300 bytes each and why nothing you load is retained or transmitted.</p>
+
+<h3>Choosing references</h3>
+<ul>
+<li><b>Match the material, not your taste.</b> The app copies tone and width, so a reference needs comparable instrumentation and arrangement density. A sparse acoustic track and a dense guitar track have genuinely different spectra; averaging them produces a target that matches neither.</li>
+<li><b>Use real files.</b> Lossless downloads or your own CD rips. Streaming services are loudness-normalized and will not give you a file; YouTube rips are lossy re-encodes that have often been altered again on upload.</li>
+<li><b>Do not pay for hi-res.</b> The app works at 44.1 kHz and measures average tone, so a 16-bit/44.1 kHz FLAC is exactly as useful as a 24-bit/192 kHz file.</li>
+<li><b>Beware of versions.</b> Remasters, vinyl masters and streaming masters of the same song differ. Vinyl rips in particular carry cutting and playback EQ you do not want to copy.</li>
+<li><b>Two or three, not one.</b> A single master may be an unusual outlier.</li>
+</ul>
+
+<h3>The agreement check</h3>
+<p>Averaging references that disagree produces a target matching none of them, so the app measures how far each reference sits from their average and reports it. Both curves are level-normalized first, so this is purely about tone shape.</p>
+<table>
+<tr><th>Reading</th><th>Means</th></tr>
+<tr><td>Under 1.5 dB</td><td>They agree. Normal variation between well-mastered songs sits near 0.9 dB.</td></tr>
+<tr><td>Over 1.5 dB</td><td>They disagree. The app names the reference furthest from the rest and the frequency range where they diverge most. Remove the named one.</td></tr>
+</table>
+<p>With three or more references the outlier is named explicitly and marked in the list. With two, both sit equally far from their average, so you compare the faint lines on the spectrum view instead.</p>
+<div class="note"><p>The 1.5 dB line is a judgment call, but it was calibrated against real files rather than guessed: two different but sanely mastered songs measured 0.9 dB apart, while a reference with a deliberate 9 dB tilt error measured 2.4–3.2 dB.</p></div>
+
+<h3>What turning references on actually changes</h3>
+<ul>
+<li>The <b>tone target</b> becomes the measured reference curve instead of the genre curve.</li>
+<li><b>Stereo width</b> on Auto aims at the references' measured width instead of a guess, clamped to between 0.7× and 1.4×.</li>
+<li><b>Clarity</b> on Auto triggers only when your song has <i>more</i> low-mid side energy than the references do, rather than against a fixed threshold.</li>
+</ul>
+<p>Unchecking "Match tone and width" reverts all three to the genre behaviour without unloading anything.</p>
+<a class="top" href="#">↑ top</a>
+
+<h2 id="setups">4. Saved setups</h2>
+<p>A setup is a name attached to two things: your loaded reference measurements, and every setting on the page. Saving under an existing name replaces it.</p>
+<p>Separately, your current settings are saved automatically as you change them, so the app reopens where you left it even if you never save a named setup.</p>
+
+<h3>Export and import</h3>
+<p>Export writes all named setups plus your current references and settings to <code>gp-master-setups.json</code>. Import merges a file back, appending "(2)" on a name collision rather than overwriting, so importing someone else's file cannot destroy your own setups. Corrupt reference entries inside an imported file are dropped and reported rather than silently producing a wrong target.</p>
+<div class="note w"><p>Browser storage is per-browser and per-device. It never syncs between machines, and it is erased when you clear site data. Export is the only durable copy — use it before clearing anything, and to move setups between computers.</p></div>
+<a class="top" href="#">↑ top</a>
+
+<h2 id="genre">5. Genre preset</h2>
+<p>A preset sets several things at once: a loudness target, a tilt applied to the tone curve, how hard the compression works, how much saturation, the de-esser ceiling, how much the auto width is allowed to move, and the target stem balance ranges.</p>
+<table>
+<tr><th>Preset</th><th>Loudness</th><th>Character</th></tr>
+<tr><td>Auto</td><td>leaves your target alone</td><td>neutral; the built-in curve with no tilt</td></tr>
+<tr><td>Rock</td><td>−10 LUFS</td><td>neutral tilt, moderate compression</td></tr>
+<tr><td>Pop</td><td>−9.5 LUFS</td><td>slight low and high lift, brighter, more de-essing</td></tr>
+<tr><td>Hip-hop</td><td>−9 LUFS</td><td>+2 dB low tilt, firmer compression, narrower auto width</td></tr>
+<tr><td>Electronic</td><td>−8.5 LUFS</td><td>low and high lift, most saturation, widest auto width</td></tr>
+<tr><td>Acoustic</td><td>−14 LUFS</td><td>gentlest compression, almost no saturation</td></tr>
+<tr><td>Voice</td><td>−16 LUFS</td><td>−2 dB low tilt, strongest de-essing, no width change</td></tr>
+</table>
+<p>Selecting a preset other than Auto moves the loudness slider to that preset's target. You can then move it back; the preset's other behaviour is unaffected.</p>
+<div class="note"><p>When reference tracks are active they replace the preset's tone curve and tilt entirely. The preset still controls compression, saturation, de-essing and the stem balance targets.</p></div>
+<a class="top" href="#">↑ top</a>
+
+<h2 id="loud">6. Target loudness</h2>
+<p>Integrated loudness in LUFS, measured per ITU-R BS.1770 with K-weighting and gating — the same standard streaming services use. The app iterates gain and limiting until the measured output lands within 0.1 LU of your target.</p>
+<table>
+<tr><th>Target</th><th>Use</th></tr>
+<tr><td>−16</td><td>podcasts, spoken word</td></tr>
+<tr><td>−14</td><td>streaming reference point; preserves the most dynamics</td></tr>
+<tr><td>−11 to −9</td><td>competitively loud; what most modern releases measure</td></tr>
+<tr><td>−8 and above</td><td>very loud; expect audible limiting on most material</td></tr>
+</table>
+<p>Streaming services turn loud masters down rather than rewarding them, so a −9 LUFS master played on Spotify is quieter and more squashed than a −14 LUFS one. Loud masters are worth making for download, local playback, and because quiet masters sound weak when a listener compares them manually.</p>
+<p>If the target is unreachable without extreme limiting the app stops at the closest achievable value and says so in the results.</p>
+<a class="top" href="#">↑ top</a>
+
+<h2 id="fmt">7. Output format</h2>
+<table>
+<tr><th>Format</th><th>Detail</th><th>Ceiling</th></tr>
+<tr><td>WAV</td><td>24-bit PCM, triangular dither</td><td>−1.0 dBTP</td></tr>
+<tr><td>MP3</td><td>320 kbps</td><td>−1.5 dBTP</td></tr>
+<tr><td>M4A</td><td>AAC 256 kbps</td><td>−1.5 dBTP</td></tr>
+</table>
+<p>The lossy formats get 0.5 dB more headroom because encoders overshoot: the decoded file can peak higher than the file you fed in. Use WAV for anything you will distribute or process further, and the lossy formats for sharing and listening.</p>
+<p>Peak levels are measured as true peak with 4× sinc oversampling, so the number reported accounts for inter-sample peaks that a simple sample-peak meter misses.</p>
+<a class="top" href="#">↑ top</a>
+
+<h2 id="stems">8. Stem balance</h2>
+<p>This splits your song into vocals, drums, bass and other, lets you rebalance them, optionally masters each one separately, then sums them and masters the result.</p>
+
+<h3>Separating</h3>
+<p>Separation uses neural network models that download once — about 123 MB total — and are then cached by your browser. It is slow: expect several times the length of the audio. Use <b>Separate 30 s section</b> first; it covers the same section the preview uses.</p>
+<p>Vocals, drums and bass each come from their own model. "Other" is derived by subtracting those three from your mix, so the four stems always sum back to the original exactly.</p>
+<div class="note w"><p>Use a desktop browser. Separation needs considerably more memory than most phones have, and a full-length song may fail outright on mobile.</p></div>
+
+<h3>Rebalancing</h3>
+<p>Each stem gets a level slider from −24 to +12 dB and an on/off switch. Changes are instant once separation is done — it does not re-separate.</p>
+<p>When separation finishes the app measures each stem against the full mix and suggests moves, with one button to apply them all. The targets per genre:</p>
+<table>
+<tr><th>Preset</th><th>Vocals</th><th>Drums</th><th>Bass</th><th>Other</th></tr>
+<tr><td>Rock</td><td>−9 to −5</td><td>−7 to −3</td><td>−13 to −8</td><td>−8 to −3</td></tr>
+<tr><td>Pop</td><td>−8 to −4</td><td>−8 to −4</td><td>−12 to −7</td><td>−10 to −5</td></tr>
+<tr><td>Hip-hop</td><td>−8 to −4</td><td>−6 to −2</td><td>−9 to −4</td><td>−12 to −6</td></tr>
+<tr><td>Electronic</td><td>−10 to −5</td><td>−6 to −2</td><td>−9 to −4</td><td>−8 to −3</td></tr>
+<tr><td>Acoustic</td><td>−7 to −3</td><td>−9 to −5</td><td>−14 to −9</td><td>−8 to −3</td></tr>
+<tr><td>Voice</td><td>−5 to −1</td><td>−14 to −8</td><td>−18 to −11</td><td>−14 to −8</td></tr>
+</table>
+<div class="note w"><p>These ranges are rules of thumb I chose, not measurements taken from reference recordings, and they take no account of your arrangement. A deliberately buried vocal will be flagged as wrong when it is not. Suggested moves are capped at 6 dB.</p></div>
+
+<h3>Mastering each stem separately</h3>
+<p>With this on, each stem gets its own chain before the stems are summed:</p>
+<table>
+<tr><th>Stem</th><th>EQ</th><th>Dynamics</th></tr>
+<tr><td>Vocals</td><td>90 Hz high-pass, +1.5 dB at 3 kHz, +1 dB above 11 kHz</td><td>2.5:1, max 4 dB, de-esser up to 5 dB</td></tr>
+<tr><td>Drums</td><td>30 Hz high-pass, +1 dB at 65 Hz, +1 dB above 9 kHz</td><td>2:1, fast 4 ms attack, max 4 dB</td></tr>
+<tr><td>Bass</td><td>28 Hz high-pass, +0.8 dB at 90 Hz, mono below 150 Hz</td><td>3:1, slow 20 ms attack, max 5 dB</td></tr>
+<tr><td>Other</td><td>40 Hz high-pass, −1 dB at 320 Hz</td><td>1.8:1, max 3 dB</td></tr>
+</table>
+<p>Each compressor works against that stem's own running average rather than a fixed threshold, so it adapts to the material.</p>
+<p>The limiter deliberately stays on the summed mix rather than running per stem. Limiting each stem to full loudness and then summing them would clip, and would undo the balance you just set.</p>
+
+<h3>Scope</h3>
+<p>Stems only apply to the section you separated. If you separate 30 seconds and then render the full song, the app masters the original audio instead and tells you so — separate the whole song to apply your balance to the whole song.</p>
+<div class="note"><p>Separated stems carry artifacts: bleed between stems, watery high frequencies, and smearing on cymbals and reverb tails. This is a rescue tool for a mix you cannot re-open. If you have the original session, exporting real stems from it will always be better.</p></div>
+<a class="top" href="#">↑ top</a>
+
+<h2 id="mode">9. Processing mode</h2>
+<table>
+<tr><th>Mode</th><th>What runs</th></tr>
+<tr><td>Full master</td><td>Everything in the chain above. Analyzes the song and adapts.</td></tr>
+<tr><td>Light polish</td><td>Fixed EQ — 28 Hz high-pass, −1.5 dB at 60 Hz, +0.8 dB at 3.5 kHz, +2 dB above 10 kHz — plus one gentle compressor. Identical for every song.</td></tr>
+<tr><td>Loudness only</td><td>No tone changes at all. Just loudness matching and limiting.</td></tr>
+</table>
+<p>Loudness only is the honest choice when you trust your mix and want nothing but a level change. It is also the right mode for checking what the other modes are actually doing to you: master once in Loudness only, once in Full master, and compare.</p>
+<p>Clarity, stereo width, the vocal enhancer, the pumper and the processing amount all apply to Full master only.</p>
+<a class="top" href="#">↑ top</a>
+
+<h2 id="amount">10. Processing amount</h2>
+<p>This scales every automatic decision at once. On Gentle it also raises the dynamic EQ and de-esser thresholds by 3 dB so they react only to clear problems rather than working continuously.</p>
+<table>
+<tr><th>Amount</th><th>Tone EQ</th><th>Dynamic EQ / de-ess</th><th>Compression</th><th>Saturation</th></tr>
+<tr><td>Gentle</td><td>55%, capped ±1.4 dB</td><td>55% / 50%, +3 dB threshold</td><td>55%</td><td>40%</td></tr>
+<tr><td>Standard</td><td>100%, capped ±2.5 dB</td><td>100%</td><td>100%</td><td>100%</td></tr>
+<tr><td>Strong</td><td>140%, capped ±3.5 dB</td><td>140% / 130%, −2 dB threshold</td><td>140%</td><td>130%</td></tr>
+</table>
+<p>Measured on real material, Gentle made four tone moves up to 1.4 dB with the dynamic EQ averaging 0.0 dB and peaking at 1.6 dB; Strong made seven moves up to 3.5 dB with the dynamic EQ averaging 0.8 dB and peaking at 4.2 dB.</p>
+<p>Gentle is the default because over-processing is harder to hear than under-processing, and much harder to undo. Start there.</p>
+<a class="top" href="#">↑ top</a>
+
+<h2 id="clarity">11. Clarity</h2>
+<p>This addresses one specific problem: wide low-mid content making a mix sound muddy. When reverb, wide guitars or pads spread energy between roughly 150 and 500 Hz across the stereo field, the result is congestion that a plain EQ cut cannot fix without thinning the whole track.</p>
+<p>Clarity high-passes the <i>side</i> signal only, pulling wide low-mid content toward the centre while leaving the centre's weight alone. At stronger settings it also applies a small cut at 140 Hz on the centre.</p>
+<table>
+<tr><th>Setting</th><th>Side high-pass</th><th>Centre cut</th></tr>
+<tr><td>Off</td><td>—</td><td>—</td></tr>
+<tr><td>Light</td><td>160 Hz</td><td>—</td></tr>
+<tr><td>Medium</td><td>200 Hz</td><td>—</td></tr>
+<tr><td>Strong</td><td>320 Hz</td><td>−1.5 dB at 140 Hz</td></tr>
+<tr><td>Auto</td><td colspan="2">measures your low-mid side energy and chooses, scaled by the processing amount</td></tr>
+</table>
+<p>With references loaded, Auto compares your song to them instead of to a fixed threshold, and does nothing if your song is already tighter than the references.</p>
+<div class="note"><p>Clarity <i>improves</i> mono compatibility, since it removes side content that would cancel on mono playback. If the mono fold figure concerns you, this is a safe control to push, unlike stereo width.</p></div>
+<p>If a mix is muddy because several instruments occupy the same frequencies in the <i>centre</i>, Clarity will not help. That is a mix problem; fix it in the arrangement or with stem balance.</p>
+<a class="top" href="#">↑ top</a>
+
+<h2 id="width">12. Stereo width</h2>
+<p>Scales the side signal of the mid and high bands. Bass below 150 Hz is summed to mono at every setting, which keeps the low end solid and is standard mastering practice.</p>
+<table>
+<tr><th>Setting</th><th>Side level</th><th>Mono risk</th></tr>
+<tr><td>Narrow</td><td>0.7×</td><td>none; improves mono</td></tr>
+<tr><td>Normal</td><td>1.0×, unchanged</td><td>none</td></tr>
+<tr><td>Wide</td><td>1.2×</td><td>some</td></tr>
+<tr><td>Extra wide</td><td>1.4×</td><td>real</td></tr>
+<tr><td>Auto</td><td colspan="2">from the references' measured width if loaded, otherwise 1.0–1.25× from your song's own width</td></tr>
+</table>
+<div class="note w"><p><b>This is the control most likely to ruin your master on a phone.</b> The side signal is L−R, and on a mono device it cancels completely. Anything you widen gets quieter or disappears in mono. Measured on a real track, the mono fold loss went from 0.31 dB at Narrow to 1.12 dB at Extra wide. Always check the Mono fold figure and the "Listen in mono" button after raising width.</p></div>
+<a class="top" href="#">↑ top</a>
+
+<h2 id="vocal">13. Vocal enhancer</h2>
+<p>Works on the centre channel only, so it does not brighten what sits in the stereo sides.</p>
+<table>
+<tr><th>Setting</th><th>Presence at 3 kHz</th><th>Air above 11 kHz</th><th>Leveling</th></tr>
+<tr><td>Light</td><td>+1 dB</td><td>+0.5 dB</td><td>up to 1.5 dB</td></tr>
+<tr><td>Medium</td><td>+2 dB</td><td>+1 dB</td><td>up to 2.5 dB</td></tr>
+<tr><td>Strong</td><td>+3 dB</td><td>+1.5 dB</td><td>up to 3.5 dB</td></tr>
+</table>
+<p>The leveling stage runs first, trimming the 1–4 kHz range when it jumps well above its own average, which evens out a vocal that lunges forward on loud phrases.</p>
+<div class="note w"><p>Without separated stems the app cannot distinguish a vocal from anything else in the centre, so this also lifts the snare crack, the kick click, and centred guitars. If it turns harsh, drop a level or raise the de-essing. For real vocal-only processing, use Stem balance with per-stem mastering instead.</p></div>
+<p>On an instrumental this control just brightens the centre. It is not useful there.</p>
+<a class="top" href="#">↑ top</a>
+
+<h2 id="pump">14. Pumper</h2>
+<p>Ducks the mid and high bands each time the kick hits, producing the rhythmic pumping common in dance and electronic music. Bass and kick are left at full level, so the low end stays solid.</p>
+<table>
+<tr><th>Setting</th><th>Maximum duck</th></tr>
+<tr><td>Light</td><td>2 dB</td></tr>
+<tr><td>Medium</td><td>4 dB</td></tr>
+<tr><td>Heavy</td><td>6 dB</td></tr>
+</table>
+<p>It follows the kick itself rather than a tempo grid, using the low band's own level as the trigger, so it needs no BPM setting and does not drift on music with a loose tempo. The attack is 3 ms and the release 150 ms.</p>
+<p>This is a creative effect, not a corrective one. Light is audible; Heavy is a production choice. Measured on real material, Medium averaged 0.7 dB of ducking with a 4 dB peak — the average is low because it only acts on kick transients.</p>
+<a class="top" href="#">↑ top</a>
+
+<h2 id="results">15. Reading the results panel</h2>
+<table>
+<tr><th>Row</th><th>Meaning</th></tr>
+<tr><td>Loudness before / after</td><td>Integrated LUFS of the source and the master. "After" should land within 0.1 of your target.</td></tr>
+<tr><td>True peak</td><td>Measured with 4× oversampling, so it accounts for inter-sample peaks.</td></tr>
+<tr><td>Mono fold</td><td>How much quieter the master becomes when summed to mono. Above 1.2 dB the app warns you. See the mono section below.</td></tr>
+<tr><td>Tone target</td><td>Whether the curve came from your references or from a genre preset.</td></tr>
+<tr><td>Processing amount</td><td>Gentle, Standard or Strong.</td></tr>
+<tr><td>Tone moves</td><td>Every static EQ move actually applied, with frequency and gain.</td></tr>
+<tr><td>Dynamic EQ</td><td>Average and maximum cut per band. A low average with a high maximum is healthy — it means the band acted only on problems.</td></tr>
+<tr><td>Clarity</td><td>The side high-pass frequency chosen, and your measured low-mid side energy.</td></tr>
+<tr><td>De-esser</td><td>Average and maximum reduction. A high average means it is working constantly; consider Gentle.</td></tr>
+<tr><td>Avg compression</td><td>Mean reduction in the low, mid and high bands.</td></tr>
+<tr><td>Stereo</td><td>The bass-mono frequency and the width multiplier used.</td></tr>
+<tr><td>Pumper / Vocal enhancer</td><td>Only shown when active, with the amounts applied.</td></tr>
+<tr><td>Stem balance / Stem chain</td><td>Only shown when stems were used; the levels you set and what each stem's chain did.</td></tr>
+<tr><td>File size</td><td>Of the encoded output. Not shown for previews.</td></tr>
+</table>
+<p>The pattern worth learning: compare the average against the maximum. A processor with a 0.2 dB average and a 3 dB maximum is doing precise, occasional work. One with a 2 dB average is reshaping the whole song, which may not be what you want.</p>
+<a class="top" href="#">↑ top</a>
+
+<h2 id="ab">16. The A/B player and the mono check</h2>
+<p>A and B switch instantly between the original and the master while playback continues, so you hear the difference rather than reconstructing it from memory.</p>
+<p><b>Match loudness</b> is on by default and should stay on. Louder reliably sounds better to human ears regardless of quality, so comparing a −10 LUFS master against a −16 LUFS original tells you nothing except which is louder. Turn it off only when you specifically want to hear the loudness gain.</p>
+<p><b>Listen in mono</b> sums both channels live. Use it while a section loops, and listen for elements that thin out, lose their reverb, or disappear — wide synths, double-tracked guitars and stereo reverb are the usual casualties.</p>
+<p>The Mono fold figure in the results quantifies the same thing. For reference, a genuinely mono source reads 0.00 dB and a fully out-of-phase one reads above 50 dB. Normal stereo music sits well under 1 dB.</p>
+<a class="top" href="#">↑ top</a>
+
+<h2 id="spec">17. The spectrum view</h2>
+<p>Two modes:</p>
+<ul>
+<li><b>Spectrum</b> — the average spectrum of the original in grey and the master in colour, from about 30 Hz to 20 kHz. With references loaded, their averaged curve appears as a dashed line and each individual reference as a fainter line, so you can see both the target and any outlier.</li>
+<li><b>Difference</b> — a bar per band showing the change, with the largest boost and cut named underneath.</li>
+</ul>
+<p><b>Match levels</b> is on by default and aligns the two curves so you see tonal change rather than the master simply being louder.</p>
+<p>It shows the whole-song average, so it will not reveal how a single section changed. A chorus that distorts will not show up here.</p>
+<a class="top" href="#">↑ top</a>
+
+<h2 id="cant">18. What this tool cannot do</h2>
+<ul>
+<li><b>Fix a mix.</b> If instruments fight for the same frequencies in the centre, no mastering chain resolves it. Clarity and stem balance reduce the symptom; the cure is in the mix.</li>
+<li><b>Restore lost quality.</b> Mastering a 128 kbps MP3 cannot recover the high frequencies the encoder discarded.</li>
+<li><b>Produce Dolby Atmos.</b> Atmos is object-based and must be built from multitracks in a renderer inside a DAW, then delivered as an ADM BWF file. Upmixing a stereo master is explicitly not accepted by distributors.</li>
+<li><b>Replace your ears.</b> Every automatic decision here is a measurement plus an assumption. The measurements are sound; the assumptions are mine.</li>
+<li><b>Match a professional mastering engineer.</b> What you get is competent, consistent and free, and it is genuinely useful for demos, references and loudness work. It is not a substitute for someone who has heard ten thousand records on a tuned system.</li>
+</ul>
+<a class="top" href="#">↑ top</a>
+
+<h2 id="trouble">19. Troubleshooting</h2>
+<table>
+<tr><th>Problem</th><th>Cause and fix</th></tr>
+<tr><td>Nothing happens on tapping the upload box</td><td>Some in-app browsers block file pickers. Use the plain picker underneath, or open the site in Safari or Chrome.</td></tr>
+<tr><td>Master sounds dull</td><td>The tone target may not suit your material. Load references, or drop to Gentle, or use Loudness only.</td></tr>
+<tr><td>Master sounds harsh</td><td>Lower the processing amount, turn down the vocal enhancer, or check the de-esser average in the results.</td></tr>
+<tr><td>Sounds fine on headphones, wrong on a phone</td><td>Almost always stereo width. Check Mono fold, press Listen in mono, and reduce width.</td></tr>
+<tr><td>Loudness target not reached</td><td>The material is too dynamic to reach it without extreme limiting. The results say what was achieved; use a quieter target.</td></tr>
+<tr><td>Separation fails or the tab crashes</td><td>Not enough memory. Use a desktop browser and the 30-second option.</td></tr>
+<tr><td>Separation is extremely slow</td><td>Expected. It is single-threaded in the browser. Models download once, then cache.</td></tr>
+<tr><td>Bass stem sounds empty</td><td>The song's low end may be carried by the kick and synths rather than a bass instrument. Check the drums and other stems.</td></tr>
+<tr><td>References vanished</td><td>Site data was cleared, or you are on a different browser or device. Use Export to keep a durable copy.</td></tr>
+<tr><td>Full master ignored my stem balance</td><td>You separated only 30 seconds. Separate the whole song.</td></tr>
+</table>
+<a class="top" href="#">↑ top</a>
+
+</main></body></html>

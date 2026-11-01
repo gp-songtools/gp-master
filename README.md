@@ -7,6 +7,11 @@ no audio is uploaded anywhere, and there is no server, API key, or account.
 
 Open `index.html`, or visit the GitHub Pages URL for this repo.
 
+`help.html` documents every control with its actual parameter values, how to
+tweak it, and how to tell when it is working against you. Every control on the
+main page also has a `?` button with a summary, and "Show all hints" expands
+them all at once.
+
 Load an audio file, choose a loudness target and output format, then preview or
 master the whole song.
 
@@ -87,6 +92,7 @@ for the lossy formats, leaving headroom for encoder overshoot.
 - [x] Stem balance and per-stem mastering inside the main app
 - [x] Reference-track matching — measured targets instead of the heuristic curve
 - [ ] Manual tone/compression sliders
+- [x] Help page and per-control hints
 - [ ] Background (worker thread) processing
 - [ ] 48 kHz and FLAC output
 
