@@ -76,6 +76,11 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 #applyS{border:1px solid var(--ac);background:transparent;color:var(--ac);border-radius:8px;padding:8px 12px;font:inherit;font-weight:600;font-size:14px;cursor:pointer}
 #applyS:disabled{opacity:.45;cursor:not-allowed}
 .sr{stroke:var(--ink);stroke-width:1.5;stroke-dasharray:4 3;fill:none;opacity:.65}
+.sri{stroke:var(--ink);stroke-width:1;fill:none;opacity:.22}
+#refAgree{font-size:13px;margin-top:8px;line-height:1.4}
+#refAgree.warn{color:var(--warn)}
+#refAgree.ok{color:var(--mut)}
+#refList div.out #refName::after{content:' — outlier';color:var(--warn)}
 #refList{font-size:14px;margin:8px 0 0}
 #refList div{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--ln)}
 #refList span{color:var(--mut);font-size:13px;white-space:nowrap}
@@ -93,7 +98,7 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .hint{color:var(--mut);font-size:13px;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v16</small></h1>
+<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v17</small></h1>
 <p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded.</p>
 <p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or get the stems as files from the <a href="stems.html" style="color:var(--ac)">Stem Splitter</a>.</p>
 
@@ -123,6 +128,7 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
  <p class="hint" style="margin:0 0 10px">Load one or more songs whose balance you like. The app measures their tone and stereo width and aims for that instead of its own built-in target. Only the measurements are kept — the audio is analyzed and discarded.</p>
  <div class="drop" style="padding:14px"><span id="refFl">Add reference tracks</span><input type="file" id="refFile" accept="audio/*" multiple aria-label="Add reference tracks"></div>
  <div id="refList"></div>
+ <div id="refAgree"></div>
  <label class="chk" id="refRow" style="margin:10px 0 0" hidden><input type="checkbox" id="useRef" checked><span>Match tone and width to the references<small>Replaces the built-in target curve. Uncheck to use the genre target instead.</small></span></label>
  <hr style="border:0;border-top:1px solid var(--ln);margin:16px 0">
  <span class="lbl">Genre preset</span>
@@ -493,8 +499,9 @@ $('file').onchange=async e=>{
 
 /* ---- reference tracks ---- */
 let refs=[],refAvg=null;
+const refNorm=v=>{let m=0;for(let i=2;i<=6;i++)m+=v[i]/5;return v.map(q=>q-m)};
 function refRecompute(){
- if(!refs.length){refAvg=null;$('refRow').hidden=true;paintSpec();return}
+ if(!refs.length){refAvg=null;$('refRow').hidden=true;$('refAgree').textContent='';paintSpec();return}
  const n=refs.length,dB=new Array(8).fill(0);
  let side=0,lm=0,ltasSum=new Array(SPC.length).fill(0);
  for(const r of refs){
@@ -504,7 +511,34 @@ function refRecompute(){
  }
  refAvg={dB,side,lm,ltas:ltasSum,count:n};
  $('refRow').hidden=false;
+ /* Agreement: each reference's RMS distance from the averaged curve, both
+    level-normalized. Calibrated on real material — two different but sanely
+    mastered songs land near 0.9 dB, while a reference with a 9 dB tilt error
+    lands above 2.4 dB. The 1.5 dB line between them is a judgment call. */
+ const an=refNorm(dB),norms=refs.map(r=>refNorm(r.dB));
+ const dist=norms.map(q=>Math.sqrt(q.reduce((s,v,i)=>s+(v-an[i])**2,0)/8));
+ let worst=0;for(let i=1;i<n;i++)if(dist[i]>dist[worst])worst=i;
+ let band=0,bs=0;
+ for(let i=0;i<8;i++){let v=0;for(const q of norms)v+=(q[i]-an[i])**2;const sd=Math.sqrt(v/n);if(sd>bs){bs=sd;band=i}}
+ const fq=f=>f>=1000?(f/1000)+' kHz':f+' Hz';
+ const sides=refs.map(r=>r.side),sideSpread=Math.max(...sides)-Math.min(...sides);
+ const md=Math.max(...dist);
+ refAvg.spread=md;refAvg.worst=n>=3&&md>1.5?worst:-1;
+ const wide=sideSpread>4?` Their stereo widths differ by ${sideSpread.toFixed(1)} dB, so the width target is less reliable than the tone.`:'';
+ const el=$('refAgree');
+ if(n===1){el.className='ok';el.textContent='One reference. Two or three averaged together is safer — a single master can be an unusually bright or bass-heavy outlier.';}
+ else if(md>1.5){
+  el.className='warn';
+  el.innerHTML=`These references disagree. The furthest sits ${md.toFixed(1)} dB from their average, mostly around ${fq(OCT[band])}, so averaging them gives a target that matches none of them.`+
+   (refAvg.worst>=0?` <b>${refs[refAvg.worst].name}</b> is the one pulling away — try removing it.`:' Compare the faint lines on the spectrum view and drop whichever one differs.')+wide;
+ }
+ else{el.className='ok';el.textContent=`These ${n} references agree — the furthest is ${md.toFixed(1)} dB from their average, so the target is meaningful.`+wide;}
+ refRenderFlags();
  paintSpec();
+}
+function refRenderFlags(){
+ const rows=$('refList').querySelectorAll('div');
+ rows.forEach((d,i)=>{d.className=refAvg&&refAvg.worst===i?'out':''});
 }
 function refRender(){
  $('refList').innerHTML=refs.map((r,i)=>`<div><span id="refName">${r.name}</span><span>${r.lufs.toFixed(1)} LUFS</span><button data-i="${i}">Remove</button></div>`).join('');
@@ -746,7 +780,11 @@ function paintSpec(){
  const W=560,H=230,L=34,R=8,T=8,B=22,iw=W-L-R,ih=H-T-B,n=SPC.length,x=i=>L+i/(n-1)*iw;
  let a=spD.a,b=spD.b,rf=null;
  if($('sp-m').checked){let s=0;for(let i=5;i<25;i++)s+=b[i]-a[i];const off=s/20;b=b.map(v=>v-off)}
- if(refAvg){let s=0;for(let i=5;i<25;i++)s+=refAvg.ltas[i]-b[i];const off=s/20;rf=refAvg.ltas.map(v=>v-off)}
+ let rfi=null;
+ if(refAvg){
+  let s=0;for(let i=5;i<25;i++)s+=refAvg.ltas[i]-b[i];const off=s/20;rf=refAvg.ltas.map(v=>v-off);
+  if(refs.length>1)rfi=refs.map(r=>{let t=0;for(let i=5;i<25;i++)t+=r.ltas[i]-b[i];const o2=t/20;return r.ltas.map(v=>v-o2)});
+ }
  const d=b.map((v,i)=>v-a[i]);let s='';
  if(spMode==='s'){
   const top=Math.ceil((Math.max(...a,...b)+2)/10)*10,bot=top-60,y=v=>T+(top-Math.max(bot,Math.min(top,v)))/(top-bot)*ih;
@@ -754,6 +792,7 @@ function paintSpec(){
   [[5,'100'],[15,'1k'],[25,'10k']].forEach(([i,t])=>{s+='<line class="sg" x1="'+x(i)+'" x2="'+x(i)+'" y1="'+T+'" y2="'+(T+ih)+'"/><text class="st" x="'+x(i)+'" y="'+(H-6)+'" text-anchor="middle">'+t+'</text>'});
   const path=v=>v.map((q,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(q).toFixed(1)).join('');
   s+='<path class="sb" d="'+path(a)+'"/><path class="sa" d="'+path(b)+'"/>';
+  if(rfi)for(const q of rfi)s+='<path class="sri" d="'+path(q)+'"/>';
   if(rf)s+='<path class="sr" d="'+path(rf)+'"/>';
   s+='<text class="st" x="'+(W-R)+'" y="'+(T+12)+'" text-anchor="end">gray: before, color: after'+(rf?', dashed: reference':'')+'</text>';
  }else{

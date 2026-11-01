@@ -25,7 +25,16 @@ master the whole song.
 measures their octave-band tone curve, stereo width and low-mid side energy,
 averages them, and aims for those measurements instead of the built-in target.
 Only the measurements are kept; the reference audio is analyzed and discarded.
-The averaged reference curve is drawn as a dashed line on the spectrum view.
+The averaged reference curve is drawn as a dashed line on the spectrum view,
+with each individual reference as a fainter line so outliers are visible.
+
+The app also checks whether the references agree with each other, since
+averaging references that disagree produces a target matching none of them. It
+reports each reference's distance from their average, names the outlier, and
+says which frequency range they disagree on most. Calibrated on real material:
+two different but sanely mastered songs land near 0.9 dB apart, a reference
+with a 9 dB tilt error lands above 2.4 dB, and the warning threshold sits at
+1.5 dB.
 
 **Stem balance** — optionally split the song into vocals, drums, bass and other,
 rebalance them, master each stem with its own EQ, compression and (for vocals)
