@@ -44,6 +44,11 @@ two different but sanely mastered songs land near 0.9 dB apart, a reference
 with a 9 dB tilt error lands above 2.4 dB, and the warning threshold sits at
 1.5 dB.
 
+**Volume automation** — drag across the waveform to select part of the song and
+set a level change, extra dynamic taming, or no tone processing there. Level
+rides the fader before the chain; region edges get 20 ms fades. Preview follows
+the selected region.
+
 **Saved setups** — name a combination of reference measurements plus every
 setting on the page, then reload it later. Export writes all setups to a JSON
 file you can keep or move to another machine; import merges a file back,
@@ -91,6 +96,9 @@ for the lossy formats, leaving headroom for encoder overshoot.
 - [x] Stem separation in the browser — `stems.html` (see `docs/stem-separation.md`)
 - [x] Stem balance and per-stem mastering inside the main app
 - [x] Reference-track matching — measured targets instead of the heuristic curve
+- [x] Region-based volume automation
+- [ ] Noise reduction (spectral subtraction, noise profile from a region)
+- [ ] Transient shaping (attack/sustain envelope)
 - [ ] Manual tone/compression sliders
 - [x] Help page and per-control hints
 - [ ] Background (worker thread) processing
