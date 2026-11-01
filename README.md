@@ -49,6 +49,10 @@ set a level change, extra dynamic taming, or no tone processing there. Level
 rides the fader before the chain; region edges get 20 ms fades. Preview follows
 the selected region.
 
+**Noise reduction** — spectral subtraction against a measured noise floor,
+learned from a marked quiet region or estimated from the quietest 5% of each
+band. Runs before EQ and compression so noise is never amplified.
+
 **Saved setups** — name a combination of reference measurements plus every
 setting on the page, then reload it later. Export writes all setups to a JSON
 file you can keep or move to another machine; import merges a file back,
@@ -97,7 +101,7 @@ for the lossy formats, leaving headroom for encoder overshoot.
 - [x] Stem balance and per-stem mastering inside the main app
 - [x] Reference-track matching — measured targets instead of the heuristic curve
 - [x] Region-based volume automation
-- [ ] Noise reduction (spectral subtraction, noise profile from a region)
+- [x] Noise reduction (spectral subtraction, noise profile from a region)
 - [ ] Transient shaping (attack/sustain envelope)
 - [ ] Manual tone/compression sliders
 - [x] Help page and per-control hints
