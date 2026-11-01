@@ -87,7 +87,7 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .hint{color:var(--mut);font-size:13px;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v14</small></h1>
+<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v15</small></h1>
 <p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded.</p>
 <p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or get the stems as files from the <a href="stems.html" style="color:var(--ac)">Stem Splitter</a>.</p>
 
@@ -131,6 +131,11 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
   <label><input type="radio" name="f" value="mp3">MP3<small>320 kbps</small></label>
   <label><input type="radio" name="f" value="m4a">M4A<small>AAC 256k</small></label>
  </div>
+ <span class="lbl">Processing amount</span>
+ <div class="chips" id="amt">
+  <button type="button" data-v="gentle" aria-pressed="true">Gentle</button><button type="button" data-v="standard" aria-pressed="false">Standard</button><button type="button" data-v="strong" aria-pressed="false">Strong</button>
+ </div>
+ <p class="hint" style="margin:-6px 0 18px">Scales every automatic move: tone correction, compression, dynamic EQ, de-essing, saturation, clarity and auto width. Gentle also makes the dynamic EQ and de-esser react only to clear problems rather than running constantly.</p>
  <span class="lbl">Clarity <span style="font-weight:400;color:var(--mut)">(low-mid cleanup)</span></span>
  <div class="chips" id="cl">
   <button type="button" data-c="auto" aria-pressed="true">Auto</button><button type="button" data-c="0" aria-pressed="false">Off</button><button type="button" data-c="0.2" aria-pressed="false">Light</button><button type="button" data-c="0.4" aria-pressed="false">Medium</button><button type="button" data-c="1" aria-pressed="false">Strong</button>
@@ -164,6 +169,7 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
  </div>
  <div class="pl">
   <div class="abrow"><button class="abb" id="ab-o" aria-pressed="false">A: Original</button><button class="abb" id="ab-m" aria-pressed="true">B: Master</button></div>
+  <button class="abb" id="monoBtn" aria-pressed="false" style="width:100%;margin-bottom:10px">Listen in mono</button>
   <div class="prow"><button class="ppb" id="pp">Play</button><input type="range" id="seek" min="0" max="1" step="0.1" value="0" aria-label="Seek"><span id="tm">0:00</span></div>
   <label class="chk" style="margin:10px 0 0"><input type="checkbox" id="lm" checked><span>Match loudness for a fair comparison</span></label>
  </div>
@@ -267,6 +273,8 @@ function limit(base,gain,ceil,fs,o,tp){
 
 /* ---- full master ---- */
 const PRESETS={auto:{lufs:null,lo:0,hi:0,rs:1,k:1.1,ds:4,wd:1},rock:{lufs:-10,lo:0,hi:0,rs:1,k:1.1,ds:4,wd:1},pop:{lufs:-9.5,lo:.5,hi:1,rs:1.1,k:1.15,ds:5,wd:1},hiphop:{lufs:-9,lo:2,hi:.5,rs:1.15,k:1.2,ds:4,wd:.5},electronic:{lufs:-8.5,lo:1.5,hi:1,rs:1.2,k:1.25,ds:3,wd:1.5},acoustic:{lufs:-14,lo:0,hi:.5,rs:.7,k:1.02,ds:4,wd:1},voice:{lufs:-16,lo:-2,hi:0,rs:1.2,k:1.05,ds:6,wd:0}};
+const AMT={gentle:{eq:.55,dyn:.55,ds:.5,comp:.55,sat:.4,clar:.6,wid:.5,thr:3},standard:{eq:1,dyn:1,ds:1,comp:1,sat:1,clar:1,wid:1,thr:0},strong:{eq:1.4,dyn:1.4,ds:1.3,comp:1.4,sat:1.3,clar:1.3,wid:1.3,thr:-2}};
+let amount='gentle';
 let genre='auto',clar='auto',pumpDb=0,widthSel='auto',vocAmt=0;
 for(const[k,v]of Object.entries({auto:3,rock:3,pop:2.5,hiphop:2,electronic:2,acoustic:3,voice:4}))PRESETS[k].dq=v;
 const DQ=[{f:140,q:1.2,o:8},{f:320,q:1.2,o:8},{f:2800,q:1.4,o:8},{f:4800,q:1.4,o:8}];
@@ -309,21 +317,21 @@ function analyze(A,B,fs){
 async function fullMaster(b){
  const fs=b.sampleRate,[a0,b0]=chans(b),n=a0.length,X=[Float32Array.from(a0),Float32Array.from(b0)];
  say('Analyzing the track…');await tick();
- const P=PRESETS[genre]||PRESETS.auto;
+ const P=PRESETS[genre]||PRESETS.auto,IQ=AMT[amount]||AMT.standard;
  const an=analyze(a0,b0,fs),avg=(v)=>{let s=0;for(let i=2;i<=6;i++)s+=v[i];return s/5},mr=avg(an.dB),TG=TGT.map((v,i)=>v+(i<3?P.lo:i>4?P.hi:0)),tr=avg(TG);
- const cl=(v,l,h)=>Math.max(l,Math.min(h,v)),cor=an.dB.map((d,i)=>cl(.5*((TG[i]-tr)-(d-mr)),-2.5,2.5));
+ const cl=(v,l,h)=>Math.max(l,Math.min(h,v)),cor=an.dB.map((d,i)=>cl(.5*IQ.eq*((TG[i]-tr)-(d-mr)),-2.5*IQ.eq,2.5*IQ.eq));
  const spec=[['hp',25,0,.7071]];
  for(let i=0;i<7;i++)if(Math.abs(cor[i])>=.3)spec.push(['pk',OCT[i],cor[i],1]);
  if(Math.abs(cor[7])>=.3)spec.push(['hs',9000,cor[7],.7]);
- const W=widthSel==='auto'?1+((an.side>-8?1:an.side<-16?1.25:1.1)-1)*P.wd:widthSel;
- const cc=clar==='auto'?Math.max(0,Math.min(1,(an.lm+11)/5)):clar,CL={on:cc>.02,fc:120+200*cc,mc:-1.5*Math.max(0,(cc-.4)/.6)};
+ const W=widthSel==='auto'?1+((an.side>-8?1:an.side<-16?1.25:1.1)-1)*P.wd*IQ.wid:widthSel;
+ const cc=(clar==='auto'?Math.max(0,Math.min(1,(an.lm+11)/5))*IQ.clar:clar),CL={on:cc>.02,fc:120+200*cc,mc:-1.5*Math.max(0,(cc-.4)/.6)};
  if(CL.on){CL.sh=bqc('hp',CL.fc,0,.7071,fs);CL.mp=CL.mc<-.05?bqc('pk',140,CL.mc,.9,fs):null}
- const BP=[{r:2.2,a:30,l:250,o:3.5},{r:2,a:15,l:150,o:4},{r:2.2,a:6,l:100,o:4.5}].map(p=>({...p,r:1+(p.r-1)*P.rs}));
+ const BP=[{r:2.2,a:30,l:250,o:3.5},{r:2,a:15,l:150,o:4},{r:2.2,a:6,l:100,o:4.5}].map(p=>({...p,o:p.o+IQ.thr*.5,r:1+(p.r-1)*P.rs*IQ.comp}));
  const L2=()=>[bqc('lp',150,0,.7071,fs),bqc('lp',150,0,.7071,fs)],H1=()=>[bqc('hp',150,0,.7071,fs),bqc('hp',150,0,.7071,fs)],
   L3=()=>[bqc('lp',2500,0,.7071,fs),bqc('lp',2500,0,.7071,fs)],H3=()=>[bqc('hp',2500,0,.7071,fs),bqc('hp',2500,0,.7071,fs)];
  const F=[0,1].map(()=>({eq:spec.map(s=>bqc(s[0],s[1],s[2],s[3],fs)),l1:L2(),h1:H1(),ml:L3(),mh:H3(),al:L3(),ah:H3(),ds:bqc('bp',7000,0,1.2,fs),dq:DQ.map(d=>bqc('bp',d.f,0,d.q,fs))}));
  const env=[0,0,0],pw=[0,0,0],gr=[0,0,0],rms=[-60,-60,-60],sg=[0,0,0],bd=[new Float64Array(2),new Float64Array(2),new Float64Array(2)];
- const aE=Math.exp(-1/(.0005*fs)),rE=Math.exp(-1/(.05*fs)),cA=BP.map(p=>1-Math.exp(-1/(p.a*.001*fs))),cR=BP.map(p=>1-Math.exp(-1/(p.l*.001*fs))),c0=1/(3*fs),K=P.k;
+ const aE=Math.exp(-1/(.0005*fs)),rE=Math.exp(-1/(.05*fs)),cA=BP.map(p=>1-Math.exp(-1/(p.a*.001*fs))),cR=BP.map(p=>1-Math.exp(-1/(p.l*.001*fs))),c0=1/(3*fs),K=1+(P.k-1)*IQ.sat;
  const aD=1-Math.exp(-1/(.001*fs)),rD=1-Math.exp(-1/(.04*fs));let de=0,dp=0,dg=0,dsum=0,dmax=0,drms=-60;
  const DS=DQ.map(()=>({e:0,p:0,r:-60,g:0,sum:0,max:0})),xs=new Float64Array(2),aQ=1-Math.exp(-1/(.005*fs)),rQ=1-Math.exp(-1/(.12*fs));
  const PDEP=pumpDb,rK=Math.exp(-1/(.03*fs)),aP=1-Math.exp(-1/(.003*fs)),rP=1-Math.exp(-1/(.15*fs));
@@ -341,7 +349,7 @@ async function fullMaster(b){
      const d=DS[k],s0=bq(F[0].dq[k],xs[0]),s1=bq(F[1].dq[k],xs[1]),lv=Math.max(Math.abs(s0),Math.abs(s1));
      d.e=lv>d.e?lv+(d.e-lv)*aE:lv+(d.e-lv)*rE;d.p+=(lv*lv-d.p)*ca;
      if((i&63)===0)d.r=10*Math.log10(d.p+1e-12);
-     const ov=20*Math.log10(d.e+1e-9)-(d.r+DQ[k].o),t=ov>0?Math.min(P.dq,ov*.6):0;
+     const ov=20*Math.log10(d.e+1e-9)-(d.r+DQ[k].o+IQ.thr),t=ov>0?Math.min(P.dq*IQ.dyn,ov*.6):0;
      d.g+=(t-d.g)*(t>d.g?aQ:rQ);d.sum+=d.g;if(d.g>d.max)d.max=d.g;
      const q=1-Math.exp(-d.g*.1151293);da+=s0*q;db+=s1*q;
     }
@@ -386,7 +394,7 @@ async function fullMaster(b){
     const s0=bq(F[0].ds,yl),s1=bq(F[1].ds,yr),lv=Math.max(Math.abs(s0),Math.abs(s1));
     de=lv>de?lv+(de-lv)*aE:lv+(de-lv)*rE;dp+=(lv*lv-dp)*ca;
     if((i&63)===0)drms=10*Math.log10(dp+1e-12);
-    const ov=20*Math.log10(de+1e-9)-(drms+9),t=ov>0?Math.min(P.ds,ov*.7):0;
+    const ov=20*Math.log10(de+1e-9)-(drms+9+IQ.thr),t=ov>0?Math.min(P.ds*IQ.ds,ov*.7):0;
     dg+=(t-dg)*(t>dg?aD:rD);dsum+=dg;if(dg>dmax)dmax=dg;
     const q=1-Math.exp(-dg*.1151293);yl-=s0*q;yr-=s1*q;
    }
@@ -395,7 +403,7 @@ async function fullMaster(b){
   say('Full master… '+Math.round(e/n*100)+'%');await tick();
  }
  const sgn=v=>(v>0?'+':'')+v.toFixed(1),moves=spec.slice(1).filter(s=>Math.abs(s[2])>=.5).map(s=>(s[1]>=1000?s[1]/1000+'k':s[1])+' '+sgn(s[2]));
- return[X,[['Tone moves (dB)',moves.length?moves.join(', '):'none needed'],['Avg compression','low '+(sg[0]/n).toFixed(1)+' / mid '+(sg[1]/n).toFixed(1)+' / high '+(sg[2]/n).toFixed(1)+' dB'],['Clarity',CL.on?'side high-pass '+Math.round(CL.fc)+' Hz'+(CL.mp?', 140 Hz '+CL.mc.toFixed(1)+' dB':'')+' (low-mid side/mid '+an.lm.toFixed(1)+' dB)':'off'],['Dynamic EQ',P.dq>0?DQ.map((d,k)=>d.f+' Hz '+(DS[k].sum/n).toFixed(1)+'/'+DS[k].max.toFixed(1)).join(', ')+' dB (avg/max)':'off'],...(PDEP>0?[['Pumper','avg '+(psum/n).toFixed(1)+' dB, max '+pmax.toFixed(1)+' dB']]:[]),...(VA>0?[['Vocal enhancer','+'+VA+' dB presence at 3 kHz, +'+(.5*VA)+' dB air, leveling avg '+(vd.sum/n).toFixed(1)+' dB']]:[]),['De-esser',P.ds>0?'avg '+(dsum/n).toFixed(1)+' dB, max '+dmax.toFixed(1)+' dB':'off'],['Stereo','bass mono below 150 Hz, width '+W.toFixed(2)+'x']]];
+ return[X,[['Tone moves (dB)',moves.length?moves.join(', '):'none needed'],['Avg compression','low '+(sg[0]/n).toFixed(1)+' / mid '+(sg[1]/n).toFixed(1)+' / high '+(sg[2]/n).toFixed(1)+' dB'],['Processing amount',amount],['Clarity',CL.on?'side high-pass '+Math.round(CL.fc)+' Hz'+(CL.mp?', 140 Hz '+CL.mc.toFixed(1)+' dB':'')+' (low-mid side/mid '+an.lm.toFixed(1)+' dB)':'off'],['Dynamic EQ',P.dq>0?DQ.map((d,k)=>d.f+' Hz '+(DS[k].sum/n).toFixed(1)+'/'+DS[k].max.toFixed(1)).join(', ')+' dB (avg/max)':'off'],...(PDEP>0?[['Pumper','avg '+(psum/n).toFixed(1)+' dB, max '+pmax.toFixed(1)+' dB']]:[]),...(VA>0?[['Vocal enhancer','+'+VA+' dB presence at 3 kHz, +'+(.5*VA)+' dB air, leveling avg '+(vd.sum/n).toFixed(1)+' dB']]:[]),['De-esser',P.ds>0?'avg '+(dsum/n).toFixed(1)+' dB, max '+dmax.toFixed(1)+' dB':'off'],['Stereo','bass mono below 150 Hz, width '+W.toFixed(2)+'x']]];
 }
 
 /* ---- encoders ---- */
@@ -627,7 +635,7 @@ async function pipeline(b,T,fmt,pm){
  }
  say('Checking peaks…');await tick();
  const te=tpEnv(o[0],o[1]);let pk=0;for(let i=0;i<n;i++)if(te[i]>pk)pk=te[i];
- return{o,L,pk:20*Math.log10(pk+1e-12),notes,fs};
+ return{o,L,pk:20*Math.log10(pk+1e-12),notes,fs,mono:monoCheck(o,fs)};
 }
 $('go').onclick=async()=>{
  if(!src)return;busy(true);
@@ -641,7 +649,7 @@ $('go').onclick=async()=>{
   say('Encoding '+fmt.toUpperCase()+'…');await tick();
   const blob=fmt==='wav'?wav24(r.o[0],r.o[1],r.fs):fmt==='mp3'?await mp3(r.o,r.fs):await m4a(r.o,r.fs);
   res={fmt,blob};setPlayer(sb,li,r.o,r.L);
-  show(li,T,r.L,r.pk,fmt,blob.size,r.notes.concat(useS?[['Stem balance',STEMS.filter(s=>!smute[s]).map(s=>s+' '+(sgain[s]>0?'+':'')+sgain[s]).join(', ')+(STEMS.some(s=>smute[s])?'; muted: '+STEMS.filter(s=>smute[s]).join(', '):'')+' dB']].concat(stemNotes.map(t=>['Stem chain',t])):[]));say('');
+  show(li,T,r.L,r.pk,fmt,blob.size,r.mono,r.notes.concat(useS?[['Stem balance',STEMS.filter(s=>!smute[s]).map(s=>s+' '+(sgain[s]>0?'+':'')+sgain[s]).join(', ')+(STEMS.some(s=>smute[s])?'; muted: '+STEMS.filter(s=>smute[s]).join(', '):'')+' dB']].concat(stemNotes.map(t=>['Stem chain',t])):[]));say('');
  }catch(e){say(e.message||'Something went wrong while processing.',1)}
  busy(false);
 };
@@ -652,10 +660,19 @@ $('pv').onclick=async()=>{
   const{buf:ex,stems:useS}=sourceFor(start,len);
   const li=lufs(kseg(chans(ex),fs)),r=await pipeline(ex,T,fmt,pm);
   res=null;setPlayer(ex,li,r.o,r.L);
-  show(li,T,r.L,r.pk,fmt,0,r.notes.concat(useS?[['Stem balance',STEMS.filter(s=>!smute[s]).map(s=>s+' '+(sgain[s]>0?'+':'')+sgain[s]).join(', ')+' dB']].concat(stemNotes.map(t=>['Stem chain',t])):[]),true);say('');
+  show(li,T,r.L,r.pk,fmt,0,r.mono,r.notes.concat(useS?[['Stem balance',STEMS.filter(s=>!smute[s]).map(s=>s+' '+(sgain[s]>0?'+':'')+sgain[s]).join(', ')+' dB']].concat(stemNotes.map(t=>['Stem chain',t])):[]),true);say('');
  }catch(e){say(e.message||'Something went wrong while processing.',1)}
  busy(false);
 };
+
+/* ---- mono compatibility ---- */
+function monoCheck(o,fs){
+ const n=o[0].length,m=new Float32Array(n);
+ let ps=0,pm=0;
+ for(let i=0;i<n;i++){const s=(o[0][i]-o[1][i])/2,mid=(o[0][i]+o[1][i])/2;m[i]=mid;ps+=s*s;pm+=mid*mid}
+ const st=lufs(kseg(o,fs)),mo=lufs(kseg([m,m],fs));
+ return{drop:st-mo,side:10*Math.log10((ps+1e-20)/(pm+1e-20))};
+}
 
 /* ---- spectrum view ---- */
 const SPC=Array.from({length:29},(_,i)=>Math.pow(10,(i+15)/10));
@@ -702,7 +719,7 @@ $('sp-d').onclick=()=>{spMode='d';$('sp-d').setAttribute('aria-pressed',true);$(
 $('sp-m').onchange=paintSpec;
 
 /* ---- A/B player ---- */
-let pc=null;const pl={ab:'m',off:0,t0:0,play:false,s:[],gn:[],dur:1,li:0,lm:0};
+let pc=null;const pl={mono:false,ab:'m',off:0,t0:0,play:false,s:[],gn:[],dur:1,li:0,lm:0};
 function setPlayer(ob,li,o,lm){
  stopP();pc=pc||new AudioContext();
  const mb=pc.createBuffer(2,o[0].length,ob.sampleRate);mb.copyToChannel(o[0],0);mb.copyToChannel(o[1],1);
@@ -714,10 +731,26 @@ function applyAB(){
  if(!pl.gn.length)return;const[a,b]=gains();
  pl.gn[0].gain.setTargetAtTime(o?a:0,pc.currentTime,.01);pl.gn[1].gain.setTargetAtTime(o?0:b,pc.currentTime,.01);
 }
+function buildBus(){
+ pl.bus=pc.createGain();
+ pl.stereoG=pc.createGain();pl.monoG=pc.createGain();
+ const sp=pc.createChannelSplitter(2);
+ pl.bus.connect(pl.stereoG);pl.stereoG.connect(pc.destination);
+ pl.bus.connect(sp);sp.connect(pl.monoG,0);sp.connect(pl.monoG,1);
+ pl.monoG.connect(pc.destination);
+ applyMono();
+}
+function applyMono(){
+ if(!pl.monoG)return;
+ const m=pl.mono?1:0;
+ pl.monoG.gain.setTargetAtTime(m*.5,pc.currentTime,.01);
+ pl.stereoG.gain.setTargetAtTime(1-m,pc.currentTime,.01);
+}
 async function playP(){
  if(pl.play||!pl.m)return;await pc.resume();
+ buildBus();
  pl.s=[pl.o,pl.m].map(b=>{const s=pc.createBufferSource();s.buffer=b;return s});
- pl.gn=pl.s.map(s=>{const g=pc.createGain();g.gain.value=0;s.connect(g);g.connect(pc.destination);return g});
+ pl.gn=pl.s.map(s=>{const g=pc.createGain();g.gain.value=0;s.connect(g);g.connect(pl.bus);return g});
  applyAB();pl.t0=pc.currentTime-pl.off;pl.play=true;$('pp').textContent='Pause';
  pl.s.forEach(s=>s.start(0,pl.off));
  pl.s[1].onended=()=>{if(pl.play){stopP();pl.off=0;$('seek').value=0;$('tm').textContent='0:00 / '+fmtT(pl.dur)}};
@@ -725,30 +758,33 @@ async function playP(){
 }
 function stopP(){
  if(pl.play){pl.off=Math.min(pl.dur,pc.currentTime-pl.t0);pl.s.forEach(s=>{s.onended=null;try{s.stop()}catch{}})}
- pl.play=false;pl.gn=[];$('pp').textContent='Play';
+ pl.play=false;pl.gn=[];pl.monoG=null;$('pp').textContent='Play';
 }
 function tickP(){if(!pl.play)return;const t=Math.min(pl.dur,pc.currentTime-pl.t0);$('seek').value=t;$('tm').textContent=fmtT(t)+' / '+fmtT(pl.dur);requestAnimationFrame(tickP)}
 $('pp').onclick=()=>pl.play?stopP():playP();
 $('ab-o').onclick=()=>{pl.ab='o';applyAB()};$('ab-m').onclick=()=>{pl.ab='m';applyAB()};$('lm').onchange=applyAB;
+$('monoBtn').onclick=()=>{pl.mono=!pl.mono;$('monoBtn').setAttribute('aria-pressed',pl.mono);$('monoBtn').textContent=pl.mono?'Mono — tap for stereo':'Listen in mono';applyMono()};
 $('seek').oninput=()=>{$('tm').textContent=fmtT(+$('seek').value)+' / '+fmtT(pl.dur)};
 $('seek').onchange=()=>{const w=pl.play;if(w)stopP();pl.off=+$('seek').value;if(w)playP()};
 $('cl').onclick=e=>{const c=e.target.dataset&&e.target.dataset.c;if(c==null)return;clar=c==='auto'?'auto':+c;[...$('cl').children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.c===c))};
 const sel=(id,v)=>[...$(id).children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.v===v));
 const chip=(id,fn)=>{$(id).onclick=e=>{const v=e.target.dataset&&e.target.dataset.v;if(v==null)return;fn(+v);sel(id,v)}};
+$('amt').onclick=e=>{const v=e.target.dataset&&e.target.dataset.v;if(!v)return;amount=v;sel('amt',v)};
 chip('pu',v=>pumpDb=v);chip('vc',v=>vocAmt=v);
 $('wd').onclick=e=>{const v=e.target.dataset&&e.target.dataset.v;if(v==null)return;widthSel=v==='auto'?'auto':+v;sel('wd',v)};
 $('gen').onclick=e=>{const g=e.target.dataset&&e.target.dataset.g;if(!g)return;genre=g;if(stemData)analyzeStems();[...$('gen').children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.g===g));if(PRESETS[g].lufs!=null)sync(PRESETS[g].lufs)};
 
-function show(i,t,o,pk,fmt,size,notes,pv){
+function show(i,t,o,pk,fmt,size,mono,notes,pv){
  const lo=-24,hi=-6,x=v=>(Math.max(lo,Math.min(hi,v))-lo)/(hi-lo)*100+'%';
  let h='<div class="tr"></div>';
  for(let v=-24;v<=-6;v+=3)h+='<span class="tk" style="left:'+x(v)+'">'+v+'</span>';
  h+='<div class="m t" style="left:'+x(t)+'"><i></i></div><div class="m in" style="left:'+x(i)+'">before<i></i></div><div class="m o" style="left:'+x(o)+'">after<i></i></div>';
  $('mt').innerHTML=h;
- const rows=[['Loudness before',i.toFixed(1)+' LUFS'],['Loudness after',o.toFixed(1)+' LUFS (target '+t+')'],['True peak (est.)',pk.toFixed(1)+' dBTP']].concat(pv?[]:[['File size',(size/1048576).toFixed(1)+' MB']]);
+ const rows=[['Loudness before',i.toFixed(1)+' LUFS'],['Loudness after',o.toFixed(1)+' LUFS (target '+t+')'],['True peak (est.)',pk.toFixed(1)+' dBTP']['Mono fold',mono.drop.toFixed(1)+' dB quieter'+(mono.drop>1.2?' — check mono':'')]].concat(pv?[]:[['File size',(size/1048576).toFixed(1)+' MB']]);
  $('dl').innerHTML=rows.concat(notes||[]).map(r=>'<dt>'+r[0]+'</dt><dd>'+r[1]+'</dd>').join('');
  $('hint').textContent=fmt==='m4a'?'M4A is saved as .mp4 (the same AAC audio). Rename it to .m4a if you prefer.':'Your browser’s save dialog only accepts certain file types, so the '+fmt.toUpperCase()+' is saved inside a .zip. Unzip it to get the audio file.';
  if(Math.abs(o-t)>.5)$('hint').textContent='The target was too loud to reach without heavy limiting, so this is the closest result. '+$('hint').textContent;
+ $('hint').textContent=(mono.drop>1.2?`Summing to mono loses ${mono.drop.toFixed(1)} dB, so some elements will thin out or disappear on a phone speaker or other mono output. Press "Listen in mono" below and check it before you release this. Reducing the stereo width is the usual fix. `:'')+$('hint').textContent;
  $('save').hidden=!!pv;if(pv)$('hint').textContent='This is a 30-second excerpt from the middle of the song. Choose Master full song to render the whole track.';
  $('res').hidden=false;$('res').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
