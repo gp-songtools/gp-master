@@ -82,6 +82,18 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 #refAgree.ok{color:var(--mut)}
 #refSaved{font-size:12.5px;color:var(--mut);margin-top:8px;display:flex;justify-content:space-between;gap:8px;align-items:center}
 #refSaved button{border:0;background:transparent;color:var(--warn);font:inherit;font-size:12.5px;cursor:pointer;padding:2px 4px}
+.setRow{display:flex;gap:8px;margin-bottom:8px}
+.setRow input[type=text]{flex:1;min-width:0;font:inherit;font-size:14px;padding:8px;background:var(--card);color:var(--ink);border:1px solid var(--ln);border-radius:8px}
+.btn{border:1px solid var(--ac);background:transparent;color:var(--ac);border-radius:8px;padding:8px 12px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+#setList{font-size:14px;margin-bottom:10px}
+#setList div{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--ln)}
+#setList .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+#setList .mt{color:var(--mut);font-size:12.5px;white-space:nowrap}
+#setList button{border:0;background:transparent;font:inherit;font-size:13px;cursor:pointer;padding:2px 4px;color:var(--ac)}
+#setList button.del{color:var(--warn)}
+#ioMsg{font-size:13px;color:var(--mut);margin-top:8px;min-height:18px}
+#ioMsg.err{color:var(--warn)}
 #refList div.out #refName::after{content:' — outlier';color:var(--warn)}
 #refList{font-size:14px;margin:8px 0 0}
 #refList div{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--ln)}
@@ -100,7 +112,7 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .hint{color:var(--mut);font-size:13px;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v18</small></h1>
+<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v19</small></h1>
 <p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded.</p>
 <p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or get the stems as files from the <a href="stems.html" style="color:var(--ac)">Stem Splitter</a>.</p>
 
@@ -133,6 +145,13 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
  <div id="refAgree"></div>
  <div id="refSaved"></div>
  <label class="chk" id="refRow" style="margin:10px 0 0" hidden><input type="checkbox" id="useRef" checked><span>Match tone and width to the references<small>Replaces the built-in target curve. Uncheck to use the genre target instead.</small></span></label>
+ <hr style="border:0;border-top:1px solid var(--ln);margin:16px 0">
+ <span class="lbl">Saved setups</span>
+ <p class="hint" style="margin:0 0 10px">A setup stores the loaded reference measurements together with every setting on this page, under a name you choose. Export writes them to a file you can keep or move to another computer.</p>
+ <div id="setList"></div>
+ <div class="setRow"><input type="text" id="setName" placeholder="Name this setup" maxlength="60"><button class="btn" id="setSave">Save</button></div>
+ <div class="setRow"><button class="btn" id="setExport">Export to file</button><button class="btn" id="setImport">Import from file</button><input type="file" id="setFile" accept=".json,application/json" hidden></div>
+ <div id="ioMsg"></div>
  <hr style="border:0;border-top:1px solid var(--ln);margin:16px 0">
  <span class="lbl">Genre preset</span>
  <div class="chips" id="gen">
@@ -568,7 +587,10 @@ $('refFile').onchange=async e=>{
 /* Persistence. Only the measurements are stored — a few hundred bytes per
    reference — never audio. localStorage is per-browser and per-device: it does
    not sync between machines and is lost if site data is cleared. */
-const REFKEY='gpmaster.refs.v1';
+const REFKEY='gpmaster.refs.v1',SETKEY='gpmaster.setups.v1',CFGKEY='gpmaster.cfg.v1';
+const isNum=v=>typeof v==='number'&&isFinite(v);
+const refValid=r=>!!r&&typeof r.name==='string'&&Array.isArray(r.dB)&&r.dB.length===8&&r.dB.every(isNum)
+  &&Array.isArray(r.ltas)&&r.ltas.length===SPC.length&&r.ltas.every(isNum)&&isNum(r.side)&&isNum(r.lm)&&isNum(r.lufs);
 const r2=v=>Math.round(v*100)/100;
 function refSave(){
  try{
@@ -581,10 +603,7 @@ function refLoad(){
  let d=null;
  try{const raw=localStorage.getItem(REFKEY);if(!raw)return;d=JSON.parse(raw)}catch(e){return}
  if(!d||d.v!==1||d.bands!==8||d.spc!==SPC.length||!Array.isArray(d.refs))return;
- const num=v=>typeof v==='number'&&isFinite(v);
- const ok=r=>r&&typeof r.name==='string'&&Array.isArray(r.dB)&&r.dB.length===8&&r.dB.every(num)
-   &&Array.isArray(r.ltas)&&r.ltas.length===SPC.length&&r.ltas.every(num)&&num(r.side)&&num(r.lm)&&num(r.lufs);
- refs=d.refs.filter(ok).slice(0,5);
+ refs=d.refs.filter(refValid).slice(0,5);
  if(d.on===false)$('useRef').checked=false;
  if(refs.length){refRender();refRecompute()}
 }
@@ -595,6 +614,100 @@ function refSavedLine(msg){
  $('refClear').onclick=()=>{refs=[];try{localStorage.removeItem(REFKEY)}catch(e){}refRender();refRecompute()};
 }
 const refOn=()=>refAvg&&$('useRef').checked;
+
+/* ---- settings and named setups ---- */
+const radio=n=>{const e=document.querySelector(`input[name=${n}]:checked`);return e?e.value:null};
+const setRadio=(n,v)=>{const e=document.querySelector(`input[name=${n}][value="${v}"]`);if(e)e.checked=true};
+function getCfg(){
+ return{genre,amount,clar,widthSel,vocAmt,pumpDb,useRef:$('useRef').checked,
+  lufs:+$('lufs').value,fmt:radio('f'),mode:radio('p'),
+  useStems:$('useStems').checked,perStem:$('perStem').checked};
+}
+function applyCfg(c){
+ if(!c||typeof c!=='object')return;
+ const pick=(v,ok,d)=>ok(v)?v:d;
+ genre=pick(c.genre,v=>typeof v==='string'&&PRESETS[v],genre);
+ amount=pick(c.amount,v=>typeof v==='string'&&AMT[v],amount);
+ clar=pick(c.clar,v=>v==='auto'||isNum(v),clar);
+ widthSel=pick(c.widthSel,v=>v==='auto'||isNum(v),widthSel);
+ vocAmt=pick(c.vocAmt,isNum,vocAmt);
+ pumpDb=pick(c.pumpDb,isNum,pumpDb);
+ if(isNum(c.lufs)&&c.lufs>=-24&&c.lufs<=-6)sync(c.lufs);
+ if(['wav','mp3','m4a'].includes(c.fmt))setRadio('f',c.fmt);
+ if(['full','polish','none'].includes(c.mode))setRadio('p',c.mode);
+ if(typeof c.useRef==='boolean')$('useRef').checked=c.useRef;
+ if(typeof c.useStems==='boolean')$('useStems').checked=c.useStems;
+ if(typeof c.perStem==='boolean')$('perStem').checked=c.perStem;
+ [...$('gen').children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.g===genre));
+ [...$('cl').children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.c===String(clar)));
+ sel('amt',amount);sel('wd',String(widthSel));sel('vc',String(vocAmt));sel('pu',String(pumpDb));
+ if(stemData)analyzeStems();
+}
+function cfgSave(){try{localStorage.setItem(CFGKEY,JSON.stringify(getCfg()))}catch(e){}}
+function cfgLoad(){try{const r=localStorage.getItem(CFGKEY);if(r)applyCfg(JSON.parse(r))}catch(e){}}
+
+let setups={};
+const io=(t,e)=>{$('ioMsg').textContent=t||'';$('ioMsg').className=e?'err':''};
+function setupsSave(){try{localStorage.setItem(SETKEY,JSON.stringify(setups))}catch(e){io('Could not save setups in this browser.',1)}}
+function setupsLoad(){
+ try{const r=localStorage.getItem(SETKEY);if(!r)return;const d=JSON.parse(r);if(d&&typeof d==='object'&&!Array.isArray(d))setups=d}catch(e){}
+}
+function setupsRender(){
+ const names=Object.keys(setups).sort();
+ $('setList').innerHTML=names.length?names.map(n=>{
+  const s=setups[n],cnt=(s.refs||[]).length;
+  return `<div><span class="nm"></span><span class="mt">${cnt} ref${cnt===1?'':'s'}${s.saved?' · '+String(s.saved).slice(0,10):''}</span><button data-load="${encodeURIComponent(n)}">Load</button><button class="del" data-del="${encodeURIComponent(n)}">Delete</button></div>`;
+ }).join(''):'<div style="border:0;padding:0"><span class="mt">No setups saved yet.</span></div>';
+ names.forEach((n,i)=>{const el=$('setList').children[i];if(el)el.querySelector('.nm').textContent=n});
+ $('setList').querySelectorAll('button[data-load]').forEach(b=>b.onclick=()=>setupLoad(decodeURIComponent(b.dataset.load)));
+ $('setList').querySelectorAll('button[data-del]').forEach(b=>b.onclick=()=>{
+  const n=decodeURIComponent(b.dataset.del);delete setups[n];setupsSave();setupsRender();io('Deleted “'+n+'”.');
+ });
+}
+function setupLoad(n){
+ const s=setups[n];if(!s){io('That setup is missing.',1);return}
+ refs=Array.isArray(s.refs)?s.refs.filter(refValid).slice(0,5):[];
+ applyCfg(s.cfg);
+ refRender();refRecompute();refSave();cfgSave();
+ io('Loaded “'+n+'”'+(refs.length?' with '+refs.length+' reference'+(refs.length===1?'':'s')+'.':', settings only (no references in it).'));
+}
+$('setSave').onclick=()=>{
+ const n=$('setName').value.trim();
+ if(!n){io('Give the setup a name first.',1);return}
+ const exists=n in setups;
+ setups[n]={refs:refs.map(r=>({...r})),cfg:getCfg(),saved:new Date().toISOString()};
+ setupsSave();setupsRender();$('setName').value='';
+ io((exists?'Replaced':'Saved')+' “'+n+'” — '+refs.length+' reference'+(refs.length===1?'':'s')+' and all current settings.');
+};
+$('setExport').onclick=()=>{
+ const names=Object.keys(setups);
+ if(!names.length&&!refs.length){io('Nothing to export yet.',1);return}
+ const payload={app:'gp-master',v:1,exported:new Date().toISOString(),setups,current:{refs:refs.map(r=>({...r})),cfg:getCfg()}};
+ const blob=new Blob([JSON.stringify(payload,null,1)],{type:'application/json'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+ a.download='gp-master-setups.json';document.body.appendChild(a);a.click();
+ setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},0);
+ io('Exported '+names.length+' setup'+(names.length===1?'':'s')+' plus the current references and settings.');
+};
+$('setImport').onclick=()=>$('setFile').click();
+$('setFile').onchange=async e=>{
+ const f=e.target.files[0];e.target.value='';if(!f)return;
+ try{
+  const d=JSON.parse(await f.text());
+  if(!d||d.app!=='gp-master'||d.v!==1)throw new Error('not a gp-master setup file');
+  let added=0,skipped=0;
+  if(d.setups&&typeof d.setups==='object')for(const[n,s]of Object.entries(d.setups)){
+   if(!s||typeof s!=='object'){skipped++;continue}
+   const good=Array.isArray(s.refs)?s.refs.filter(refValid):[];
+   if(Array.isArray(s.refs)&&good.length<s.refs.length)skipped++;
+   let key=n,i=2;while(key in setups)key=n+' ('+(i++)+')';
+   setups[key]={refs:good.slice(0,5),cfg:s.cfg&&typeof s.cfg==='object'?s.cfg:null,saved:s.saved||new Date().toISOString()};
+   added++;
+  }
+  setupsSave();setupsRender();
+  io(added?'Imported '+added+' setup'+(added===1?'':'s')+(skipped?', '+skipped+' had entries that could not be read and were dropped':'')+'. Press Load on one to use it.':'That file had no readable setups.',added?0:1);
+ }catch(err){io('Could not read that file: '+err.message,1)}
+};
 
 /* ---- per-stem mastering ---- */
 function stemFX(name,ch,fs){
@@ -924,7 +1037,10 @@ $('save').onclick=async()=>{
   await dl.save({filename:fn,data});say('Saved.');
  }catch(e){say(e&&e.code==='declined'?'Save cancelled.':'Couldn’t save the file ('+((e&&e.code)||'error')+').',1)}
 };
-$('useRef').onchange=refSave;
-try{refLoad()}catch(e){}
+$('useRef').onchange=()=>{refSave();cfgSave()};
+['gen','cl','amt','wd','vc','pu'].forEach(id=>$(id).addEventListener('click',()=>setTimeout(cfgSave,0)));
+$('lufs').addEventListener('change',cfgSave);
+document.querySelectorAll('input[name=f],input[name=p],#useStems,#perStem').forEach(e=>e.addEventListener('change',cfgSave));
+try{setupsLoad();setupsRender();cfgLoad();refLoad()}catch(e){}
 window.addEventListener('error',e=>say('Error: '+e.message,1));
 </script></body></html>

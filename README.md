@@ -39,6 +39,12 @@ two different but sanely mastered songs land near 0.9 dB apart, a reference
 with a 9 dB tilt error lands above 2.4 dB, and the warning threshold sits at
 1.5 dB.
 
+**Saved setups** — name a combination of reference measurements plus every
+setting on the page, then reload it later. Export writes all setups to a JSON
+file you can keep or move to another machine; import merges a file back,
+renaming on collision rather than overwriting. The last-used settings are also
+restored automatically on reload.
+
 **Stem balance** — optionally split the song into vocals, drums, bass and other,
 rebalance them, master each stem with its own EQ, compression and (for vocals)
 de-essing, then recombine. The app measures each stem against the full mix and
@@ -83,6 +89,22 @@ for the lossy formats, leaving headroom for encoder overshoot.
 - [ ] Manual tone/compression sliders
 - [ ] Background (worker thread) processing
 - [ ] 48 kHz and FLAC output
+
+## Stored data
+
+Nothing leaves the browser. Three keys in `localStorage`:
+
+| Key | Holds |
+| --- | --- |
+| `gpmaster.refs.v1` | the currently loaded reference measurements |
+| `gpmaster.cfg.v1` | last-used settings |
+| `gpmaster.setups.v1` | named setups |
+
+Reference entries store only analysis results — octave-band curve, spectrum,
+stereo width, low-mid side energy, loudness — never audio. Stored and imported
+data is validated and silently dropped if malformed, so an old or corrupt entry
+cannot produce a wrong target. Use Export for anything you want to keep, since
+browser storage is per-device and is lost when site data is cleared.
 
 ## Limitations
 
