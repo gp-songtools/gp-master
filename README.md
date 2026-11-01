@@ -48,7 +48,7 @@ for the lossy formats, leaving headroom for encoder overshoot.
 
 ## Roadmap
 
-- [ ] Stem separation in the browser (see `docs/stem-separation.md`)
+- [x] Stem separation in the browser — `stems.html` (see `docs/stem-separation.md`)
 - [ ] Reference-track matching
 - [ ] Manual tone/compression sliders
 - [ ] Background (worker thread) processing
