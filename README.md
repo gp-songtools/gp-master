@@ -44,10 +44,15 @@ two different but sanely mastered songs land near 0.9 dB apart, a reference
 with a 9 dB tilt error lands above 2.4 dB, and the warning threshold sits at
 1.5 dB.
 
-**Volume automation** — drag across the waveform to select part of the song and
+**Volume automation** — play the song from the waveform to find the spot, then
+drag across the waveform to select part of the song and
 set a level change, extra dynamic taming, or no tone processing there. Level
 rides the fader before the chain; region edges get 20 ms fades. Preview follows
 the selected region.
+
+**Transients** — brings percussive hits forward relative to sustained sounds,
+or pushes them back, driven by the gap between a fast and a slow envelope
+follower measured against its own running average.
 
 **Noise reduction** — spectral subtraction against a measured noise floor,
 learned from a marked quiet region or estimated from the quietest 5% of each
@@ -102,7 +107,7 @@ for the lossy formats, leaving headroom for encoder overshoot.
 - [x] Reference-track matching — measured targets instead of the heuristic curve
 - [x] Region-based volume automation
 - [x] Noise reduction (spectral subtraction, noise profile from a region)
-- [ ] Transient shaping (attack/sustain envelope)
+- [x] Transient shaping (attack/sustain envelope)
 - [ ] Manual tone/compression sliders
 - [x] Help page and per-control hints
 - [ ] Background (worker thread) processing

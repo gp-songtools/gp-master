@@ -134,7 +134,7 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .hint{color:var(--mut);font-size:13px;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v24</small></h1>
+<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v25</small></h1>
 <p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded.</p>
 <p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or get the stems as files from the <a href="stems.html" style="color:var(--ac)">Stem Splitter</a>.</p>
 
@@ -148,6 +148,7 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
  <span class="lbl">Volume automation</span>
  <p class="hint" style="margin:0 0 10px">Drag across the waveform to select a part of the song, then choose what happens there: a level change, extra dynamic taming, or no tone processing at all. Everything outside your regions is mastered normally.</p>
  <canvas id="wav" height="90" aria-label="Waveform — drag to select a region"></canvas>
+ <div class="prow" style="margin-top:8px"><button class="ppb" id="wpBtn">Play</button><span id="wpTime" style="flex:1;font-size:13px;color:var(--mut);font-variant-numeric:tabular-nums">0:00 / 0:00</span></div>
  <div id="regList"></div>
  <p class="hint" id="regHint" style="margin:10px 0 0">No regions yet. Drag across the waveform above to add one.</p>
 </section>
@@ -208,6 +209,11 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
   <button type="button" data-v="gentle" aria-pressed="true">Gentle</button><button type="button" data-v="standard" aria-pressed="false">Standard</button><button type="button" data-v="strong" aria-pressed="false">Strong</button>
  </div>
  <p class="hint" style="margin:-6px 0 18px">Scales every automatic move: tone correction, compression, dynamic EQ, de-essing, saturation, clarity and auto width. Gentle also makes the dynamic EQ and de-esser react only to clear problems rather than running constantly.</p>
+ <span class="lbl">Transients</span>
+ <div class="chips" id="tr">
+  <button type="button" data-v="-3">Soften</button><button type="button" data-v="0" aria-pressed="true">Off</button><button type="button" data-v="3">Punchy</button><button type="button" data-v="6">Very punchy</button>
+ </div>
+ <p class="hint" style="margin:-6px 0 18px">Brings percussive hits forward relative to sustained sounds, or pushes them back. Measurable but subtle on already-compressed material — see the guide for what it can and cannot do.</p>
  <span class="lbl">Noise reduction</span>
  <div class="chips" id="nr">
   <button type="button" data-v="0" aria-pressed="true">Off</button><button type="button" data-v="6">Light</button><button type="button" data-v="12">Medium</button><button type="button" data-v="20">Strong</button>
@@ -410,6 +416,18 @@ async function fullMaster(b){
  const env=[0,0,0],pw=[0,0,0],gr=[0,0,0],rms=[-60,-60,-60],sg=[0,0,0],bd=[new Float64Array(2),new Float64Array(2),new Float64Array(2)];
  const aE=Math.exp(-1/(.0005*fs)),rE=Math.exp(-1/(.05*fs)),cA=BP.map(p=>1-Math.exp(-1/(p.a*.001*fs))),cR=BP.map(p=>1-Math.exp(-1/(p.l*.001*fs))),c0=1/(3*fs),K=1+(P.k-1)*IQ.sat;
  const aD=1-Math.exp(-1/(.001*fs)),rD=1-Math.exp(-1/(.04*fs));let de=0,dp=0,dg=0,dsum=0,dmax=0,drms=-60;
+ /* Transient shaper: a fast and a slow envelope follower on the same signal.
+    Where the fast one runs ahead of the slow one, an attack is happening.
+    Measured on real material, that ratio sits around 2.1 dB in steady parts
+    and 3.5 dB at onsets, so an absolute threshold would be wrong for every
+    other track. Instead the drive is the ratio's excess over its own
+    one-second running average, which self-calibrates per track and leaves
+    steady passages untouched. */
+ const TR=transDb,aTF=Math.exp(-1/(.0008*fs)),rTF=Math.exp(-1/(.02*fs)),
+       aTS=Math.exp(-1/(.02*fs)),rTS=Math.exp(-1/(.15*fs)),
+       aTG=1-Math.exp(-1/(.001*fs)),rTG=1-Math.exp(-1/(.03*fs)),
+       cTA=1-Math.exp(-1/(1.0*fs));
+ let tf=0,ts=0,tg=0,tda=0,tsum=0,tcnt=0,tmx=0;
  const DS=DQ.map(()=>({e:0,p:0,r:-60,g:0,sum:0,max:0})),xs=new Float64Array(2),aQ=1-Math.exp(-1/(.005*fs)),rQ=1-Math.exp(-1/(.12*fs));
  const PDEP=pumpDb,rK=Math.exp(-1/(.03*fs)),aP=1-Math.exp(-1/(.003*fs)),rP=1-Math.exp(-1/(.15*fs));
  let ke=0,kp=0,krms=-60,pgr=0,psum=0,pmax=0;
@@ -475,12 +493,27 @@ async function fullMaster(b){
     dg+=(t-dg)*(t>dg?aD:rD);dsum+=dg;if(dg>dmax)dmax=dg;
     const q=1-Math.exp(-dg*.1151293);yl-=s0*q;yr-=s1*q;
    }
-   X[0][i]=Math.tanh(K*yl)/K;X[1][i]=Math.tanh(K*yr)/K;
+   let ol=Math.tanh(K*yl)/K,or2=Math.tanh(K*yr)/K;
+   /* After saturation, not before: the tanh stage would otherwise squash the
+      punch the shaper just added, inverting the control. */
+   if(TR!==0){
+    const lv=Math.max(Math.abs(ol),Math.abs(or2));
+    tf=lv>tf?lv+(tf-lv)*aTF:lv+(tf-lv)*rTF;
+    ts=lv>ts?lv+(ts-lv)*aTS:lv+(ts-lv)*rTS;
+    const d=20*Math.log10((tf+1e-9)/(ts+1e-9));
+    tda+=(d-tda)*cTA;
+    const drive=d-tda-.3;
+    const t=drive>0?Math.min(Math.abs(TR),drive*2.5)*(TR>0?1:-1):0;
+    tg+=(t-tg)*(Math.abs(t)>Math.abs(tg)?aTG:rTG);
+    const q=Math.pow(10,tg/20);ol*=q;or2*=q;
+    if(tg!==0){tsum+=Math.abs(tg);tcnt++;if(Math.abs(tg)>tmx)tmx=Math.abs(tg)}
+   }
+   X[0][i]=ol;X[1][i]=or2;
   }
   say('Full master… '+Math.round(e/n*100)+'%');await tick();
  }
  const sgn=v=>(v>0?'+':'')+v.toFixed(1),moves=spec.slice(1).filter(s=>Math.abs(s[2])>=.5).map(s=>(s[1]>=1000?s[1]/1000+'k':s[1])+' '+sgn(s[2]));
- return[X,[['Tone moves (dB)',moves.length?moves.join(', '):'none needed'],['Avg compression','low '+(sg[0]/n).toFixed(1)+' / mid '+(sg[1]/n).toFixed(1)+' / high '+(sg[2]/n).toFixed(1)+' dB'],['Tone target',RF?'matched to '+refAvg.count+' reference track'+(refAvg.count>1?'s':''):(genre==='auto'?'built-in curve':genre+' curve')],['Processing amount',amount],['Clarity',CL.on?'side high-pass '+Math.round(CL.fc)+' Hz'+(CL.mp?', 140 Hz '+CL.mc.toFixed(1)+' dB':'')+' (low-mid side/mid '+an.lm.toFixed(1)+' dB)':'off'],['Dynamic EQ',P.dq>0?DQ.map((d,k)=>d.f+' Hz '+(DS[k].sum/n).toFixed(1)+'/'+DS[k].max.toFixed(1)).join(', ')+' dB (avg/max)':'off'],...(PDEP>0?[['Pumper','avg '+(psum/n).toFixed(1)+' dB, max '+pmax.toFixed(1)+' dB']]:[]),...(VA>0?[['Vocal enhancer','+'+VA+' dB presence at 3 kHz, +'+(.5*VA)+' dB air, leveling avg '+(vd.sum/n).toFixed(1)+' dB']]:[]),['De-esser',P.ds>0?'avg '+(dsum/n).toFixed(1)+' dB, max '+dmax.toFixed(1)+' dB':'off'],['Stereo','bass mono below 150 Hz, width '+W.toFixed(2)+'x']]];
+ return[X,[['Tone moves (dB)',moves.length?moves.join(', '):'none needed'],['Avg compression','low '+(sg[0]/n).toFixed(1)+' / mid '+(sg[1]/n).toFixed(1)+' / high '+(sg[2]/n).toFixed(1)+' dB'],['Tone target',RF?'matched to '+refAvg.count+' reference track'+(refAvg.count>1?'s':''):(genre==='auto'?'built-in curve':genre+' curve')],['Processing amount',amount],['Clarity',CL.on?'side high-pass '+Math.round(CL.fc)+' Hz'+(CL.mp?', 140 Hz '+CL.mc.toFixed(1)+' dB':'')+' (low-mid side/mid '+an.lm.toFixed(1)+' dB)':'off'],['Dynamic EQ',P.dq>0?DQ.map((d,k)=>d.f+' Hz '+(DS[k].sum/n).toFixed(1)+'/'+DS[k].max.toFixed(1)).join(', ')+' dB (avg/max)':'off'],...(TR!==0?[['Transients',(TR>0?'+':'')+TR+' dB target, avg '+(tcnt?tsum/tcnt:0).toFixed(1)+' dB, max '+tmx.toFixed(1)+' dB']]:[]),...(PDEP>0?[['Pumper','avg '+(psum/n).toFixed(1)+' dB, max '+pmax.toFixed(1)+' dB']]:[]),...(VA>0?[['Vocal enhancer','+'+VA+' dB presence at 3 kHz, +'+(.5*VA)+' dB air, leveling avg '+(vd.sum/n).toFixed(1)+' dB']]:[]),['De-esser',P.ds>0?'avg '+(dsum/n).toFixed(1)+' dB, max '+dmax.toFixed(1)+' dB':'off'],['Stereo','bass mono below 150 Hz, width '+W.toFixed(2)+'x']]];
 }
 
 /* ---- encoders ---- */
@@ -552,12 +585,40 @@ $('file').onchange=async e=>{
   await tick();
   const L=lufs(kseg(chans(src),src.sampleRate));
   $('inStats').textContent=fmtT(src.duration)+', '+(src.sampleRate/1000)+' kHz, '+(src.numberOfChannels>1?'stereo':'mono')+', currently '+L.toFixed(1)+' LUFS';
-  src.inL=L;clearStems();regions=[];regSel=-1;noiseProf=null;buildPeaks();$('regCard').hidden=false;regSetup();regRender();drawWave();$('go').disabled=false;$('pv').disabled=false;$('sepPv').disabled=false;$('sepAll').disabled=false;say('');
+  src.inL=L;clearStems();wpStop();wpOff=0;regions=[];regSel=-1;noiseProf=null;buildPeaks();$('regCard').hidden=false;regSetup();regRender();drawWave();$('wpTime').textContent=wpTimeStr();$('go').disabled=false;$('pv').disabled=false;$('sepPv').disabled=false;$('sepAll').disabled=false;say('');
  }catch{src=null;$('inStats').textContent='';say('That file couldn’t be decoded. Try an MP3, WAV, M4A or FLAC.',1)}
 };
 
 /* ---- volume automation regions ---- */
 let regions=[],regSel=-1,wavPeaks=null,drag=null;
+/* Source player for the waveform, separate from the A/B master player.
+   Only one of the two may sound at a time. */
+let wpSrc=null,wpT0=0,wpOff=0,wpOn=false,wpRaf=0;
+const wpPos=()=>wpOn?Math.min(src?src.duration:0,pc.currentTime-wpT0):wpOff;
+function wpTimeStr(){const d=src?src.duration:0;return tc(wpPos())+' / '+tc(d)}
+async function wpPlay(){
+ if(!src||wpOn)return;
+ stopP();
+ pc=pc||new AudioContext();await pc.resume();
+ wpSrc=pc.createBufferSource();wpSrc.buffer=src;wpSrc.connect(pc.destination);
+ wpT0=pc.currentTime-wpOff;wpOn=true;$('wpBtn').textContent='Pause';
+ wpSrc.start(0,Math.max(0,Math.min(src.duration-.01,wpOff)));
+ wpSrc.onended=()=>{if(wpOn){wpStop();wpOff=0;$('wpTime').textContent=wpTimeStr();drawWave()}};
+ wpTick();
+}
+function wpStop(){
+ if(wpOn&&wpSrc){wpOff=Math.min(src?src.duration:0,pc.currentTime-wpT0);try{wpSrc.onended=null;wpSrc.stop()}catch(_){}}
+ wpOn=false;wpSrc=null;cancelAnimationFrame(wpRaf);
+ const b=$('wpBtn');if(b)b.textContent='Play';
+ drawWave();
+}
+function wpTick(){if(!wpOn)return;$('wpTime').textContent=wpTimeStr();drawWave();wpRaf=requestAnimationFrame(wpTick)}
+function wpSeek(sec){
+ const was=wpOn;if(was)wpStop();
+ wpOff=Math.max(0,Math.min((src?src.duration:0)-.05,sec));
+ $('wpTime').textContent=wpTimeStr();
+ if(was)wpPlay();else drawWave();
+}
 const RMODE={gain:'Level',tame:'Tame dynamics',skip:'No tone processing',noise:'Noise profile'};
 const tc=s=>Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');
 
@@ -577,21 +638,26 @@ function drawWave(){
  const c=$('wav');if(!c)return;
  const W=c.clientWidth||520,H=90,dpr=window.devicePixelRatio||1;
  if(c.width!==Math.round(W*dpr)||c.height!==Math.round(H*dpr)){c.width=Math.round(W*dpr);c.height=Math.round(H*dpr)}
- const g=c.getContext('2d');
+ const g=c.getContext('2d'),cs0=getComputedStyle(document.documentElement);
  g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
  if(!wavPeaks||!src)return;
  const n=src.length;
  regions.forEach((r,k)=>{
   const x0=r.s/n*W,x1=r.e/n*W;
   g.fillStyle=RFILL[r.mode]||RFILL.gain;g.fillRect(x0,0,Math.max(1,x1-x0),H);
-  if(k===regSel){const cs=getComputedStyle(document.documentElement);
-   g.strokeStyle=cs.getPropertyValue('--ac').trim()||'#0a8';g.lineWidth=2;g.strokeRect(x0+1,1,Math.max(2,x1-x0-2),H-2)}
+  if(k===regSel){
+   g.strokeStyle=cs0.getPropertyValue('--ac').trim()||'#0a8';g.lineWidth=2;g.strokeRect(x0+1,1,Math.max(2,x1-x0-2),H-2)}
  });
+ if(src){
+  const px=wpPos()/src.duration*W;
+  g.strokeStyle=cs0.getPropertyValue('--ink').trim()||'#000';g.lineWidth=1.5;
+  g.beginPath();g.moveTo(px,0);g.lineTo(px,H);g.stroke();
+ }
  if(drag&&drag.x1!==undefined){
   const a=Math.min(drag.x0,drag.x1)*W,b=Math.max(drag.x0,drag.x1)*W;
   g.fillStyle='rgba(120,120,120,.25)';g.fillRect(a,0,Math.max(1,b-a),H);
  }
- const cs=getComputedStyle(document.documentElement);
+ const cs=cs0;
  g.strokeStyle=cs.getPropertyValue('--mut').trim()||'#777';g.lineWidth=1;g.beginPath();
  const N=wavPeaks.length/2;
  for(let i=0;i<N;i++){
@@ -650,6 +716,7 @@ function regSetup(){
    const pos=a*src.length;let hit=-1;
    regions.forEach((r,i)=>{if(pos>=r.s&&pos<=r.e)hit=i});
    regSel=hit;
+   wpSeek(a*src.duration);
   }else{
    regions.push({s:Math.round(a*src.length),e:Math.round(b*src.length),mode:'gain',amt:0});noiseProf=null;
    regions.sort((p,q)=>p.s-q.s);
@@ -703,7 +770,7 @@ function applyTame(ch,R,fs){
 }
 
 /* ---- noise reduction (spectral subtraction) ---- */
-let noiseDb=0,noiseProf=null;
+let noiseDb=0,noiseProf=null,transDb=0;
 const NRN=2048,NRH=512,NRHALF=1024;
 const nrWin=(()=>{const w=new Float64Array(NRN);for(let i=0;i<NRN;i++)w[i]=.5-.5*Math.cos(2*Math.PI*i/NRN);return w})();
 function nrFrameMag(ch,off,re,im,out){
@@ -909,7 +976,7 @@ const refOn=()=>refAvg&&$('useRef').checked;
 const radio=n=>{const e=document.querySelector(`input[name=${n}]:checked`);return e?e.value:null};
 const setRadio=(n,v)=>{const e=document.querySelector(`input[name=${n}][value="${v}"]`);if(e)e.checked=true};
 function getCfg(){
- return{genre,amount,clar,widthSel,vocAmt,pumpDb,noiseDb,useRef:$('useRef').checked,
+ return{genre,amount,clar,widthSel,vocAmt,pumpDb,noiseDb,transDb,useRef:$('useRef').checked,
   lufs:+$('lufs').value,fmt:radio('f'),mode:radio('p'),
   useStems:$('useStems').checked,perStem:$('perStem').checked};
 }
@@ -923,6 +990,7 @@ function applyCfg(c){
  vocAmt=pick(c.vocAmt,isNum,vocAmt);
  pumpDb=pick(c.pumpDb,isNum,pumpDb);
  noiseDb=pick(c.noiseDb,isNum,noiseDb);
+ transDb=pick(c.transDb,isNum,transDb);
  if(isNum(c.lufs)&&c.lufs>=-24&&c.lufs<=-6)sync(c.lufs);
  if(['wav','mp3','m4a'].includes(c.fmt))setRadio('f',c.fmt);
  if(['full','polish','none'].includes(c.mode))setRadio('p',c.mode);
@@ -931,7 +999,7 @@ function applyCfg(c){
  if(typeof c.perStem==='boolean')$('perStem').checked=c.perStem;
  [...$('gen').children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.g===genre));
  [...$('cl').children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.c===String(clar)));
- sel('amt',amount);sel('wd',String(widthSel));sel('vc',String(vocAmt));sel('pu',String(pumpDb));sel('nr',String(noiseDb));nrHintUpdate();
+ sel('amt',amount);sel('wd',String(widthSel));sel('vc',String(vocAmt));sel('pu',String(pumpDb));sel('nr',String(noiseDb));sel('tr',String(transDb));nrHintUpdate();
  if(stemData)analyzeStems();
 }
 function cfgSave(){try{localStorage.setItem(CFGKEY,JSON.stringify(getCfg()))}catch(e){}}
@@ -1144,6 +1212,7 @@ function runSeparation(scope){
  stemWorker.postMessage({mix,stems:STEMS,baseUrl:location.href.replace(/[^/]*$/,''),sampleRate:src.sampleRate},[mix[0].buffer,mix[1].buffer]);
  ssay('Starting…');
 }
+$('wpBtn').onclick=()=>wpOn?wpStop():wpPlay();
 $('sepPv').onclick=()=>runSeparation('preview');
 $('sepAll').onclick=()=>runSeparation('full');
 
@@ -1323,7 +1392,7 @@ function applyMono(){
  pl.stereoG.gain.setTargetAtTime(1-m,pc.currentTime,.01);
 }
 async function playP(){
- if(pl.play||!pl.m)return;await pc.resume();
+ if(pl.play||!pl.m)return;wpStop();await pc.resume();
  buildBus();
  pl.s=[pl.o,pl.m].map(b=>{const s=pc.createBufferSource();s.buffer=b;return s});
  pl.gn=pl.s.map(s=>{const g=pc.createGain();g.gain.value=0;s.connect(g);g.connect(pl.bus);return g});
@@ -1346,7 +1415,7 @@ $('cl').onclick=e=>{const c=e.target.dataset&&e.target.dataset.c;if(c==null)retu
 const sel=(id,v)=>[...$(id).children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.v===v));
 const chip=(id,fn)=>{$(id).onclick=e=>{const v=e.target.dataset&&e.target.dataset.v;if(v==null)return;fn(+v);sel(id,v)}};
 $('amt').onclick=e=>{const v=e.target.dataset&&e.target.dataset.v;if(!v)return;amount=v;sel('amt',v)};
-chip('pu',v=>pumpDb=v);chip('vc',v=>vocAmt=v);chip('nr',v=>{noiseDb=v;nrHintUpdate()});
+chip('pu',v=>pumpDb=v);chip('vc',v=>vocAmt=v);chip('nr',v=>{noiseDb=v;nrHintUpdate()});chip('tr',v=>transDb=v);
 $('wd').onclick=e=>{const v=e.target.dataset&&e.target.dataset.v;if(v==null)return;widthSel=v==='auto'?'auto':+v;sel('wd',v)};
 $('gen').onclick=e=>{const g=e.target.dataset&&e.target.dataset.g;if(!g)return;genre=g;if(stemData)analyzeStems();[...$('gen').children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.g===g));if(PRESETS[g].lufs!=null)sync(PRESETS[g].lufs)};
 
@@ -1395,7 +1464,7 @@ $('save').onclick=async()=>{
  }catch(e){say(e&&e.code==='declined'?'Save cancelled.':'Couldn’t save the file ('+((e&&e.code)||'error')+').',1)}
 };
 $('useRef').onchange=()=>{refSave();cfgSave()};
-['gen','cl','amt','wd','vc','pu','nr'].forEach(id=>$(id).addEventListener('click',()=>setTimeout(cfgSave,0)));
+['gen','cl','amt','wd','vc','pu','nr','tr'].forEach(id=>$(id).addEventListener('click',()=>setTimeout(cfgSave,0)));
 $('lufs').addEventListener('change',cfgSave);
 document.querySelectorAll('input[name=f],input[name=p],#useStems,#perStem').forEach(e=>e.addEventListener('change',cfgSave));
 try{setupsLoad();setupsRender();cfgLoad();refLoad()}catch(e){}
@@ -1404,10 +1473,14 @@ const HELP={
 'Reference tracks':`<p>Load songs whose balance you like. The app measures their tone curve, stereo width and low-mid side energy, averages them, and aims for that instead of its own built-in target. <b>This is the single biggest quality improvement available here</b> — without references the app aims at a hand-chosen curve that may not suit your material.</p>
 <p>Pick by similarity to your song, not by taste: it copies tone and width, so instrumentation and arrangement density need to be comparable. Use lossless downloads or CD rips, not streaming or YouTube rips. Two or three is safer than one, and the app tells you if they disagree.</p>
 <p>Only the measurements are kept — about 300 bytes each. The audio is analyzed and discarded.</p>`,
+'Transients':`<p>Two envelope followers run on the signal, one fast and one slow. Where the fast one runs ahead of the slow one, an attack is happening. The drive is that gap's excess over its own one-second average, so it self-calibrates per track instead of using a fixed threshold.</p>
+<p><b>Punchy</b> and <b>Very punchy</b> add up to 3 or 6 dB on attacks; <b>Soften</b> cuts up to 3 dB. Measured on material with real transients, Very punchy applies about 5.5 dB at onsets against 1.6 dB in steady passages.</p>
+<p><b>Be realistic about the size of this effect.</b> What it mainly does is bring percussive hits forward relative to sustained sounds. It does not make individual hits noticeably sharper, and on an already-compressed source at a loud target the surrounding compression and limiting largely re-level what it boosts, so the net change can be near zero. It has the most to work with on an unlimited mix at a moderate loudness target.</p>`,
 'Noise reduction':`<p>Removes steady background noise — hiss, hum, room tone, and the warble AI generators sometimes leave behind. It measures the noise floor per frequency band, then attenuates each band when it drops toward that floor.</p>
 <p><b>Mark a quiet passage</b> with a Noise profile region on the waveform for the best result: that measures the actual noise rather than guessing. Without one, the floor is estimated from the quietest 5% of each frequency band across the song, which on a test with known added noise came within 0.5 dB of the region result.</p>
 <p>Light is 6 dB of reduction, Medium 12 dB, Strong 20 dB. It runs first, before any EQ or compression, so the chain never amplifies noise. Gains are smoothed across frequency and time to avoid the warbling that makes denoisers obvious, but strong settings on dense music can still sound watery — check on Preview.</p>`,
-'Volume automation':`<p>Mastering normally applies one setting to the whole song, but problems are usually local — one chorus that jumps, one verse too quiet, an intro you want left alone. Drag across the waveform to select a part and choose what happens there.</p>
+'Volume automation':`<p>Press Play under the waveform to hear the song and find the part you want, then drag across the waveform to select it. Clicking moves the playhead, and clicking inside a region also selects it.</p>
+<p>Mastering normally applies one setting to the whole song, but problems are usually local — one chorus that jumps, one verse too quiet, an intro you want left alone. Drag across the waveform to select a part and choose what happens there.</p>
 <p><b>Level</b> rides the fader by up to ±12 dB <i>before</i> the mastering chain, so the compressors respond to the corrected balance rather than fighting it. <b>Tame dynamics</b> adds compression inside the region only. <b>No tone processing</b> keeps the original tone there but still applies the final loudness and limiting, so the level still matches the rest.</p>
 <p>Region edges get 20 ms fades so boundaries do not click. With a region selected, Preview renders around it instead of the middle of the song. Regions belong to the loaded file and are cleared when you load another.</p>`,
 'Saved setups':`<p>A setup stores your loaded references plus every setting on this page, under a name. Your current settings are also saved automatically, so the app reopens where you left it.</p>
