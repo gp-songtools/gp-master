@@ -21,6 +21,12 @@ master the whole song.
 - **Light polish** — fixed EQ plus gentle glue compression.
 - **Loudness only** — no tone changes, just level matching and limiting.
 
+**Reference tracks** — load up to five songs whose balance you like. The app
+measures their octave-band tone curve, stereo width and low-mid side energy,
+averages them, and aims for those measurements instead of the built-in target.
+Only the measurements are kept; the reference audio is analyzed and discarded.
+The averaged reference curve is drawn as a dashed line on the spectrum view.
+
 **Stem balance** — optionally split the song into vocals, drums, bass and other,
 rebalance them, master each stem with its own EQ, compression and (for vocals)
 de-essing, then recombine. The app measures each stem against the full mix and
@@ -61,18 +67,20 @@ for the lossy formats, leaving headroom for encoder overshoot.
 
 - [x] Stem separation in the browser — `stems.html` (see `docs/stem-separation.md`)
 - [x] Stem balance and per-stem mastering inside the main app
-- [ ] Reference-track matching — replace the heuristic tone target with
-      measurements from songs you choose
+- [x] Reference-track matching — measured targets instead of the heuristic curve
 - [ ] Manual tone/compression sliders
 - [ ] Background (worker thread) processing
 - [ ] 48 kHz and FLAC output
 
 ## Limitations
 
-- **The tone target is a heuristic.** The target curve is a set of hand-chosen
-  values, not a balance measured from reference recordings, and it takes no
-  account of arrangement. The same applies to the suggested stem levels. Treat
-  both as starting points. Reference matching is the planned fix.
+- **Without references, the tone target is a heuristic.** The built-in curve is
+  a set of hand-chosen values, not a balance measured from recordings, and it
+  takes no account of arrangement. Load reference tracks to replace it with
+  measurements. The suggested stem levels are still heuristics either way.
+- Reference matching copies tone and width, not arrangement, performance or
+  mix decisions. A reference whose instrumentation differs from yours will pull
+  the tone somewhere unhelpful.
 - Automatic processing improves some material and worsens other material. Use
   Gentle, the 30-second preview, and the A/B player rather than trusting the
   output unheard.

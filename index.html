@@ -75,6 +75,12 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 #sugg .ok{color:var(--mut);font-weight:400}
 #applyS{border:1px solid var(--ac);background:transparent;color:var(--ac);border-radius:8px;padding:8px 12px;font:inherit;font-weight:600;font-size:14px;cursor:pointer}
 #applyS:disabled{opacity:.45;cursor:not-allowed}
+.sr{stroke:var(--ink);stroke-width:1.5;stroke-dasharray:4 3;fill:none;opacity:.65}
+#refList{font-size:14px;margin:8px 0 0}
+#refList div{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--ln)}
+#refList span{color:var(--mut);font-size:13px;white-space:nowrap}
+#refList button{border:0;background:transparent;color:var(--warn);font:inherit;font-size:13px;cursor:pointer;padding:2px 4px}
+#refName{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .srow{display:grid;grid-template-columns:62px 1fr 56px 34px;gap:8px;align-items:center;margin-top:8px;font-size:14px}
 .srow b{font-weight:600;text-transform:capitalize}
 .srow input[type=range]{margin:0;width:100%}
@@ -87,7 +93,7 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .hint{color:var(--mut);font-size:13px;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v15</small></h1>
+<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v16</small></h1>
 <p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded.</p>
 <p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or get the stems as files from the <a href="stems.html" style="color:var(--ac)">Stem Splitter</a>.</p>
 
@@ -113,6 +119,12 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 </section>
 
 <section class="card">
+ <span class="lbl">Reference tracks <span style="font-weight:400;color:var(--mut)">(optional)</span></span>
+ <p class="hint" style="margin:0 0 10px">Load one or more songs whose balance you like. The app measures their tone and stereo width and aims for that instead of its own built-in target. Only the measurements are kept — the audio is analyzed and discarded.</p>
+ <div class="drop" style="padding:14px"><span id="refFl">Add reference tracks</span><input type="file" id="refFile" accept="audio/*" multiple aria-label="Add reference tracks"></div>
+ <div id="refList"></div>
+ <label class="chk" id="refRow" style="margin:10px 0 0" hidden><input type="checkbox" id="useRef" checked><span>Match tone and width to the references<small>Replaces the built-in target curve. Uncheck to use the genre target instead.</small></span></label>
+ <hr style="border:0;border-top:1px solid var(--ln);margin:16px 0">
  <span class="lbl">Genre preset</span>
  <div class="chips" id="gen">
   <button type="button" data-g="auto" aria-pressed="true">Auto</button><button type="button" data-g="rock" aria-pressed="false">Rock</button><button type="button" data-g="pop" aria-pressed="false">Pop</button><button type="button" data-g="hiphop" aria-pressed="false">Hip-hop</button><button type="button" data-g="electronic" aria-pressed="false">Electronic</button><button type="button" data-g="acoustic" aria-pressed="false">Acoustic</button><button type="button" data-g="voice" aria-pressed="false">Voice</button>
@@ -318,13 +330,13 @@ async function fullMaster(b){
  const fs=b.sampleRate,[a0,b0]=chans(b),n=a0.length,X=[Float32Array.from(a0),Float32Array.from(b0)];
  say('Analyzing the track…');await tick();
  const P=PRESETS[genre]||PRESETS.auto,IQ=AMT[amount]||AMT.standard;
- const an=analyze(a0,b0,fs),avg=(v)=>{let s=0;for(let i=2;i<=6;i++)s+=v[i];return s/5},mr=avg(an.dB),TG=TGT.map((v,i)=>v+(i<3?P.lo:i>4?P.hi:0)),tr=avg(TG);
+ const an=analyze(a0,b0,fs),avg=(v)=>{let s=0;for(let i=2;i<=6;i++)s+=v[i];return s/5},mr=avg(an.dB),RF=refOn(),TG=RF?refAvg.dB.slice():TGT.map((v,i)=>v+(i<3?P.lo:i>4?P.hi:0)),tr=avg(TG);
  const cl=(v,l,h)=>Math.max(l,Math.min(h,v)),cor=an.dB.map((d,i)=>cl(.5*IQ.eq*((TG[i]-tr)-(d-mr)),-2.5*IQ.eq,2.5*IQ.eq));
  const spec=[['hp',25,0,.7071]];
  for(let i=0;i<7;i++)if(Math.abs(cor[i])>=.3)spec.push(['pk',OCT[i],cor[i],1]);
  if(Math.abs(cor[7])>=.3)spec.push(['hs',9000,cor[7],.7]);
- const W=widthSel==='auto'?1+((an.side>-8?1:an.side<-16?1.25:1.1)-1)*P.wd*IQ.wid:widthSel;
- const cc=(clar==='auto'?Math.max(0,Math.min(1,(an.lm+11)/5))*IQ.clar:clar),CL={on:cc>.02,fc:120+200*cc,mc:-1.5*Math.max(0,(cc-.4)/.6)};
+ const W=widthSel!=='auto'?widthSel:RF?Math.max(.7,Math.min(1.4,1+(Math.pow(10,(refAvg.side-an.side)/20)-1)*IQ.wid)):1+((an.side>-8?1:an.side<-16?1.25:1.1)-1)*P.wd*IQ.wid;
+ const cc=(clar!=='auto'?clar:RF?Math.max(0,Math.min(1,(an.lm-refAvg.lm)/5))*IQ.clar:Math.max(0,Math.min(1,(an.lm+11)/5))*IQ.clar),CL={on:cc>.02,fc:120+200*cc,mc:-1.5*Math.max(0,(cc-.4)/.6)};
  if(CL.on){CL.sh=bqc('hp',CL.fc,0,.7071,fs);CL.mp=CL.mc<-.05?bqc('pk',140,CL.mc,.9,fs):null}
  const BP=[{r:2.2,a:30,l:250,o:3.5},{r:2,a:15,l:150,o:4},{r:2.2,a:6,l:100,o:4.5}].map(p=>({...p,o:p.o+IQ.thr*.5,r:1+(p.r-1)*P.rs*IQ.comp}));
  const L2=()=>[bqc('lp',150,0,.7071,fs),bqc('lp',150,0,.7071,fs)],H1=()=>[bqc('hp',150,0,.7071,fs),bqc('hp',150,0,.7071,fs)],
@@ -403,7 +415,7 @@ async function fullMaster(b){
   say('Full master… '+Math.round(e/n*100)+'%');await tick();
  }
  const sgn=v=>(v>0?'+':'')+v.toFixed(1),moves=spec.slice(1).filter(s=>Math.abs(s[2])>=.5).map(s=>(s[1]>=1000?s[1]/1000+'k':s[1])+' '+sgn(s[2]));
- return[X,[['Tone moves (dB)',moves.length?moves.join(', '):'none needed'],['Avg compression','low '+(sg[0]/n).toFixed(1)+' / mid '+(sg[1]/n).toFixed(1)+' / high '+(sg[2]/n).toFixed(1)+' dB'],['Processing amount',amount],['Clarity',CL.on?'side high-pass '+Math.round(CL.fc)+' Hz'+(CL.mp?', 140 Hz '+CL.mc.toFixed(1)+' dB':'')+' (low-mid side/mid '+an.lm.toFixed(1)+' dB)':'off'],['Dynamic EQ',P.dq>0?DQ.map((d,k)=>d.f+' Hz '+(DS[k].sum/n).toFixed(1)+'/'+DS[k].max.toFixed(1)).join(', ')+' dB (avg/max)':'off'],...(PDEP>0?[['Pumper','avg '+(psum/n).toFixed(1)+' dB, max '+pmax.toFixed(1)+' dB']]:[]),...(VA>0?[['Vocal enhancer','+'+VA+' dB presence at 3 kHz, +'+(.5*VA)+' dB air, leveling avg '+(vd.sum/n).toFixed(1)+' dB']]:[]),['De-esser',P.ds>0?'avg '+(dsum/n).toFixed(1)+' dB, max '+dmax.toFixed(1)+' dB':'off'],['Stereo','bass mono below 150 Hz, width '+W.toFixed(2)+'x']]];
+ return[X,[['Tone moves (dB)',moves.length?moves.join(', '):'none needed'],['Avg compression','low '+(sg[0]/n).toFixed(1)+' / mid '+(sg[1]/n).toFixed(1)+' / high '+(sg[2]/n).toFixed(1)+' dB'],['Tone target',RF?'matched to '+refAvg.count+' reference track'+(refAvg.count>1?'s':''):(genre==='auto'?'built-in curve':genre+' curve')],['Processing amount',amount],['Clarity',CL.on?'side high-pass '+Math.round(CL.fc)+' Hz'+(CL.mp?', 140 Hz '+CL.mc.toFixed(1)+' dB':'')+' (low-mid side/mid '+an.lm.toFixed(1)+' dB)':'off'],['Dynamic EQ',P.dq>0?DQ.map((d,k)=>d.f+' Hz '+(DS[k].sum/n).toFixed(1)+'/'+DS[k].max.toFixed(1)).join(', ')+' dB (avg/max)':'off'],...(PDEP>0?[['Pumper','avg '+(psum/n).toFixed(1)+' dB, max '+pmax.toFixed(1)+' dB']]:[]),...(VA>0?[['Vocal enhancer','+'+VA+' dB presence at 3 kHz, +'+(.5*VA)+' dB air, leveling avg '+(vd.sum/n).toFixed(1)+' dB']]:[]),['De-esser',P.ds>0?'avg '+(dsum/n).toFixed(1)+' dB, max '+dmax.toFixed(1)+' dB':'off'],['Stereo','bass mono below 150 Hz, width '+W.toFixed(2)+'x']]];
 }
 
 /* ---- encoders ---- */
@@ -478,6 +490,45 @@ $('file').onchange=async e=>{
   src.inL=L;clearStems();$('go').disabled=false;$('pv').disabled=false;$('sepPv').disabled=false;$('sepAll').disabled=false;say('');
  }catch{src=null;$('inStats').textContent='';say('That file couldn’t be decoded. Try an MP3, WAV, M4A or FLAC.',1)}
 };
+
+/* ---- reference tracks ---- */
+let refs=[],refAvg=null;
+function refRecompute(){
+ if(!refs.length){refAvg=null;$('refRow').hidden=true;paintSpec();return}
+ const n=refs.length,dB=new Array(8).fill(0);
+ let side=0,lm=0,ltasSum=new Array(SPC.length).fill(0);
+ for(const r of refs){
+  for(let i=0;i<8;i++)dB[i]+=r.dB[i]/n;
+  side+=r.side/n;lm+=r.lm/n;
+  for(let i=0;i<SPC.length;i++)ltasSum[i]+=r.ltas[i]/n;
+ }
+ refAvg={dB,side,lm,ltas:ltasSum,count:n};
+ $('refRow').hidden=false;
+ paintSpec();
+}
+function refRender(){
+ $('refList').innerHTML=refs.map((r,i)=>`<div><span id="refName">${r.name}</span><span>${r.lufs.toFixed(1)} LUFS</span><button data-i="${i}">Remove</button></div>`).join('');
+ $('refList').querySelectorAll('button').forEach(b=>b.onclick=()=>{refs.splice(+b.dataset.i,1);refRender();refRecompute()});
+}
+$('refFile').onchange=async e=>{
+ const files=[...e.target.files];if(!files.length)return;
+ e.target.value='';
+ for(const f of files){
+  if(refs.length>=5){say('Five reference tracks is the limit.',1);break}
+  $('refFl').textContent='Analyzing '+f.name+'…';await tick();
+  try{
+   const ab=await f.arrayBuffer();let ctx;
+   try{ctx=new AudioContext({sampleRate:44100})}catch{ctx=new AudioContext()}
+   const buf=await ctx.decodeAudioData(ab);ctx.close();
+   const ch=chans(buf),an=analyze(ch[0],ch[1],buf.sampleRate);
+   refs.push({name:f.name,dB:an.dB,side:an.side,lm:an.lm,
+     ltas:ltas(ch[0],ch[1],buf.sampleRate),lufs:lufs(kseg(ch,buf.sampleRate))});
+  }catch(err){say('Could not read '+f.name,1)}
+ }
+ $('refFl').textContent='Add reference tracks';
+ refRender();refRecompute();
+};
+const refOn=()=>refAvg&&$('useRef').checked;
 
 /* ---- per-stem mastering ---- */
 function stemFX(name,ch,fs){
@@ -693,8 +744,9 @@ function drawSpec(ob,o){const a=chans(ob);spD={a:ltas(a[0],a[1],ob.sampleRate),b
 function paintSpec(){
  if(!spD)return;
  const W=560,H=230,L=34,R=8,T=8,B=22,iw=W-L-R,ih=H-T-B,n=SPC.length,x=i=>L+i/(n-1)*iw;
- let a=spD.a,b=spD.b;
+ let a=spD.a,b=spD.b,rf=null;
  if($('sp-m').checked){let s=0;for(let i=5;i<25;i++)s+=b[i]-a[i];const off=s/20;b=b.map(v=>v-off)}
+ if(refAvg){let s=0;for(let i=5;i<25;i++)s+=refAvg.ltas[i]-b[i];const off=s/20;rf=refAvg.ltas.map(v=>v-off)}
  const d=b.map((v,i)=>v-a[i]);let s='';
  if(spMode==='s'){
   const top=Math.ceil((Math.max(...a,...b)+2)/10)*10,bot=top-60,y=v=>T+(top-Math.max(bot,Math.min(top,v)))/(top-bot)*ih;
@@ -702,7 +754,8 @@ function paintSpec(){
   [[5,'100'],[15,'1k'],[25,'10k']].forEach(([i,t])=>{s+='<line class="sg" x1="'+x(i)+'" x2="'+x(i)+'" y1="'+T+'" y2="'+(T+ih)+'"/><text class="st" x="'+x(i)+'" y="'+(H-6)+'" text-anchor="middle">'+t+'</text>'});
   const path=v=>v.map((q,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(q).toFixed(1)).join('');
   s+='<path class="sb" d="'+path(a)+'"/><path class="sa" d="'+path(b)+'"/>';
-  s+='<text class="st" x="'+(W-R)+'" y="'+(T+12)+'" text-anchor="end">gray: before, color: after</text>';
+  if(rf)s+='<path class="sr" d="'+path(rf)+'"/>';
+  s+='<text class="st" x="'+(W-R)+'" y="'+(T+12)+'" text-anchor="end">gray: before, color: after'+(rf?', dashed: reference':'')+'</text>';
  }else{
   const r=Math.max(4,Math.ceil(Math.max(...d.map(Math.abs)))),y=v=>T+(r-v)/(2*r)*ih,bw=iw/n*.7;
   for(let v=-r;v<=r;v+=r>=8?4:2)s+='<line class="sg" x1="'+L+'" x2="'+(W-R)+'" y1="'+y(v)+'" y2="'+y(v)+'"/><text class="st" x="'+(L-4)+'" y="'+(y(v)+4)+'" text-anchor="end">'+(v>0?'+':'')+v+'</text>';
