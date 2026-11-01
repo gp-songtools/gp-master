@@ -25,6 +25,9 @@ master the whole song.
 measures their octave-band tone curve, stereo width and low-mid side energy,
 averages them, and aims for those measurements instead of the built-in target.
 Only the measurements are kept; the reference audio is analyzed and discarded.
+Those measurements persist in browser storage (about 300 bytes per reference),
+so references survive a reload. Storage is per-browser and per-device: it does
+not sync between machines and is lost if site data is cleared.
 The averaged reference curve is drawn as a dashed line on the spectrum view,
 with each individual reference as a fainter line so outliers are visible.
 

@@ -80,6 +80,8 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 #refAgree{font-size:13px;margin-top:8px;line-height:1.4}
 #refAgree.warn{color:var(--warn)}
 #refAgree.ok{color:var(--mut)}
+#refSaved{font-size:12.5px;color:var(--mut);margin-top:8px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+#refSaved button{border:0;background:transparent;color:var(--warn);font:inherit;font-size:12.5px;cursor:pointer;padding:2px 4px}
 #refList div.out #refName::after{content:' — outlier';color:var(--warn)}
 #refList{font-size:14px;margin:8px 0 0}
 #refList div{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--ln)}
@@ -98,7 +100,7 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .hint{color:var(--mut);font-size:13px;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v17</small></h1>
+<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v18</small></h1>
 <p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded.</p>
 <p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or get the stems as files from the <a href="stems.html" style="color:var(--ac)">Stem Splitter</a>.</p>
 
@@ -129,6 +131,7 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
  <div class="drop" style="padding:14px"><span id="refFl">Add reference tracks</span><input type="file" id="refFile" accept="audio/*" multiple aria-label="Add reference tracks"></div>
  <div id="refList"></div>
  <div id="refAgree"></div>
+ <div id="refSaved"></div>
  <label class="chk" id="refRow" style="margin:10px 0 0" hidden><input type="checkbox" id="useRef" checked><span>Match tone and width to the references<small>Replaces the built-in target curve. Uncheck to use the genre target instead.</small></span></label>
  <hr style="border:0;border-top:1px solid var(--ln);margin:16px 0">
  <span class="lbl">Genre preset</span>
@@ -501,7 +504,7 @@ $('file').onchange=async e=>{
 let refs=[],refAvg=null;
 const refNorm=v=>{let m=0;for(let i=2;i<=6;i++)m+=v[i]/5;return v.map(q=>q-m)};
 function refRecompute(){
- if(!refs.length){refAvg=null;$('refRow').hidden=true;$('refAgree').textContent='';paintSpec();return}
+ if(!refs.length){refAvg=null;$('refRow').hidden=true;$('refAgree').textContent='';$('refAgree').className='';refSavedLine();paintSpec();return}
  const n=refs.length,dB=new Array(8).fill(0);
  let side=0,lm=0,ltasSum=new Array(SPC.length).fill(0);
  for(const r of refs){
@@ -533,7 +536,7 @@ function refRecompute(){
    (refAvg.worst>=0?` <b>${refs[refAvg.worst].name}</b> is the one pulling away — try removing it.`:' Compare the faint lines on the spectrum view and drop whichever one differs.')+wide;
  }
  else{el.className='ok';el.textContent=`These ${n} references agree — the furthest is ${md.toFixed(1)} dB from their average, so the target is meaningful.`+wide;}
- refRenderFlags();
+ refRenderFlags();refSavedLine();
  paintSpec();
 }
 function refRenderFlags(){
@@ -542,7 +545,7 @@ function refRenderFlags(){
 }
 function refRender(){
  $('refList').innerHTML=refs.map((r,i)=>`<div><span id="refName">${r.name}</span><span>${r.lufs.toFixed(1)} LUFS</span><button data-i="${i}">Remove</button></div>`).join('');
- $('refList').querySelectorAll('button').forEach(b=>b.onclick=()=>{refs.splice(+b.dataset.i,1);refRender();refRecompute()});
+ $('refList').querySelectorAll('button').forEach(b=>b.onclick=()=>{refs.splice(+b.dataset.i,1);refRender();refRecompute();refSave()});
 }
 $('refFile').onchange=async e=>{
  const files=[...e.target.files];if(!files.length)return;
@@ -560,8 +563,37 @@ $('refFile').onchange=async e=>{
   }catch(err){say('Could not read '+f.name,1)}
  }
  $('refFl').textContent='Add reference tracks';
- refRender();refRecompute();
+ refRender();refRecompute();refSave();
 };
+/* Persistence. Only the measurements are stored — a few hundred bytes per
+   reference — never audio. localStorage is per-browser and per-device: it does
+   not sync between machines and is lost if site data is cleared. */
+const REFKEY='gpmaster.refs.v1';
+const r2=v=>Math.round(v*100)/100;
+function refSave(){
+ try{
+  localStorage.setItem(REFKEY,JSON.stringify({v:1,bands:8,spc:SPC.length,on:$('useRef').checked,
+   refs:refs.map(r=>({name:r.name,dB:r.dB.map(r2),side:r2(r.side),lm:r2(r.lm),ltas:r.ltas.map(r2),lufs:r2(r.lufs)}))}));
+  refSavedLine();
+ }catch(e){refSavedLine('Could not save to this browser — references will be lost on reload.')}
+}
+function refLoad(){
+ let d=null;
+ try{const raw=localStorage.getItem(REFKEY);if(!raw)return;d=JSON.parse(raw)}catch(e){return}
+ if(!d||d.v!==1||d.bands!==8||d.spc!==SPC.length||!Array.isArray(d.refs))return;
+ const num=v=>typeof v==='number'&&isFinite(v);
+ const ok=r=>r&&typeof r.name==='string'&&Array.isArray(r.dB)&&r.dB.length===8&&r.dB.every(num)
+   &&Array.isArray(r.ltas)&&r.ltas.length===SPC.length&&r.ltas.every(num)&&num(r.side)&&num(r.lm)&&num(r.lufs);
+ refs=d.refs.filter(ok).slice(0,5);
+ if(d.on===false)$('useRef').checked=false;
+ if(refs.length){refRender();refRecompute()}
+}
+function refSavedLine(msg){
+ const el=$('refSaved');
+ if(!refs.length){el.innerHTML='';return}
+ el.innerHTML=`<span>${msg||'Saved in this browser — measurements only, no audio. Not shared between devices.'}</span><button id="refClear">Clear all</button>`;
+ $('refClear').onclick=()=>{refs=[];try{localStorage.removeItem(REFKEY)}catch(e){}refRender();refRecompute()};
+}
 const refOn=()=>refAvg&&$('useRef').checked;
 
 /* ---- per-stem mastering ---- */
@@ -892,5 +924,7 @@ $('save').onclick=async()=>{
   await dl.save({filename:fn,data});say('Saved.');
  }catch(e){say(e&&e.code==='declined'?'Save cancelled.':'Couldn’t save the file ('+((e&&e.code)||'error')+').',1)}
 };
+$('useRef').onchange=refSave;
+try{refLoad()}catch(e){}
 window.addEventListener('error',e=>say('Error: '+e.message,1));
 </script></body></html>
