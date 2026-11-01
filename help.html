@@ -48,6 +48,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 <li><a href="#genre">Genre preset</a></li>
 <li><a href="#loud">Target loudness</a></li>
 <li><a href="#fmt">Output format</a></li>
+<li><a href="#regions">Volume automation</a></li>
 <li><a href="#stems">Stem balance</a></li>
 <li><a href="#mode">Processing mode</a></li>
 <li><a href="#amount">Processing amount</a></li>
@@ -184,7 +185,28 @@ td:first-child{white-space:nowrap;font-weight:600}
 <p>Peak levels are measured as true peak with 4× sinc oversampling, so the number reported accounts for inter-sample peaks that a simple sample-peak meter misses.</p>
 <a class="top" href="#">↑ top</a>
 
-<h2 id="stems">8. Stem balance</h2>
+<h2 id="regions">8. Volume automation</h2>
+<p>Mastering normally applies one setting to the whole song, but problems are usually local: one chorus that jumps forward, a verse sitting too low, an intro you want left alone. This is where you ride the fader instead.</p>
+<p>Drag across the waveform to select a part of the song. Each region gets one of three modes:</p>
+<table>
+<tr><th>Mode</th><th>What it does</th></tr>
+<tr><td>Level</td><td>Changes the level by up to &plusmn;12 dB <b>before</b> the mastering chain, so the compressors respond to the corrected balance instead of fighting it. This is what fader riding means.</td></tr>
+<tr><td>Tame dynamics</td><td>Adds compression inside the region only &mdash; Light, Medium or Strong, up to 6 dB of reduction measured against the region&rsquo;s own running level. Use it on a section that is dynamically wilder than the rest.</td></tr>
+<tr><td>No tone processing</td><td>Keeps the original tone there &mdash; no EQ, no compression, no saturation &mdash; but still applies the final loudness match and limiting, so the level matches the rest of the song and there is no jump at the boundary.</td></tr>
+</table>
+
+<h3>Things worth knowing</h3>
+<ul>
+<li><b>Edges are faded.</b> Each boundary gets a 20 ms raised-cosine ramp, so transitions do not click.</li>
+<li><b>Preview follows your selection.</b> With a region selected, Preview renders around that region plus a few seconds of context instead of the middle of the song, so you hear what you just set.</li>
+<li><b>Loudness is still held at your target</b>, which has a consequence worth understanding. Turning one section down makes the whole track quieter, so the loudness match raises everything to compensate. Measured on real material, a &minus;9 dB region ended up 7.3 dB down relative to its surroundings while the rest of the song came up about 1 dB. The relative balance is what you set; absolute levels shift to hold the target.</li>
+<li><b>Regions belong to the loaded file</b> and are cleared when you load another. They are not stored in setups, because they describe one specific song rather than a way of working.</li>
+<li><b>Click a region</b> on the waveform, or its time range in the list, to select it. Colour indicates the mode.</li>
+</ul>
+<div class="note"><p>Regions are also the natural way to point at part of a song for other purposes. Selecting a quiet passage is how a future noise-reduction stage would learn the noise profile.</p></div>
+<a class="top" href="#">&uarr; top</a>
+
+<h2 id="stems">9. Stem balance</h2>
 <p>This splits your song into vocals, drums, bass and other, lets you rebalance them, optionally masters each one separately, then sums them and masters the result.</p>
 
 <h3>Separating</h3>
@@ -223,7 +245,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 <div class="note"><p>Separated stems carry artifacts: bleed between stems, watery high frequencies, and smearing on cymbals and reverb tails. This is a rescue tool for a mix you cannot re-open. If you have the original session, exporting real stems from it will always be better.</p></div>
 <a class="top" href="#">↑ top</a>
 
-<h2 id="mode">9. Processing mode</h2>
+<h2 id="mode">10. Processing mode</h2>
 <table>
 <tr><th>Mode</th><th>What runs</th></tr>
 <tr><td>Full master</td><td>Everything in the chain above. Analyzes the song and adapts.</td></tr>
@@ -234,7 +256,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 <p>Clarity, stereo width, the vocal enhancer, the pumper and the processing amount all apply to Full master only.</p>
 <a class="top" href="#">↑ top</a>
 
-<h2 id="amount">10. Processing amount</h2>
+<h2 id="amount">11. Processing amount</h2>
 <p>This scales every automatic decision at once. On Gentle it also raises the dynamic EQ and de-esser thresholds by 3 dB so they react only to clear problems rather than working continuously.</p>
 <table>
 <tr><th>Amount</th><th>Tone EQ</th><th>Dynamic EQ / de-ess</th><th>Compression</th><th>Saturation</th></tr>
@@ -246,7 +268,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 <p>Gentle is the default because over-processing is harder to hear than under-processing, and much harder to undo. Start there.</p>
 <a class="top" href="#">↑ top</a>
 
-<h2 id="clarity">11. Clarity</h2>
+<h2 id="clarity">12. Clarity</h2>
 <p>This addresses one specific problem: wide low-mid content making a mix sound muddy. When reverb, wide guitars or pads spread energy between roughly 150 and 500 Hz across the stereo field, the result is congestion that a plain EQ cut cannot fix without thinning the whole track.</p>
 <p>Clarity high-passes the <i>side</i> signal only, pulling wide low-mid content toward the centre while leaving the centre's weight alone. At stronger settings it also applies a small cut at 140 Hz on the centre.</p>
 <table>
@@ -262,7 +284,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 <p>If a mix is muddy because several instruments occupy the same frequencies in the <i>centre</i>, Clarity will not help. That is a mix problem; fix it in the arrangement or with stem balance.</p>
 <a class="top" href="#">↑ top</a>
 
-<h2 id="width">12. Stereo width</h2>
+<h2 id="width">13. Stereo width</h2>
 <p>Scales the side signal of the mid and high bands. Bass below 150 Hz is summed to mono at every setting, which keeps the low end solid and is standard mastering practice.</p>
 <table>
 <tr><th>Setting</th><th>Side level</th><th>Mono risk</th></tr>
@@ -275,7 +297,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 <div class="note w"><p><b>This is the control most likely to ruin your master on a phone.</b> The side signal is L−R, and on a mono device it cancels completely. Anything you widen gets quieter or disappears in mono. Measured on a real track, the mono fold loss went from 0.31 dB at Narrow to 1.12 dB at Extra wide. Always check the Mono fold figure and the "Listen in mono" button after raising width.</p></div>
 <a class="top" href="#">↑ top</a>
 
-<h2 id="vocal">13. Vocal enhancer</h2>
+<h2 id="vocal">14. Vocal enhancer</h2>
 <p>Works on the centre channel only, so it does not brighten what sits in the stereo sides.</p>
 <table>
 <tr><th>Setting</th><th>Presence at 3 kHz</th><th>Air above 11 kHz</th><th>Leveling</th></tr>
@@ -288,7 +310,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 <p>On an instrumental this control just brightens the centre. It is not useful there.</p>
 <a class="top" href="#">↑ top</a>
 
-<h2 id="pump">14. Pumper</h2>
+<h2 id="pump">15. Pumper</h2>
 <p>Ducks the mid and high bands each time the kick hits, producing the rhythmic pumping common in dance and electronic music. Bass and kick are left at full level, so the low end stays solid.</p>
 <table>
 <tr><th>Setting</th><th>Maximum duck</th></tr>
@@ -300,7 +322,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 <p>This is a creative effect, not a corrective one. Light is audible; Heavy is a production choice. Measured on real material, Medium averaged 0.7 dB of ducking with a 4 dB peak — the average is low because it only acts on kick transients.</p>
 <a class="top" href="#">↑ top</a>
 
-<h2 id="results">15. Reading the results panel</h2>
+<h2 id="results">16. Reading the results panel</h2>
 <table>
 <tr><th>Row</th><th>Meaning</th></tr>
 <tr><td>Loudness before / after</td><td>Integrated LUFS of the source and the master. "After" should land within 0.1 of your target.</td></tr>
@@ -321,14 +343,14 @@ td:first-child{white-space:nowrap;font-weight:600}
 <p>The pattern worth learning: compare the average against the maximum. A processor with a 0.2 dB average and a 3 dB maximum is doing precise, occasional work. One with a 2 dB average is reshaping the whole song, which may not be what you want.</p>
 <a class="top" href="#">↑ top</a>
 
-<h2 id="ab">16. The A/B player and the mono check</h2>
+<h2 id="ab">17. The A/B player and the mono check</h2>
 <p>A and B switch instantly between the original and the master while playback continues, so you hear the difference rather than reconstructing it from memory.</p>
 <p><b>Match loudness</b> is on by default and should stay on. Louder reliably sounds better to human ears regardless of quality, so comparing a −10 LUFS master against a −16 LUFS original tells you nothing except which is louder. Turn it off only when you specifically want to hear the loudness gain.</p>
 <p><b>Listen in mono</b> sums both channels live. Use it while a section loops, and listen for elements that thin out, lose their reverb, or disappear — wide synths, double-tracked guitars and stereo reverb are the usual casualties.</p>
 <p>The Mono fold figure in the results quantifies the same thing. For reference, a genuinely mono source reads 0.00 dB and a fully out-of-phase one reads above 50 dB. Normal stereo music sits well under 1 dB.</p>
 <a class="top" href="#">↑ top</a>
 
-<h2 id="spec">17. The spectrum view</h2>
+<h2 id="spec">18. The spectrum view</h2>
 <p>Two modes:</p>
 <ul>
 <li><b>Spectrum</b> — the average spectrum of the original in grey and the master in colour, from about 30 Hz to 20 kHz. With references loaded, their averaged curve appears as a dashed line and each individual reference as a fainter line, so you can see both the target and any outlier.</li>
@@ -338,7 +360,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 <p>It shows the whole-song average, so it will not reveal how a single section changed. A chorus that distorts will not show up here.</p>
 <a class="top" href="#">↑ top</a>
 
-<h2 id="cant">18. What this tool cannot do</h2>
+<h2 id="cant">19. What this tool cannot do</h2>
 <ul>
 <li><b>Fix a mix.</b> If instruments fight for the same frequencies in the centre, no mastering chain resolves it. Clarity and stem balance reduce the symptom; the cure is in the mix.</li>
 <li><b>Restore lost quality.</b> Mastering a 128 kbps MP3 cannot recover the high frequencies the encoder discarded.</li>
@@ -348,7 +370,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 </ul>
 <a class="top" href="#">↑ top</a>
 
-<h2 id="trouble">19. Troubleshooting</h2>
+<h2 id="trouble">20. Troubleshooting</h2>
 <table>
 <tr><th>Problem</th><th>Cause and fix</th></tr>
 <tr><td>Nothing happens on tapping the upload box</td><td>Some in-app browsers block file pickers. Use the plain picker underneath, or open the site in Safari or Chrome.</td></tr>
