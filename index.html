@@ -126,6 +126,15 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .srow{display:grid;grid-template-columns:34px 62px 1fr 56px 34px;gap:8px;align-items:center;margin-top:8px;font-size:14px}
 .sbtn{width:34px;height:34px;border:1px solid var(--ln);border-radius:50%;background:var(--card);color:var(--ink);font:inherit;font-size:13px;cursor:pointer;padding:0;line-height:1}
 .sbtn[aria-pressed=true]{background:var(--ac);color:var(--acf);border-color:var(--ac)}
+.swr{grid-column:1/-1;display:flex;align-items:center;gap:8px}
+.sw{position:relative;flex:1;height:42px;cursor:pointer;border-radius:6px;background:var(--bg);overflow:hidden}
+.sw canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.sw .ph{position:absolute;top:0;bottom:0;width:2px;left:0;background:var(--warn);pointer-events:none}
+.sdl{flex:0 0 auto;border:1px solid var(--ln);border-radius:8px;background:var(--card);color:var(--ink);font:inherit;font-size:13px;font-weight:600;padding:8px 10px;cursor:pointer}
+.sdl:hover{border-color:var(--ac)}
+.ssel{display:flex;flex-wrap:wrap;gap:6px 16px;margin:0 0 10px;font-size:14px}
+.ssel label{display:flex;gap:6px;align-items:center;cursor:pointer}
+.ssel input{accent-color:var(--ac);width:16px;height:16px}
 .sp{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0 4px}
 .sp button{width:auto;padding:9px 14px;font-size:14px;flex:0 0 auto}
 #spTime{font-variant-numeric:tabular-nums;color:var(--mut);font-size:13px}
@@ -141,9 +150,9 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .hint{color:var(--mut);font-size:13px;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v32</small></h1>
+<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v33</small></h1>
 <p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded.</p>
-<p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or get the stems as files from the <a href="stems.html" style="color:var(--ac)">Stem Splitter</a>.</p>
+<p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or use it just to split the song and download each stem as a WAV.</p>
 
 <div id="helpTop"><a href="help.html">Full guide</a><button type="button" id="helpAll">Show all hints</button></div>
 
@@ -160,9 +169,10 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
  <p class="hint" id="regHint" style="margin:10px 0 0">No regions yet. Drag across the waveform above to add one.</p>
 </section>
 
-<section class="card">
+<section class="card" id="stems">
  <span class="lbl">Stem balance <span style="font-weight:400;color:var(--mut)">(optional)</span></span>
- <p class="hint" style="margin:0 0 10px">Splits the song into vocals, drums, bass and other, lets you rebalance them, then masters the rebalanced mix. Separating is slow and downloads 123 MB of models the first time, so start with the 30-second section.</p>
+ <p class="hint" style="margin:0 0 10px">Splits the song into vocals, drums, bass and other, shows each stem's waveform, lets you listen to them, download them as WAV files, and rebalance them before mastering. Separating is slow and downloads 123 MB of models the first time, so start with the 30-second section.</p>
+ <div class="ssel" id="ssel"><span style="color:var(--mut)">Separate:</span><label><input type="checkbox" id="ss-vocals" checked>Vocals</label><label><input type="checkbox" id="ss-drums" checked>Drums</label><label><input type="checkbox" id="ss-bass" checked>Bass</label><span style="color:var(--mut);font-size:13px">Anything you skip stays in Other, and fewer stems finish sooner.</span></div>
  <div class="two" style="margin-bottom:8px">
   <button class="go alt" id="sepPv" disabled>Separate 30 s section</button>
   <button class="go alt" id="sepAll" disabled>Separate whole song</button>
@@ -1247,8 +1257,10 @@ function spLabels(){
  STEMS.forEach(s=>{const b=$('sp-'+s);if(!b)return;const on=sp.mode===s;b.textContent=on?'■':'▶';b.setAttribute('aria-pressed',on)});
  const m=$('spMix');if(m){const on=sp.mode==='mix';m.textContent=on?'■ Stop':'▶ Play all stems';m.setAttribute('aria-pressed',on)}
  const t=$('spTime');if(t)t.textContent=tc(spPos())+' / '+tc(spDur());
+ swHead(spPos());
 }
 function spTick(){if(!sp.mode)return;const t=$('spSeek');if(t)t.value=spPos();spLabels();sp.raf=requestAnimationFrame(spTick)}
+function spSeekTo(v){const m=sp.mode;if(m)spStop();sp.off=Math.max(0,Math.min(spDur(),v));$('spSeek').value=sp.off;spLabels();if(m)spPlay(m)}
 function spStop(){
  if(sp.mode){sp.off=spPos();sp.srcs.forEach(x=>{x.onended=null;try{x.stop()}catch(_){}})}
  sp.mode=null;sp.srcs=[];sp.gn={};cancelAnimationFrame(sp.raf);spLabels();
@@ -1259,13 +1271,13 @@ function spGainFor(s,mode){
  const a=stemData[s][0],n=a.length;let q=0,c=0;for(let i=0;i<n;i+=4){q+=a[i]*a[i];c++}
  return Math.min(7.94,Math.pow(10,(-20-10*Math.log10(q/Math.max(1,c)+1e-18))/20));   // lift to about -20 dB RMS, capped at +18 dB
 }
-function spGains(){if(sp.mode!=='mix'||!pc)return;for(const s of STEMS)if(sp.gn[s])sp.gn[s].gain.setTargetAtTime(spGainFor(s,'mix'),pc.currentTime,.02)}
+function spGains(){if(sp.mode!=='mix'||!pc)return;for(const s of HAVE())if(sp.gn[s])sp.gn[s].gain.setTargetAtTime(spGainFor(s,'mix'),pc.currentTime,.02)}
 async function spPlay(mode){
  if(!stemData||!src)return;
  if(sp.mode){const same=sp.mode===mode;spStop();if(same)return}
  stopP();wpStop();
  pc=pc||new AudioContext();await pc.resume();
- const fs=src.sampleRate,L=stemData[STEMS[0]][0].length,names=mode==='mix'?STEMS:[mode];
+ const fs=src.sampleRate,L=stemLen,names=mode==='mix'?HAVE():[mode];
  sp.srcs=[];sp.gn={};
  for(const s of names){
   if(!stemData[s])continue;
@@ -1282,16 +1294,67 @@ async function spPlay(mode){
  spTick();
 }
 $('spMix').onclick=()=>spPlay('mix');
-$('spSeek').oninput=e=>{const m=sp.mode,v=+e.target.value;if(m)spStop();sp.off=v;spLabels();if(m)spPlay(m)};
+$('spSeek').oninput=e=>spSeekTo(+e.target.value);
+/* ---- per-stem waveform and download ---- */
+let stemScope='all';const swPk={};
+function swPeaks(s){
+ if(swPk[s]&&swPk[s].key===stemData[s])return swPk[s];
+ const B=900,n=stemData[s][0].length,a=stemData[s][0],b=stemData[s][1],mx=new Float32Array(B);let pk=0;
+ for(let k=0;k<B;k++){const lo=Math.floor(k*n/B),hi=Math.max(lo+1,Math.floor((k+1)*n/B)),st=Math.max(1,(hi-lo)>>6);let m=0;for(let i=lo;i<hi;i+=st){const v=Math.max(Math.abs(a[i]),Math.abs(b[i]));if(v>m)m=v}mx[k]=m;if(m>pk)pk=m}
+ return swPk[s]={key:stemData[s],mx,pk};
+}
+function swDraw(s){
+ const c=$('swc-'+s);if(!c||!stemData||!stemData[s])return;
+ const W=c.clientWidth||300,H=c.clientHeight||42,dpr=window.devicePixelRatio||1;
+ if(c.width!==Math.round(W*dpr)||c.height!==Math.round(H*dpr)){c.width=Math.round(W*dpr);c.height=Math.round(H*dpr)}
+ const g=c.getContext('2d'),cs=getComputedStyle(document.documentElement),P=swPeaks(s);
+ g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
+ g.fillStyle=cs.getPropertyValue('--ac').trim()||'#00796b';g.globalAlpha=smute[s]?.25:.9;
+ const B=P.mx.length;
+ for(let x=0;x<W;x++){const k=Math.min(B-1,Math.floor(x*B/W)),h=Math.max(1,(P.mx[k]/(P.pk||1))*(H/2-2));g.fillRect(x,H/2-h,1,h*2)}
+ g.globalAlpha=1;g.font='11px system-ui,sans-serif';
+ const lab='peak '+(20*Math.log10(P.pk+1e-9)).toFixed(1)+' dB',tw=g.measureText(lab).width;
+ g.fillStyle=cs.getPropertyValue('--card').trim()||'#f7f9fa';g.globalAlpha=.88;g.fillRect(2,2,tw+8,15);
+ g.globalAlpha=1;g.fillStyle=cs.getPropertyValue('--ink').trim()||'#11161b';g.fillText(lab,6,13);
+}
+function swAll(){HAVE().forEach(swDraw)}
+function swHead(pos){const d=spDur()||1;HAVE().forEach(s=>{const e=$('ph-'+s);if(e)e.style.left=(Math.min(1,pos/d)*100)+'%'})}
+let _swR=0;window.addEventListener('resize',()=>{clearTimeout(_swR);_swR=setTimeout(()=>{if(stemData&&!$('mix').hidden)swAll()},150)});
+async function saveBlob(blob,fn){
+ if(!hosted()){
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fn;
+  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},0);
+  return true;
+ }
+ const dl=await window.claude.use('downloads');
+ if(!dl)throw new Error('Saving is not available in this view.');
+ await dl.save({filename:fn.replace(/\.wav$/,'_wav.zip'),data:zip(fn,new Uint8Array(await blob.arrayBuffer()))});
+ return true;
+}
+async function stemSave(s){
+ if(!stemData||!stemData[s])return;
+ const btn=$('dl-'+s),old=btn.textContent;btn.disabled=true;btn.textContent='…';
+ try{
+  await new Promise(r=>setTimeout(r,20));
+  const fn=name+'_'+s+(stemScope==='preview'?'_section':'')+'.wav';
+  await saveBlob(wav24(stemData[s][0],stemData[s][1],src.sampleRate),fn);
+  ssay('Saved '+fn+'.');
+ }catch(e){ssay(e&&e.code==='declined'?'Save cancelled.':'Couldn\u2019t save the stem: '+(e.message||e.code||'error'),1)}
+ btn.disabled=false;btn.textContent=old;
+}
+const HAVE=()=>stemData?STEMS.filter(s=>stemData[s]):STEMS;
 function mixRows(){
- $('mixRows').innerHTML=STEMS.map(s=>`<div class="srow"><button type="button" class="sbtn" id="sp-${s}" aria-pressed="false" aria-label="Play ${s} alone" title="Play ${s} alone">▶</button><b>${s}</b><input type="range" id="sg-${s}" min="-24" max="12" step="0.5" value="${sgain[s]}" aria-label="${s} level"><span id="sv-${s}">${sgain[s]>0?'+':''}${sgain[s]} dB</span><input type="checkbox" id="sm-${s}" ${smute[s]?'':'checked'} aria-label="${s} on"></div>`).join('');
- STEMS.forEach(s=>{
+ const have=HAVE();
+ $('mixRows').innerHTML=have.map(s=>`<div class="srow"><button type="button" class="sbtn" id="sp-${s}" aria-pressed="false" aria-label="Play ${s} alone" title="Play ${s} alone">▶</button><b>${s}</b><input type="range" id="sg-${s}" min="-24" max="12" step="0.5" value="${sgain[s]}" aria-label="${s} level"><span id="sv-${s}">${sgain[s]>0?'+':''}${sgain[s]} dB</span><input type="checkbox" id="sm-${s}" ${smute[s]?'':'checked'} aria-label="${s} on"><div class="swr"><div class="sw" id="sw-${s}" title="Click to jump here"><canvas id="swc-${s}"></canvas><i class="ph" id="ph-${s}"></i></div><button type="button" class="sdl" id="dl-${s}" aria-label="Download ${s} as WAV">⬇ WAV</button></div></div>`).join('');
+ have.forEach(s=>{
   $('sg-'+s).oninput=e=>{sgain[s]=+e.target.value;$('sv-'+s).textContent=(sgain[s]>0?'+':'')+sgain[s]+' dB';spGains()};
-  $('sm-'+s).onchange=e=>{smute[s]=!e.target.checked;spGains()};
+  $('sm-'+s).onchange=e=>{smute[s]=!e.target.checked;spGains();swDraw(s)};
   $('sp-'+s).onclick=()=>spPlay(s);
+  $('sw-'+s).onclick=e=>{const r=e.currentTarget.getBoundingClientRect();spSeekTo(Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*spDur())};
+  $('dl-'+s).onclick=()=>stemSave(s);
  });
  $('mix').hidden=false;
- spReset();
+ spReset();swAll();
  if(stemData)analyzeStems();
 }
 /* typical stem-to-mix loudness ranges, in dB relative to the full mix.
@@ -1355,14 +1418,16 @@ function sourceFor(start,len){
 function runSeparation(scope){
  if(!src)return;
  const r=scope==='preview'?exRange():{start:0,len:src.length};
+ const chosen=['vocals','drums','bass'].filter(s=>$('ss-'+s).checked);
+ if(!chosen.length){ssay('Pick at least one stem to separate.',1);return}
  spReset();busy(true);$('sepPv').disabled=true;$('sepAll').disabled=true;$('mix').hidden=true;$('sbar').style.width='0';
  const ch=chans(src),mix=[new Float32Array(ch[0].subarray(r.start,r.start+r.len)),new Float32Array(ch[1].subarray(r.start,r.start+r.len))];
  const t0=performance.now(),free=()=>{$('sepPv').disabled=false;$('sepAll').disabled=false;busy(false)};
  const eta=SepEta(t=>ssay(t));eta.start();
- stemWorker=separateParallel({mix,stems:STEMS,baseUrl:location.href.replace(/[^/]*$/,''),sampleRate:src.sampleRate,eta,
+ stemWorker=separateParallel({mix,stems:[...chosen,'other'],baseUrl:location.href.replace(/[^/]*$/,''),sampleRate:src.sampleRate,eta,
   onStatus:t=>eta.note(t),onProgress:()=>{$('sbar').style.width=(eta.frac()*100).toFixed(1)+'%'}});
  stemWorker.then(d=>{
-  eta.stop();stemData=d.result;stemStart=r.start;stemLen=r.len;
+  eta.stop();stemData=d.result;stemStart=r.start;stemLen=r.len;stemScope=scope;
   $('sbar').style.width='100%';
   ssay(`Separated ${scope==='preview'?'the 30-second section':'the whole song'} in ${((performance.now()-t0)/60000).toFixed(1)} min using ${d.workers} worker${d.workers>1?'s':''}.`);
   mixRows();free();
@@ -1434,7 +1499,7 @@ $('go').onclick=async()=>{
   say('Encoding '+fmt.toUpperCase()+'…');await tick();
   const blob=fmt==='wav'?wav24(r.o[0],r.o[1],r.fs):fmt==='mp3'?await mp3(r.o,r.fs):await m4a(r.o,r.fs);
   res={fmt,blob};setPlayer(sb,li,r.o,r.L);
-  show(li,T,r.L,r.pk,fmt,blob.size,r.mono,r.notes.concat(dblAmt>0&&!useS?[['Vocal doubler','skipped: needs the vocal stem (split the song first)']]:[]).concat(useS?[['Stem balance',STEMS.filter(s=>!smute[s]).map(s=>s+' '+(sgain[s]>0?'+':'')+sgain[s]).join(', ')+(STEMS.some(s=>smute[s])?'; muted: '+STEMS.filter(s=>smute[s]).join(', '):'')+' dB']].concat(stemNotes.map(t=>['Stem chain',t])):[]));say('');
+  show(li,T,r.L,r.pk,fmt,blob.size,r.mono,r.notes.concat(dblAmt>0&&!useS?[['Vocal doubler','skipped: needs the vocal stem (split the song first)']]:[]).concat(useS?[['Stem balance',HAVE().filter(s=>!smute[s]).map(s=>s+' '+(sgain[s]>0?'+':'')+sgain[s]).join(', ')+(STEMS.some(s=>smute[s])?'; muted: '+STEMS.filter(s=>smute[s]).join(', '):'')+' dB']].concat(stemNotes.map(t=>['Stem chain',t])):[]));say('');
  }catch(e){say(e.message||'Something went wrong while processing.',1)}
  busy(false);
 };
@@ -1445,7 +1510,7 @@ $('pv').onclick=async()=>{
   const{buf:ex,stems:useS}=sourceFor(start,len);
   const li=lufs(kseg(chans(ex),fs)),r=await pipeline(ex,T,fmt,pm,start);
   res=null;setPlayer(ex,li,r.o,r.L);
-  show(li,T,r.L,r.pk,fmt,0,r.mono,r.notes.concat(dblAmt>0&&!useS?[['Vocal doubler','skipped: needs the vocal stem (split the song first)']]:[]).concat(useS?[['Stem balance',STEMS.filter(s=>!smute[s]).map(s=>s+' '+(sgain[s]>0?'+':'')+sgain[s]).join(', ')+' dB']].concat(stemNotes.map(t=>['Stem chain',t])):[]),true);say('');
+  show(li,T,r.L,r.pk,fmt,0,r.mono,r.notes.concat(dblAmt>0&&!useS?[['Vocal doubler','skipped: needs the vocal stem (split the song first)']]:[]).concat(useS?[['Stem balance',HAVE().filter(s=>!smute[s]).map(s=>s+' '+(sgain[s]>0?'+':'')+sgain[s]).join(', ')+' dB']].concat(stemNotes.map(t=>['Stem chain',t])):[]),true);say('');
  }catch(e){say(e.message||'Something went wrong while processing.',1)}
  busy(false);
 };

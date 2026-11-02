@@ -102,7 +102,7 @@ for the lossy formats, leaving headroom for encoder overshoot.
 
 ## Roadmap
 
-- [x] Stem separation in the browser — `stems.html` (see `docs/stem-separation.md`)
+- [x] Stem separation in the browser, built into the Stem balance section: waveform, playback and WAV download per stem (see `docs/stem-separation.md`). `stems.html` is now a redirect.
 - [x] Stem balance and per-stem mastering inside the main app
 - [x] Reference-track matching — measured targets instead of the heuristic curve
 - [x] Region-based volume automation
