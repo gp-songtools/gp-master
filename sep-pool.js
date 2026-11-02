@@ -26,17 +26,22 @@ function separateParallel(o) {
     const url = o.baseUrl + 'models/' + G[stem].file;
     const r = await fetch(url);
     if (!r.ok) throw new Error('Could not download the ' + stem + ' model (' + r.status + ')');
-    const total = +r.headers.get('content-length') || 0;
-    if (!r.body || !total) return await r.arrayBuffer();
-    const rd = r.body.getReader(), buf = new Uint8Array(total);
+    if (!r.body) return await r.arrayBuffer();
+    // Collect chunks and join at the end. Content-Length cannot size a buffer: when the host
+    // compresses the file it is the compressed size, while the stream yields decompressed
+    // bytes, so a preallocated buffer would overflow. It is only used for the progress figure.
+    const total = +r.headers.get('content-length') || 0, rd = r.body.getReader(), parts = [];
     let got = 0, last = 0;
     for (;;) {
       const { done, value } = await rd.read();
       if (done) break;
-      buf.set(value, got); got += value.length;
+      parts.push(value); got += value.length;
       const t = performance.now();
-      if (t - last > 400) { last = t; say('Downloading the ' + stem + ' model… ' + Math.round(got / total * 100) + '%'); }
+      if (total && t - last > 400) { last = t; say('Downloading the ' + stem + ' model… ' + Math.min(99, Math.round(got / total * 100)) + '%'); }
     }
+    const buf = new Uint8Array(got);
+    let at = 0;
+    for (const v of parts) { buf.set(v, at); at += v.length; }
     return buf.buffer;
   }
 
