@@ -150,7 +150,7 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .hint{color:var(--mut);font-size:13px;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v35</small></h1>
+<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v36</small></h1>
 <p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded.</p>
 <p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or use it just to split the song and download each stem as a WAV.</p>
 
@@ -173,6 +173,7 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
  <span class="lbl">Stem balance <span style="font-weight:400;color:var(--mut)">(optional)</span></span>
  <p class="hint" style="margin:0 0 10px">Splits the song into vocals, drums, bass and other, shows each stem's waveform, lets you listen to them, download them as WAV files, and rebalance them before mastering. Separating is slow and downloads 123 MB of models the first time, so start with the 30-second section.</p>
  <div class="ssel" id="ssel"><span style="color:var(--mut)">Separate:</span><label><input type="checkbox" id="ss-vocals" checked>Vocals</label><label><input type="checkbox" id="ss-drums" checked>Drums</label><label><input type="checkbox" id="ss-bass" checked>Bass</label><span style="color:var(--mut);font-size:13px">Anything you skip stays in Other, and fewer stems finish sooner.</span></div>
+ <div class="ssel" id="wsel"><label for="wk" style="color:var(--mut)">Workers:</label><select id="wk" aria-label="Number of parallel workers" style="font:inherit;padding:4px 6px;border:1px solid var(--ln);border-radius:6px;background:var(--card);color:var(--ink)"></select><span id="wkHint" style="color:var(--mut);font-size:13px"></span></div>
  <div class="two" style="margin-bottom:8px">
   <button class="go alt" id="sepPv" disabled>Separate 30 s section</button>
   <button class="go alt" id="sepAll" disabled>Separate whole song</button>
@@ -1415,6 +1416,22 @@ function sourceFor(start,len){
  b.copyToChannel(ch[0].subarray(start,start+len),0);b.copyToChannel(ch[1].subarray(start,start+len),1);
  return{buf:b,stems:false};
 }
+/* worker count: Auto, or a fixed number; remembered on this device only */
+const WK_KEY='gpmaster.workers.v1',CORES=navigator.hardwareConcurrency||2;
+function wkChoice(){const v=$('wk').value;return v==='auto'?sepWorkerCount():Math.max(1,Math.min(8,CORES,+v||1))}
+function wkInit(){
+ const sel=$('wk');let saved='auto';try{saved=localStorage.getItem(WK_KEY)||'auto'}catch(_){}
+ const opts=[...new Set([1,2,3,4,6,8].filter(n=>n<=CORES))];
+ sel.innerHTML='<option value="auto">Auto ('+sepWorkerCount()+')</option>'+opts.map(n=>`<option value="${n}">${n}</option>`).join('');
+ sel.value=[...sel.options].some(o=>o.value===saved)?saved:'auto';
+ const upd=()=>{
+  const n=wkChoice();
+  $('wkHint').textContent=CORES+' cores reported · '+n+' worker'+(n>1?'s':'')+' use about '+(n*1.1).toFixed(1)+' GB of memory';
+  try{localStorage.setItem(WK_KEY,sel.value)}catch(_){}
+ };
+ sel.onchange=upd;upd();
+}
+wkInit();
 function runSeparation(scope){
  if(!src)return;
  const r=scope==='preview'?exRange():{start:0,len:src.length};
@@ -1424,7 +1441,7 @@ function runSeparation(scope){
  const ch=chans(src),mix=[new Float32Array(ch[0].subarray(r.start,r.start+r.len)),new Float32Array(ch[1].subarray(r.start,r.start+r.len))];
  const t0=performance.now(),free=()=>{$('sepPv').disabled=false;$('sepAll').disabled=false;busy(false)};
  const eta=SepEta(t=>ssay(t));eta.start();
- stemWorker=separateParallel({mix,stems:[...chosen,'other'],baseUrl:location.href.replace(/[^/]*$/,''),sampleRate:src.sampleRate,eta,
+ stemWorker=separateParallel({mix,stems:[...chosen,'other'],baseUrl:location.href.replace(/[^/]*$/,''),sampleRate:src.sampleRate,eta,workers:wkChoice(),
   onStatus:t=>eta.note(t),onProgress:()=>{$('sbar').style.width=(eta.frac()*100).toFixed(1)+'%'}});
  stemWorker.then(d=>{
   eta.stop();stemData=d.result;stemStart=r.start;stemLen=r.len;stemScope=scope;
