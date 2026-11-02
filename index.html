@@ -123,7 +123,13 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 #refList button{border:0;background:transparent;color:var(--warn);font:inherit;font-size:13px;cursor:pointer;padding:2px 4px}
 #refName{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sdist{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin:2px 0 10px;font-size:14px}.sdist label{display:flex;justify-content:space-between;align-items:center;gap:8px}.sdist select{font:inherit;padding:4px 6px;border:1px solid var(--ln);border-radius:6px;background:var(--card);color:var(--ink)}
-.srow{display:grid;grid-template-columns:62px 1fr 56px 34px;gap:8px;align-items:center;margin-top:8px;font-size:14px}
+.srow{display:grid;grid-template-columns:34px 62px 1fr 56px 34px;gap:8px;align-items:center;margin-top:8px;font-size:14px}
+.sbtn{width:34px;height:34px;border:1px solid var(--ln);border-radius:50%;background:var(--card);color:var(--ink);font:inherit;font-size:13px;cursor:pointer;padding:0;line-height:1}
+.sbtn[aria-pressed=true]{background:var(--ac);color:var(--acf);border-color:var(--ac)}
+.sp{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0 4px}
+.sp button{width:auto;padding:9px 14px;font-size:14px;flex:0 0 auto}
+#spTime{font-variant-numeric:tabular-nums;color:var(--mut);font-size:13px}
+#spSeek{width:100%;margin:0 0 4px}
 .srow b{font-weight:600;text-transform:capitalize}
 .srow input[type=range]{margin:0;width:100%}
 .srow span{text-align:right;color:var(--mut)}
@@ -135,7 +141,7 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .hint{color:var(--mut);font-size:13px;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v31</small></h1>
+<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v32</small></h1>
 <p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded.</p>
 <p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or get the stems as files from the <a href="stems.html" style="color:var(--ac)">Stem Splitter</a>.</p>
 
@@ -165,6 +171,9 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
  <div id="sst" role="status"></div>
  <div id="mix" hidden>
   <div id="mixRows"></div>
+  <div class="sp"><button type="button" class="go alt" id="spMix" aria-pressed="false">▶ Play all stems</button><span id="spTime">0:00 / 0:00</span></div>
+  <input type="range" id="spSeek" min="0" max="1" step="0.1" value="0" aria-label="Stem player position">
+  <p class="hint" style="margin:0 0 6px">The round ▶ buttons play one stem alone, leveled up so quiet stems are audible. <b>Play all stems</b> mixes them at the levels you set and follows the sliders and switches as you listen. Only the separated section plays; switching buttons keeps your place.</p>
   <div id="sugg"></div>
   <label class="chk" style="margin:10px 0 0"><input type="checkbox" id="useStems" checked><span>Master the rebalanced mix<small>Uncheck to master the original audio instead.</small></span></label>
   <label class="chk" style="margin:0"><input type="checkbox" id="perStem" checked><span>Master each stem separately, then recombine<small>Each stem gets its own EQ and compression before they are summed. The limiter always runs last on the combined mix, so the stems stay in balance.</small></span></label>
@@ -618,7 +627,7 @@ const wpPos=()=>wpOn?Math.min(src?src.duration:0,pc.currentTime-wpT0):wpOff;
 function wpTimeStr(){const d=src?src.duration:0;return tc(wpPos())+' / '+tc(d)}
 async function wpPlay(){
  if(!src||wpOn)return;
- stopP();
+ stopP();spStop();
  pc=pc||new AudioContext();await pc.resume();
  wpSrc=pc.createBufferSource();wpSrc.buffer=src;wpSrc.connect(pc.destination);
  wpT0=pc.currentTime-wpOff;wpOn=true;$('wpBtn').textContent='Pause';
@@ -1229,14 +1238,60 @@ const exRange=()=>{
  }
  return{start:Math.min(Math.round(src.length*.35),src.length-cap),len:cap};
 };
-function clearStems(){stemData=null;$('mix').hidden=true;$('sbar').style.width='0';ssay('');STEMS.forEach(s=>{sgain[s]=0;smute[s]=false})}
+function clearStems(){spReset();stemData=null;$('mix').hidden=true;$('sbar').style.width='0';ssay('');STEMS.forEach(s=>{sgain[s]=0;smute[s]=false})}
+/* ---- stem player: audition separated stems alone or as the rebalanced mix ---- */
+const sp={mode:null,off:0,t0:0,raf:0,srcs:[],gn:{}};
+const spDur=()=>src&&stemLen?stemLen/src.sampleRate:0;
+const spPos=()=>sp.mode?Math.min(spDur(),pc.currentTime-sp.t0):sp.off;
+function spLabels(){
+ STEMS.forEach(s=>{const b=$('sp-'+s);if(!b)return;const on=sp.mode===s;b.textContent=on?'■':'▶';b.setAttribute('aria-pressed',on)});
+ const m=$('spMix');if(m){const on=sp.mode==='mix';m.textContent=on?'■ Stop':'▶ Play all stems';m.setAttribute('aria-pressed',on)}
+ const t=$('spTime');if(t)t.textContent=tc(spPos())+' / '+tc(spDur());
+}
+function spTick(){if(!sp.mode)return;const t=$('spSeek');if(t)t.value=spPos();spLabels();sp.raf=requestAnimationFrame(spTick)}
+function spStop(){
+ if(sp.mode){sp.off=spPos();sp.srcs.forEach(x=>{x.onended=null;try{x.stop()}catch(_){}})}
+ sp.mode=null;sp.srcs=[];sp.gn={};cancelAnimationFrame(sp.raf);spLabels();
+}
+function spReset(){spStop();sp.off=0;const t=$('spSeek');if(t){t.max=spDur()||1;t.value=0}spLabels()}
+function spGainFor(s,mode){
+ if(mode==='mix')return smute[s]?0:Math.pow(10,sgain[s]/20);
+ const a=stemData[s][0],n=a.length;let q=0,c=0;for(let i=0;i<n;i+=4){q+=a[i]*a[i];c++}
+ return Math.min(7.94,Math.pow(10,(-20-10*Math.log10(q/Math.max(1,c)+1e-18))/20));   // lift to about -20 dB RMS, capped at +18 dB
+}
+function spGains(){if(sp.mode!=='mix'||!pc)return;for(const s of STEMS)if(sp.gn[s])sp.gn[s].gain.setTargetAtTime(spGainFor(s,'mix'),pc.currentTime,.02)}
+async function spPlay(mode){
+ if(!stemData||!src)return;
+ if(sp.mode){const same=sp.mode===mode;spStop();if(same)return}
+ stopP();wpStop();
+ pc=pc||new AudioContext();await pc.resume();
+ const fs=src.sampleRate,L=stemData[STEMS[0]][0].length,names=mode==='mix'?STEMS:[mode];
+ sp.srcs=[];sp.gn={};
+ for(const s of names){
+  if(!stemData[s])continue;
+  const b=new AudioBuffer({length:L,numberOfChannels:2,sampleRate:fs});
+  b.copyToChannel(stemData[s][0],0);b.copyToChannel(stemData[s][1],1);
+  const x=pc.createBufferSource(),g=pc.createGain();
+  x.buffer=b;g.gain.value=spGainFor(s,mode);x.connect(g);g.connect(pc.destination);
+  sp.srcs.push(x);sp.gn[s]=g;
+ }
+ const off=Math.max(0,Math.min(spDur()-.05,sp.off));
+ sp.t0=pc.currentTime-off;sp.mode=mode;
+ sp.srcs.forEach(x=>x.start(0,off));
+ sp.srcs[0].onended=()=>{if(sp.mode){spStop();sp.off=0;$('spSeek').value=0;spLabels()}};
+ spTick();
+}
+$('spMix').onclick=()=>spPlay('mix');
+$('spSeek').oninput=e=>{const m=sp.mode,v=+e.target.value;if(m)spStop();sp.off=v;spLabels();if(m)spPlay(m)};
 function mixRows(){
- $('mixRows').innerHTML=STEMS.map(s=>`<div class="srow"><b>${s}</b><input type="range" id="sg-${s}" min="-24" max="12" step="0.5" value="${sgain[s]}" aria-label="${s} level"><span id="sv-${s}">${sgain[s]>0?'+':''}${sgain[s]} dB</span><input type="checkbox" id="sm-${s}" ${smute[s]?'':'checked'} aria-label="${s} on"></div>`).join('');
+ $('mixRows').innerHTML=STEMS.map(s=>`<div class="srow"><button type="button" class="sbtn" id="sp-${s}" aria-pressed="false" aria-label="Play ${s} alone" title="Play ${s} alone">▶</button><b>${s}</b><input type="range" id="sg-${s}" min="-24" max="12" step="0.5" value="${sgain[s]}" aria-label="${s} level"><span id="sv-${s}">${sgain[s]>0?'+':''}${sgain[s]} dB</span><input type="checkbox" id="sm-${s}" ${smute[s]?'':'checked'} aria-label="${s} on"></div>`).join('');
  STEMS.forEach(s=>{
-  $('sg-'+s).oninput=e=>{sgain[s]=+e.target.value;$('sv-'+s).textContent=(sgain[s]>0?'+':'')+sgain[s]+' dB'};
-  $('sm-'+s).onchange=e=>{smute[s]=!e.target.checked};
+  $('sg-'+s).oninput=e=>{sgain[s]=+e.target.value;$('sv-'+s).textContent=(sgain[s]>0?'+':'')+sgain[s]+' dB';spGains()};
+  $('sm-'+s).onchange=e=>{smute[s]=!e.target.checked;spGains()};
+  $('sp-'+s).onclick=()=>spPlay(s);
  });
  $('mix').hidden=false;
+ spReset();
  if(stemData)analyzeStems();
 }
 /* typical stem-to-mix loudness ranges, in dB relative to the full mix.
@@ -1300,7 +1355,7 @@ function sourceFor(start,len){
 function runSeparation(scope){
  if(!src)return;
  const r=scope==='preview'?exRange():{start:0,len:src.length};
- busy(true);$('sepPv').disabled=true;$('sepAll').disabled=true;$('mix').hidden=true;$('sbar').style.width='0';
+ spReset();busy(true);$('sepPv').disabled=true;$('sepAll').disabled=true;$('mix').hidden=true;$('sbar').style.width='0';
  const ch=chans(src),mix=[new Float32Array(ch[0].subarray(r.start,r.start+r.len)),new Float32Array(ch[1].subarray(r.start,r.start+r.len))];
  const t0=performance.now(),free=()=>{$('sepPv').disabled=false;$('sepAll').disabled=false;busy(false)};
  const eta=SepEta(t=>ssay(t));eta.start();
@@ -1494,7 +1549,7 @@ function applyMono(){
  pl.stereoG.gain.setTargetAtTime(1-m,pc.currentTime,.01);
 }
 async function playP(){
- if(pl.play||!pl.m)return;wpStop();await pc.resume();
+ if(pl.play||!pl.m)return;wpStop();spStop();await pc.resume();
  buildBus();
  pl.s=[pl.o,pl.m].map(b=>{const s=pc.createBufferSource();s.buffer=b;return s});
  pl.gn=pl.s.map(s=>{const g=pc.createGain();g.gain.value=0;s.connect(g);g.connect(pl.bus);return g});
