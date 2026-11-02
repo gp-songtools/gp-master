@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Loudness Master — Changelog</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e9edf0;--card:#f7f9fa;--ink:#11161b;--mut:#56626d;--ln:#c4ccd3;--ac:#00796b;--acf:#fff;--warn:#b3261e;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1317;--card:#161d23;--ink:#e8edf1;--mut:#92a0ab;--ln:#2a343c;--ac:#3ccfbf;--acf:#06201d;--warn:#ff8a80}}
+:root[data-theme="dark"]{--bg:#0e1317;--card:#161d23;--ink:#e8edf1;--mut:#92a0ab;--ln:#2a343c;--ac:#3ccfbf;--acf:#06201d;--warn:#ff8a80}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:680px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:30px;line-height:1.1;margin:8px 0 6px;letter-spacing:-.02em}
+h2{font-size:21px;margin:34px 0 10px;letter-spacing:-.01em;padding-top:12px;border-top:1px solid var(--ln)}
+h3{font-size:16.5px;margin:22px 0 6px}
+h4{font-size:15px;margin:16px 0 4px;color:var(--mut)}
+p,li{margin:0 0 10px}
+ul,ol{padding-left:22px;margin:0 0 12px}
+a{color:var(--ac)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13.5px;background:var(--card);border:1px solid var(--ln);border-radius:4px;padding:1px 4px}
+.sub{color:var(--mut);margin:0 0 20px;font-size:15px}
+.toc{background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.toc ol{margin:0;padding-left:20px;font-size:15px}
+.toc li{margin:0 0 3px}
+table{width:100%;border-collapse:collapse;margin:0 0 14px;font-size:14.5px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--ln);vertical-align:top}
+th{font-weight:600;color:var(--mut);font-size:13px}
+td:first-child{white-space:nowrap;font-weight:600}
+.note{background:var(--card);border:1px solid var(--ln);border-left:3px solid var(--ac);border-radius:8px;padding:12px 14px;margin:0 0 14px;font-size:15px}
+.note.w{border-left-color:var(--warn)}
+.note p:last-child{margin:0}
+.top{display:inline-block;margin-top:6px;font-size:13.5px;color:var(--mut);text-decoration:none}
+.chain{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:12px 14px;margin:0 0 14px;font-size:14.5px;line-height:1.7}
+.chain b{display:inline-block;min-width:22px;color:var(--ac)}
+</style>
+<style>
+.ver{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.ver .v{font-weight:700;font-size:20px}
+.ver time{color:var(--mut);font-size:14px}
+.ver .cur{font-size:12px;font-weight:700;background:var(--ac);color:var(--acf);border-radius:999px;padding:2px 9px}
+.cl h2{margin-top:26px}
+.cl ul{list-style:none;padding:0;margin:8px 0 0}
+.cl li{display:flex;gap:10px;align-items:flex-start;margin:0 0 9px}
+.tag{flex:0 0 auto;min-width:64px;text-align:center;font-size:11.5px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;border-radius:6px;padding:2px 6px;margin-top:3px;border:1px solid var(--ln)}
+.tag.new{background:var(--ac);color:var(--acf);border-color:var(--ac)}
+.tag.chg{background:var(--card);color:var(--ink)}
+.tag.fix{background:var(--card);color:var(--warn);border-color:var(--warn)}
+.note{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:10px 14px;margin:12px 0}
+.jump{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:14px;margin:0 0 6px}
+</style>
+</head>
+<body><main class="cl">
+<h1>Changelog</h1>
+<p class="sub">What changed in each version, newest first. The version number is the small tag beside the app&rsquo;s title. <a href="./">Back to the app</a> &middot; <a href="help.html">Full guide</a></p>
+<nav class="jump" aria-label="Jump to a version"><a href="#v35">Latest</a><a href="#v31">Parallel splitting</a><a href="#v28">Distortion</a><a href="#v23">Regions</a><a href="#v16">References</a><a href="#before">Before v11</a></nav>
+<h2 id="v35"><span class="ver"><span class="v">v35</span><time>Nov 2</time><span class=cur>Latest</span></span></h2><ul><li><span class="tag new">New</span><span>This <b>Changelog</b> page, linked from the app and the help page.</span></li></ul>
+<h2 id="v34"><span class="ver"><span class="v">v34</span><time>Nov 2</time></span></h2><ul><li><span class="tag fix">Fixed</span><span>Splitting stems failed with <b>&ldquo;offset is out of bounds&rdquo;</b> on hosts that compress the model files, including GitHub Pages. The model download no longer assumes its size in advance.</span></li></ul>
+<h2 id="v33"><span class="ver"><span class="v">v33</span><time>Nov 2</time></span></h2><ul><li><span class="tag chg">Changed</span><span>The standalone Stem Splitter is now part of <b>Stem balance</b>. The old <code>stems.html</code> address redirects there.</span></li><li><span class="tag new">New</span><span>Each separated stem has its own <b>waveform</b>, scaled to the stem&rsquo;s own peak with the peak level printed on it. Click it to jump to that point.</span></li><li><span class="tag new">New</span><span>A <b>&#11015; WAV</b> button per stem saves a 24-bit stereo WAV named after your song (with <code>_section</code> if you separated only the 30-second section).</span></li><li><span class="tag new">New</span><span>Choose which of vocals, drums and bass to separate. Anything skipped stays in Other, and fewer stems finish sooner.</span></li></ul>
+<h2 id="v32"><span class="ver"><span class="v">v32</span><time>Nov 2</time></span></h2><ul><li><span class="tag new">New</span><span><b>Play buttons for stems.</b> A round &#9654; on each row plays that stem alone, lifted toward a common loudness so quiet stems are audible. <b>Play all stems</b> mixes them at your slider levels and follows the sliders and on/off switches as you listen. A shared seek bar keeps your place when you switch.</span></li><li><span class="tag chg">Changed</span><span>The stem player, the waveform player and the A/B player now stop each other, so only one thing plays at a time.</span></li></ul>
+<h2 id="v31"><span class="ver"><span class="v">v31</span><time>Nov 2</time></span></h2><ul><li><span class="tag new">New</span><span><b>Parallel stem separation.</b> The song is split into independent chunks shared between up to four background workers, chosen from your core count with one core left for the page. Output is identical to the old sequential run, sample for sample. In tests, two workers took about half the time.</span></li><li><span class="tag chg">Changed</span><span>Models are downloaded once on the page and handed to each worker as needed.</span></li><li><span class="tag chg">Changed</span><span>The countdown now estimates the <b>total time remaining</b> across all workers.</span></li></ul>
+<h2 id="v30"><span class="ver"><span class="v">v30</span><time>Nov 2</time></span></h2><ul><li><span class="tag chg">Changed</span><span>The separation countdown&rsquo;s cost ratio now comes from timing the real models in a browser (vocals about 3.2 times the work of drums or bass) instead of an earlier native measurement.</span></li></ul>
+<h2 id="v29"><span class="ver"><span class="v">v29</span><time>Nov 2</time></span></h2><ul><li><span class="tag new">New</span><span>A <b>countdown</b> on stem separation and a progress bar weighted by how much work each stem is, so it no longer stalls on the slow vocal model.</span></li></ul>
+<h2 id="v28"><span class="ver"><span class="v">v28</span><time>Nov 2</time></span></h2><ul><li><span class="tag new">New</span><span><b>Distortion</b> in three types: Overdrive, Fuzz and Crush (bit and sample-rate reduction). It is a parallel layer, level-matched by measuring your song, adding about &minus;26, &minus;19 and &minus;13 dB at Light, Medium and Heavy. Use it on the whole mix or per stem.</span></li></ul>
+<h2 id="v27"><span class="ver"><span class="v">v27</span><time>Nov 1</time></span></h2><ul><li><span class="tag new">New</span><span><b>Saturation</b> now has a setting and a character. Auto keeps the old gentle peak soft-clip; Light, Medium and Heavy add real harmonic saturation in Tape, Tube or Crunch, calibrated to about &minus;36, &minus;28 and &minus;21 dB of added nonlinear content. Aliasing is controlled with anti-aliased waveshaping.</span></li></ul>
+<h2 id="v26"><span class="ver"><span class="v">v26</span><time>Nov 1</time></span></h2><ul><li><span class="tag new">New</span><span><b>Vocal doubler</b> for the separated vocal: two detuned, delayed copies, one leaning left and one right, at &minus;14, &minus;10 or &minus;7 dB. It needs the vocal stem.</span></li></ul>
+<h2 id="v25"><span class="ver"><span class="v">v25</span><time>Nov 1</time></span></h2><ul><li><span class="tag new">New</span><span><b>Transient shaping</b> (Soften, Off, Punchy, Very punchy). Measured honestly: it lifts attacks by about 5.5 dB against 1.6 dB on steady material, but on already-limited audio the net change is small, and the help page says so.</span></li><li><span class="tag new">New</span><span>A <b>Play button on the waveform</b> with a moving playhead and click-to-seek, so you can hear where to place region boundaries.</span></li></ul>
+<h2 id="v24"><span class="ver"><span class="v">v24</span><time>Nov 1</time></span></h2><ul><li><span class="tag new">New</span><span><b>Noise reduction</b> (Light, Medium, Strong: up to 6, 12 or 20 dB) by spectral subtraction. Mark a quiet passage with a Noise profile region for the most reliable result.</span></li></ul>
+<h2 id="v23"><span class="ver"><span class="v">v23</span><time>Nov 1</time></span></h2><ul><li><span class="tag new">New</span><span><b>Volume automation by region.</b> Drag across the waveform to mark a part of the song and choose Level (&plusmn;12 dB), Tame dynamics, or No tone processing. Region edges get short smooth ramps.</span></li></ul>
+<h2 id="v22"><span class="ver"><span class="v">v22</span><time>Nov 1</time></span></h2><ul><li><span class="tag new">New</span><span>A <b>Help page</b> covering every control with its real values, plus a <b>?</b> hint on each control group and a Show all hints button (versions 20 to 22).</span></li><li><span class="tag fix">Fixed</span><span>A missing comma stopped the results panel from rendering at all, which meant the mono checks from v15 never appeared. Found the first time the page was run in a real browser.</span></li><li><span class="tag fix">Fixed</span><span>The preview note overwrote the mono warning instead of adding to it.</span></li><li><span class="tag fix">Fixed</span><span>Saving failed on GitHub Pages because it assumed the Claude app&rsquo;s download dialog. A normal page now uses a plain download.</span></li><li><span class="tag fix">Fixed</span><span>The spectrum difference view let near-silent bands distort its scale; bands more than 40 dB below the loudest are now excluded and drawn faded.</span></li></ul>
+<h2 id="v19"><span class="ver"><span class="v">v19</span><time>Nov 1</time></span></h2><ul><li><span class="tag new">New</span><span><b>Named setups</b> that bundle reference measurements with every page setting, last-used settings restored on reload, and JSON import and export.</span></li></ul>
+<h2 id="v18"><span class="ver"><span class="v">v18</span><time>Nov 1</time></span></h2><ul><li><span class="tag new">New</span><span>Reference measurements are kept in your browser between visits. Only the measurements (about 320 bytes each) are stored, never audio.</span></li></ul>
+<h2 id="v17"><span class="ver"><span class="v">v17</span><time>Nov 1</time></span></h2><ul><li><span class="tag new">New</span><span><b>Reference agreement check.</b> It names a reference that disagrees with the others and the band where they diverge, warning above 1.5 dB.</span></li></ul>
+<h2 id="v16"><span class="ver"><span class="v">v16</span><time>Nov 1</time></span></h2><ul><li><span class="tag new">New</span><span><b>Reference-track matching.</b> Up to five reference songs replace the built-in tone target, matching tone curve, stereo width and low-mid side energy. Only the analysis is kept.</span></li></ul>
+<h2 id="v15"><span class="ver"><span class="v">v15</span><time>Nov 1</time></span></h2><ul><li><span class="tag new">New</span><span><b>Processing amount</b> (Gentle, Standard, Strong), with Gentle as the default, scaling every automatic move.</span></li><li><span class="tag new">New</span><span><b>Mono compatibility check</b> with a warning above 1.2 dB of loss, and a mono audition button in the A/B player.</span></li></ul>
+<h2 id="v14"><span class="ver"><span class="v">v14</span><time>Nov 1</time></span></h2><ul><li><span class="tag new">New</span><span>Suggested stem levels, measured against typical ranges for the chosen genre, with one-click apply. The ranges are rules of thumb and are labelled that way.</span></li></ul>
+<h2 id="v13"><span class="ver"><span class="v">v13</span><time>Nov 1</time></span></h2><ul><li><span class="tag new">New</span><span><b>Stem balance inside the app:</b> split the song, rebalance with level and mute, optionally master each stem with its own EQ and compression, sum them, and master the result.</span></li></ul>
+<h2 id="v11"><span class="ver"><span class="v">v11</span><time>Oct 31</time></span></h2><p style="margin:4px 0 0;color:var(--mut)">Everything below was built earlier, inside the Claude app, before the move to GitHub.</p><ul><li><span class="tag new">New</span><span>First release on GitHub Pages, together with the in-browser <b>stem splitter</b> (vocals, drums and bass models, other derived by subtraction).</span></li></ul>
+<h2 id="before"><span class="ver"><span class="v">Before v11</span></span></h2>
+<p style="margin:4px 0 0;color:var(--mut)">Built in the Claude app.</p>
+<ul>
+<li><span class="tag new">New</span><span>The first version loudness-matched a track to a target and exported WAV, M4A or MP3.</span></li>
+<li><span class="tag new">New</span><span>A <b>full mastering chain</b>: tone correction, multiband compression, a true-peak look-ahead limiter, A/B preview, de-esser, genre presets and a dynamic EQ.</span></li>
+<li><span class="tag new">New</span><span><b>Clarity</b> to reduce low-mid muddiness, a <b>pumper</b>, <b>stereo width</b>, a <b>vocal enhancer</b>, and a before and after <b>spectrum view</b>. A gater was tried and removed.</span></li>
+</ul>
+<h2 id="next">Still on the list</h2>
+<div class="note"><ul style="margin:0"><li><span class="tag chg">Open</span><span>Manual tone and compression sliders.</span></li><li><span class="tag chg">Open</span><span>Running the mastering itself in a background worker.</span></li><li><span class="tag chg">Open</span><span>FLAC and 48 kHz output.</span></li></ul></div>
+
+</main></body></html>

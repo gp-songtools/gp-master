@@ -150,3 +150,6 @@ browser storage is per-device and is lost when site data is cleared.
 
 ## Stem separation speed and progress
 Separation runs in parallel. `sep-pool.js` cuts the song into independent chunks and a pool of up to four workers (one per core, leaving one free) takes them from a shared queue, slowest model first. Each worker is single-threaded WebAssembly, so no special server headers are needed. The page downloads each model once and copies it to a worker only when that worker needs it. Output is identical to the old sequential worker, sample for sample. `eta.js` turns finished-chunk timings into a cost-weighted bar and a countdown of total time remaining.
+
+## Changelog
+See `changelog.html` (linked from the app) for what changed in each version.
