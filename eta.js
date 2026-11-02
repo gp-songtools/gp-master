@@ -1,9 +1,9 @@
 /* Separation progress: a cost-weighted progress fraction and a ticking countdown.
-   Stems run one after another, and they are not equally expensive: in a native run the
-   vocal model took 76 s against 28 s each for drums and bass on the same audio. REL holds
-   those ratios. They are used only to guess stems that have not started yet; as soon as a
+   Stems run one after another, and they are not equally expensive: in a real browser run the
+   vocal model cost about 6.4 s of compute per second of audio against about 2 s for drums,
+   measured in Chromium with the real models. REL holds that ratio. They are used only to guess stems that have not started yet; as soon as a
    stem has been timed, the next one is predicted from the measured speed instead. */
-const SEP_REL = { vocals: 76, drums: 28, bass: 28 };
+const SEP_REL = { vocals: 64, drums: 20, bass: 20 };
 
 function SepEta(stems, onText, now) {
   now = now || (() => performance.now() / 1000);

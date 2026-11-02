@@ -149,4 +149,4 @@ browser storage is per-device and is lost when site data is cleared.
 
 
 ## Stem separation progress
-Both pages share `eta.js`: a cost-weighted progress bar and a ticking countdown. Rates are measured per stem; stems that have not started are predicted from the most recently timed one using relative costs (vocals 76 : drums 28 : bass 28, measured natively), so early estimates are approximate.
+Both pages share `eta.js`: a cost-weighted progress bar and a ticking countdown. Rates are measured per stem; stems that have not started are predicted from the most recently timed one using relative costs (vocals 64 : drums 20 : bass 20, measured in Chromium), so early estimates are approximate.
