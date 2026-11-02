@@ -134,7 +134,7 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .hint{color:var(--mut);font-size:13px;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v25</small></h1>
+<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v26</small></h1>
 <p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded.</p>
 <p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or get the stems as files from the <a href="stems.html" style="color:var(--ac)">Stem Splitter</a>.</p>
 
@@ -167,6 +167,9 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
   <div id="sugg"></div>
   <label class="chk" style="margin:10px 0 0"><input type="checkbox" id="useStems" checked><span>Master the rebalanced mix<small>Uncheck to master the original audio instead.</small></span></label>
   <label class="chk" style="margin:0"><input type="checkbox" id="perStem" checked><span>Master each stem separately, then recombine<small>Each stem gets its own EQ and compression before they are summed. The limiter always runs last on the combined mix, so the stems stay in balance.</small></span></label>
+  <span class="lbl" style="margin-top:14px">Vocal doubler <span style="font-weight:400;color:var(--mut)">(thickens the vocal stem)</span></span>
+  <div class="chips" id="db"><button type="button" data-v="0" aria-pressed="true">Off</button><button type="button" data-v="1" aria-pressed="false">Light</button><button type="button" data-v="2" aria-pressed="false">Medium</button><button type="button" data-v="3" aria-pressed="false">Thick</button></div>
+  <p class="hint" style="margin:-6px 0 4px">Adds two slightly detuned, delayed copies of the vocal, one leaning left and one right, like a double-tracked take. Works on the separated vocal only.</p>
  </div>
 </section>
 
@@ -976,7 +979,7 @@ const refOn=()=>refAvg&&$('useRef').checked;
 const radio=n=>{const e=document.querySelector(`input[name=${n}]:checked`);return e?e.value:null};
 const setRadio=(n,v)=>{const e=document.querySelector(`input[name=${n}][value="${v}"]`);if(e)e.checked=true};
 function getCfg(){
- return{genre,amount,clar,widthSel,vocAmt,pumpDb,noiseDb,transDb,useRef:$('useRef').checked,
+ return{genre,amount,clar,widthSel,vocAmt,pumpDb,noiseDb,transDb,dblAmt,useRef:$('useRef').checked,
   lufs:+$('lufs').value,fmt:radio('f'),mode:radio('p'),
   useStems:$('useStems').checked,perStem:$('perStem').checked};
 }
@@ -991,6 +994,7 @@ function applyCfg(c){
  pumpDb=pick(c.pumpDb,isNum,pumpDb);
  noiseDb=pick(c.noiseDb,isNum,noiseDb);
  transDb=pick(c.transDb,isNum,transDb);
+ dblAmt=pick(c.dblAmt,v=>isNum(v)&&v>=0&&v<=3,dblAmt);
  if(isNum(c.lufs)&&c.lufs>=-24&&c.lufs<=-6)sync(c.lufs);
  if(['wav','mp3','m4a'].includes(c.fmt))setRadio('f',c.fmt);
  if(['full','polish','none'].includes(c.mode))setRadio('p',c.mode);
@@ -999,7 +1003,7 @@ function applyCfg(c){
  if(typeof c.perStem==='boolean')$('perStem').checked=c.perStem;
  [...$('gen').children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.g===genre));
  [...$('cl').children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.c===String(clar)));
- sel('amt',amount);sel('wd',String(widthSel));sel('vc',String(vocAmt));sel('pu',String(pumpDb));sel('nr',String(noiseDb));sel('tr',String(transDb));nrHintUpdate();
+ sel('amt',amount);sel('wd',String(widthSel));sel('vc',String(vocAmt));sel('pu',String(pumpDb));sel('nr',String(noiseDb));sel('tr',String(transDb));sel('db',String(dblAmt));nrHintUpdate();
  if(stemData)analyzeStems();
 }
 function cfgSave(){try{localStorage.setItem(CFGKEY,JSON.stringify(getCfg()))}catch(e){}}
@@ -1104,6 +1108,31 @@ function stemFX(name,ch,fs){
  return{ch:o,note:`${name}: comp avg ${(gsum/n).toFixed(1)} dB`+(C.ds?`, de-ess ${(dsum/n).toFixed(1)} dB`:'')};
 }
 
+/* ---- vocal doubler: two detuned, delayed, band-limited copies of the vocal stem ---- */
+const DBL=[0,-14,-10,-7];
+let dblAmt=0;
+function doubleVocal(ch,fs,lv){
+ const n=ch[0].length,g=Math.pow(10,DBL[lv]/20),SZ=Math.ceil(fs*.07),buf=[new Float32Array(SZ),new Float32Array(SZ)];
+ const hp=bqc('hp',180,0,.7071,fs),lp=bqc('lp',9000,0,.7071,fs);
+ const TAP=[{d:.019,f1:.43,f2:1.13,p1:0,p2:1.3},{d:.027,f1:.37,f2:.91,p1:2.1,p2:.4}],DEP=.0016,W=2*Math.PI/fs;
+ const o=[new Float32Array(ch[0]),new Float32Array(ch[1])];
+ let w=0,ex=0;
+ for(let i=0;i<n;i++){
+  const m=bq(lp,bq(hp,(ch[0][i]+ch[1][i])*.5));
+  buf[0][w]=m;
+  const v=[0,0];
+  for(let k=0;k<2;k++){
+   const T=TAP[k],dl=(T.d+DEP*(.7*Math.sin(W*T.f1*i+T.p1)+.3*Math.sin(W*T.f2*i+T.p2)))*fs;
+   let rp=w-dl;if(rp<0)rp+=SZ;
+   const i0=Math.floor(rp),fr=rp-i0,i1=i0+1>=SZ?0:i0+1;
+   v[k]=buf[0][i0]*(1-fr)+buf[0][i1]*fr;
+  }
+  w=w+1>=SZ?0:w+1;
+  o[0][i]+=g*(v[0]+.25*v[1]);o[1][i]+=g*(v[1]+.25*v[0]);
+ }
+ return o;
+}
+
 /* ---- stem balance ---- */
 const STEMS=['vocals','drums','bass','other'];
 let stemData=null,stemStart=0,stemLen=0,stemWorker=null;
@@ -1173,6 +1202,7 @@ function buildFromStems(start,len){
   if(smute[s]||!stemData[s])continue;
   let ch=[stemData[s][0].subarray(off,off+len),stemData[s][1].subarray(off,off+len)];
   if(per){const r=stemFX(s,ch,fs);ch=r.ch;stemNotes.push(r.note)}
+  if(s==='vocals'&&dblAmt>0){ch=doubleVocal(ch,fs,dblAmt);stemNotes.push('vocal doubler: 2 copies at '+DBL[dblAmt]+' dB, 19 and 27 ms, drifting up to about 10 cents')}
   const g=Math.pow(10,sgain[s]/20);
   for(let c=0;c<2;c++){const a=acc[c],v=ch[c];for(let i=0;i<len;i++)a[i]+=v[i]*g}
  }
@@ -1277,7 +1307,7 @@ $('go').onclick=async()=>{
   say('Encoding '+fmt.toUpperCase()+'…');await tick();
   const blob=fmt==='wav'?wav24(r.o[0],r.o[1],r.fs):fmt==='mp3'?await mp3(r.o,r.fs):await m4a(r.o,r.fs);
   res={fmt,blob};setPlayer(sb,li,r.o,r.L);
-  show(li,T,r.L,r.pk,fmt,blob.size,r.mono,r.notes.concat(useS?[['Stem balance',STEMS.filter(s=>!smute[s]).map(s=>s+' '+(sgain[s]>0?'+':'')+sgain[s]).join(', ')+(STEMS.some(s=>smute[s])?'; muted: '+STEMS.filter(s=>smute[s]).join(', '):'')+' dB']].concat(stemNotes.map(t=>['Stem chain',t])):[]));say('');
+  show(li,T,r.L,r.pk,fmt,blob.size,r.mono,r.notes.concat(dblAmt>0&&!useS?[['Vocal doubler','skipped: needs the vocal stem (split the song first)']]:[]).concat(useS?[['Stem balance',STEMS.filter(s=>!smute[s]).map(s=>s+' '+(sgain[s]>0?'+':'')+sgain[s]).join(', ')+(STEMS.some(s=>smute[s])?'; muted: '+STEMS.filter(s=>smute[s]).join(', '):'')+' dB']].concat(stemNotes.map(t=>['Stem chain',t])):[]));say('');
  }catch(e){say(e.message||'Something went wrong while processing.',1)}
  busy(false);
 };
@@ -1288,7 +1318,7 @@ $('pv').onclick=async()=>{
   const{buf:ex,stems:useS}=sourceFor(start,len);
   const li=lufs(kseg(chans(ex),fs)),r=await pipeline(ex,T,fmt,pm,start);
   res=null;setPlayer(ex,li,r.o,r.L);
-  show(li,T,r.L,r.pk,fmt,0,r.mono,r.notes.concat(useS?[['Stem balance',STEMS.filter(s=>!smute[s]).map(s=>s+' '+(sgain[s]>0?'+':'')+sgain[s]).join(', ')+' dB']].concat(stemNotes.map(t=>['Stem chain',t])):[]),true);say('');
+  show(li,T,r.L,r.pk,fmt,0,r.mono,r.notes.concat(dblAmt>0&&!useS?[['Vocal doubler','skipped: needs the vocal stem (split the song first)']]:[]).concat(useS?[['Stem balance',STEMS.filter(s=>!smute[s]).map(s=>s+' '+(sgain[s]>0?'+':'')+sgain[s]).join(', ')+' dB']].concat(stemNotes.map(t=>['Stem chain',t])):[]),true);say('');
  }catch(e){say(e.message||'Something went wrong while processing.',1)}
  busy(false);
 };
@@ -1415,7 +1445,7 @@ $('cl').onclick=e=>{const c=e.target.dataset&&e.target.dataset.c;if(c==null)retu
 const sel=(id,v)=>[...$(id).children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.v===v));
 const chip=(id,fn)=>{$(id).onclick=e=>{const v=e.target.dataset&&e.target.dataset.v;if(v==null)return;fn(+v);sel(id,v)}};
 $('amt').onclick=e=>{const v=e.target.dataset&&e.target.dataset.v;if(!v)return;amount=v;sel('amt',v)};
-chip('pu',v=>pumpDb=v);chip('vc',v=>vocAmt=v);chip('nr',v=>{noiseDb=v;nrHintUpdate()});chip('tr',v=>transDb=v);
+chip('pu',v=>pumpDb=v);chip('vc',v=>vocAmt=v);chip('nr',v=>{noiseDb=v;nrHintUpdate()});chip('tr',v=>transDb=v);chip('db',v=>dblAmt=v);
 $('wd').onclick=e=>{const v=e.target.dataset&&e.target.dataset.v;if(v==null)return;widthSel=v==='auto'?'auto':+v;sel('wd',v)};
 $('gen').onclick=e=>{const g=e.target.dataset&&e.target.dataset.g;if(!g)return;genre=g;if(stemData)analyzeStems();[...$('gen').children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.g===g));if(PRESETS[g].lufs!=null)sync(PRESETS[g].lufs)};
 
@@ -1464,7 +1494,7 @@ $('save').onclick=async()=>{
  }catch(e){say(e&&e.code==='declined'?'Save cancelled.':'Couldn’t save the file ('+((e&&e.code)||'error')+').',1)}
 };
 $('useRef').onchange=()=>{refSave();cfgSave()};
-['gen','cl','amt','wd','vc','pu','nr','tr'].forEach(id=>$(id).addEventListener('click',()=>setTimeout(cfgSave,0)));
+['gen','cl','amt','wd','vc','pu','nr','tr','db'].forEach(id=>$(id).addEventListener('click',()=>setTimeout(cfgSave,0)));
 $('lufs').addEventListener('change',cfgSave);
 document.querySelectorAll('input[name=f],input[name=p],#useStems,#perStem').forEach(e=>e.addEventListener('change',cfgSave));
 try{setupsLoad();setupsRender();cfgLoad();refLoad()}catch(e){}
@@ -1473,6 +1503,9 @@ const HELP={
 'Reference tracks':`<p>Load songs whose balance you like. The app measures their tone curve, stereo width and low-mid side energy, averages them, and aims for that instead of its own built-in target. <b>This is the single biggest quality improvement available here</b> — without references the app aims at a hand-chosen curve that may not suit your material.</p>
 <p>Pick by similarity to your song, not by taste: it copies tone and width, so instrumentation and arrangement density need to be comparable. Use lossless downloads or CD rips, not streaming or YouTube rips. Two or three is safer than one, and the app tells you if they disagree.</p>
 <p>Only the measurements are kept — about 300 bytes each. The audio is analyzed and discarded.</p>`,
+'Vocal doubler':`<p>Takes the separated vocal, keeps only 180 Hz to 9 kHz of it, and adds two copies: one about 19 ms late leaning left, one about 27 ms late leaning right. Each copy's delay drifts slowly, which detunes it by up to about 10 cents, so it behaves like a second and third take rather than a fixed echo. Levels are Light (-14 dB), Medium (-10 dB) and Thick (-7 dB) relative to the lead vocal.</p>
+<p>It needs the vocal stem, so it only does anything after you split the song and leave <b>Master the rebalanced mix</b> on. Check <b>Listen in mono</b> afterwards: delayed copies can comb-filter when the stereo image collapses, and the mono-compatibility row in the results will show it if they do.</p>
+<p>The copies are made from whatever the stem contains. Any bleed in the vocal stem is doubled with it, and a vocal with audible artifacts will have them doubled too, so listen at Light before going further.</p>`,
 'Transients':`<p>Two envelope followers run on the signal, one fast and one slow. Where the fast one runs ahead of the slow one, an attack is happening. The drive is that gap's excess over its own one-second average, so it self-calibrates per track instead of using a fixed threshold.</p>
 <p><b>Punchy</b> and <b>Very punchy</b> add up to 3 or 6 dB on attacks; <b>Soften</b> cuts up to 3 dB. Measured on material with real transients, Very punchy applies about 5.5 dB at onsets against 1.6 dB in steady passages.</p>
 <p><b>Be realistic about the size of this effect.</b> What it mainly does is bring percussive hits forward relative to sustained sounds. It does not make individual hits noticeably sharper, and on an already-compressed source at a loud target the surrounding compression and limiting largely re-level what it boosts, so the net change can be near zero. It has the most to work with on an unlimited mix at a moderate loudness target.</p>`,

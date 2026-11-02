@@ -291,6 +291,10 @@ td:first-child{white-space:nowrap;font-weight:600}
 <p>Each compressor works against that stem's own running average rather than a fixed threshold, so it adapts to the material.</p>
 <p>The limiter deliberately stays on the summed mix rather than running per stem. Limiting each stem to full loudness and then summing them would clip, and would undo the balance you just set.</p>
 
+<h3>Vocal doubler</h3>
+<p>An optional thickener for the vocal stem. It keeps only 180 Hz to 9 kHz of the vocal and adds two copies: one about 19 ms late leaning left, one about 27 ms late leaning right. Each copy's delay drifts slowly, which detunes it by up to about 10 cents, so it behaves like a second and third take instead of a fixed echo. Light, Medium and Thick set the copies at −14, −10 and −7 dB below the lead.</p>
+<div class="note w"><p>It only works on a separated vocal, so it does nothing until you split the song, and the results panel says "skipped" if it was on without stems. Any bleed or artifacts in the vocal stem are doubled with it, so start at Light and listen. Delayed copies can comb-filter when the stereo image folds to mono: check <b>Listen in mono</b> and the mono-compatibility row.</p></div>
+
 <h3>Scope</h3>
 <p>Stems only apply to the section you separated. If you separate 30 seconds and then render the full song, the app masters the original audio instead and tells you so — separate the whole song to apply your balance to the whole song.</p>
 <div class="note"><p>Separated stems carry artifacts: bleed between stems, watery high frequencies, and smearing on cymbals and reverb tails. This is a rescue tool for a mix you cannot re-open. If you have the original session, exporting real stems from it will always be better.</p></div>
