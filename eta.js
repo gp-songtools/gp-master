@@ -1,55 +1,62 @@
-/* Separation progress: a cost-weighted progress fraction and a ticking countdown.
-   Stems run one after another, and they are not equally expensive: in a real browser run the
-   vocal model cost about 6.4 s of compute per second of audio against about 2 s for drums,
-   measured in Chromium with the real models. REL holds that ratio. They are used only to guess stems that have not started yet; as soon as a
-   stem has been timed, the next one is predicted from the measured speed instead. */
+/* Separation progress for the parallel worker pool: a cost-weighted bar and a ticking
+   countdown of the total time remaining.
+
+   Work is a queue of chunks. Each stem has a measured compute time per chunk (the median of
+   what its finished chunks took, as timed inside the worker). Stems that have not produced a
+   result yet are predicted from a measured one using REL, the relative compute cost per second
+   of audio: in Chromium with the real models the vocal model cost about 6.4 s per second of
+   audio against about 2 s for drums or bass. The remaining wall time is the remaining compute
+   divided by the worker count, plus a model load for each stem not yet started, and never less
+   than one chunk. */
 const SEP_REL = { vocals: 64, drums: 20, bass: 20 };
 
-function SepEta(stems, onText, now) {
+function SepEta(onText, now) {
   now = now || (() => performance.now() / 1000);
-  const order = stems.filter(s => SEP_REL[s]);
-  const S = {};                        // per stem: total, first/last arrival, chunks at first arrival
-  let cur = null, loadGap = 5, timer = null, snap = null, over = '';
-  const sumW = order.reduce((a, s) => a + SEP_REL[s], 0);
+  let P = null, W = 1, timer = null, snap = null, over = '', loadSecs = 4;
+  const samples = {}, done = {}, started = {};
+  let doneAll = 0, totalAll = 0, units = 0, unitsDone = 0;
 
-  // measured seconds per chunk for a stem, or null until one interval has been seen
-  const rate = s => {
-    const r = S[s];
-    return r && r.done > r.c0 ? (r.tLast - r.t0) / (r.done - r.c0) : null;
-  };
-  // estimated total time for a stem (measured if possible)
-  const cost = s => {
-    const r = rate(s);
-    return r == null ? null : r * S[s].total;
+  const med = a => { const b = a.slice().sort((x, y) => x - y), m = b.length >> 1; return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2; };
+  const chunkCost = s => {                       // seconds of compute for one chunk of stem s
+    if (samples[s] && samples[s].length) return samples[s].length >= 3 ? med(samples[s]) : samples[s].reduce((a, b) => a + b, 0) / samples[s].length;
+    let ref = null;                              // most-sampled stem to predict from
+    for (const k in samples) if (samples[k].length && (!ref || samples[k].length > samples[ref].length)) ref = k;
+    if (!ref) return null;
+    const u = k => SEP_REL[k] * P[k].genSec;
+    return chunkCost(ref) * u(s) / u(ref);
   };
 
-  function progress(m) {
-    const t = now(), s = m.stem;
-    if (!S[s]) {
-      const prev = order[order.indexOf(s) - 1];
-      if (prev && S[prev]) loadGap = Math.max(1, t - S[prev].tLast - (rate(s) || 0));   // time between stems: model load
-      S[s] = { total: m.total, t0: t, c0: m.done, done: m.done, tLast: t };
-    } else { S[s].done = m.done; S[s].tLast = t; S[s].total = m.total; }
-    cur = s; over = '';
-
-    // weighted bar
-    const i = order.indexOf(s);
-    let w = 0; for (let k = 0; k < i; k++) w += SEP_REL[order[k]];
-    w += SEP_REL[s] * (m.done / m.total);
-    const frac = sumW ? Math.min(1, w / sumW) : 0;
-
-    // remaining time: rest of this stem, plus later stems predicted from the best reference
-    let rem = null, refS = null;
-    for (let k = i; k >= 0; k--) if (cost(order[k]) != null) { refS = order[k]; break; }
-    if (refS) {
-      const ref = cost(refS), per = SEP_REL[s] / SEP_REL[refS];
-      rem = rate(s) != null ? rate(s) * (S[s].total - S[s].done) : ref * per * (1 - S[s].done / S[s].total);
-      for (let k = i + 1; k < order.length; k++) rem += loadGap + ref * (SEP_REL[order[k]] / SEP_REL[refS]);
-    }
-    snap = rem == null ? null : { rem, at: t };
+  function plan(p, workers) {
+    P = p; W = workers;
+    for (const s in p) { samples[s] = []; done[s] = 0; started[s] = false; totalAll += p[s].total; units += p[s].total * SEP_REL[s] * p[s].genSec; }
     tick();
-    return frac;
   }
+  function setWorkers(w) { W = Math.max(1, w); recompute(); }
+
+  function taskDone(stem, secs, load) {
+    if (!P) return;
+    samples[stem].push(secs); done[stem]++; doneAll++; started[stem] = true;
+    unitsDone += SEP_REL[stem] * P[stem].genSec;
+    if (load > 0) loadSecs = load;
+    recompute();
+  }
+
+  function recompute() {
+    over = '';
+    let comp = 0, biggest = 0, loads = 0, unknown = false;
+    for (const s in P) {
+      const left = P[s].total - done[s];
+      if (!left) continue;
+      const c = chunkCost(s);
+      if (c == null) { unknown = true; break; }
+      comp += left * c; biggest = Math.max(biggest, c);
+      if (!started[s]) loads++;
+    }
+    snap = unknown ? null : { rem: Math.max(comp / W + loads * loadSecs, biggest), at: now() };
+    tick();
+  }
+
+  function frac() { return units ? Math.min(1, unitsDone / units) : 0; }
 
   function fmt(sec) {
     if (sec < 8) return 'a few seconds';
@@ -59,18 +66,18 @@ function SepEta(stems, onText, now) {
     return 'about ' + (s === 60 ? (m + 1) + ' min' : m + ' min' + (s ? ' ' + s + ' s' : ''));
   }
 
-  // text for the current moment, counting down between worker messages
   function text() {
-    if (!cur) return over;
-    const r = S[cur], base = over || (cur + ': chunk ' + r.done + ' of ' + r.total);
+    if (over && !P) return over;
+    if (!P) return '';
+    const base = over || (doneAll + ' of ' + totalAll + ' chunks · ' + W + ' worker' + (W > 1 ? 's' : ''));
     if (!snap) return base + (over ? '' : ' · timing…');
     const left = snap.rem - (now() - snap.at);
-    return base + ' · ' + (left > 0 ? fmt(left) + ' left' : 'finishing up…');
+    return base + ' · ' + (left > 0 ? fmt(left) + ' total remaining' : 'finishing up…');
   }
   function note(t) { over = t; tick(); }
   function tick() { if (onText) onText(text()); }
   function start() { stop(); timer = setInterval(tick, 1000); }
   function stop() { if (timer) { clearInterval(timer); timer = null; } }
-  return { progress, text, note, start, stop };
+  return { plan, setWorkers, taskDone, frac, text, note, start, stop };
 }
 if (typeof module !== 'undefined') module.exports = { SepEta, SEP_REL };

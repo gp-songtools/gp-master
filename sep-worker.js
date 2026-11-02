@@ -1,4 +1,6 @@
 /* Stem separation worker: MDX-Net ONNX inference in the browser.
+   Task-based: the page (sep-pool.js) cuts the song into chunks and hands them to several of
+   these workers; each worker holds one model at a time and returns one chunk per message.
    Parameters verified against UVR's model_data.json — see docs/stem-separation.md.
    The n_fft differs per model and cannot be inferred from the ONNX input shape;
    running a model at the wrong n_fft silently produces a weak, hollow stem. */
@@ -189,76 +191,69 @@ async function initOrt() {
   if (ortReady) return;
   importScripts(ORT_BASE + 'ort.min.js');
   self.ort.env.wasm.wasmPaths = ORT_BASE;
-  self.ort.env.wasm.numThreads = 1;   // no SharedArrayBuffer without COOP/COEP headers
+  self.ort.env.wasm.numThreads = 1;   // one thread per worker; the pool provides the parallelism
   self.ort.env.wasm.simd = true;
   self.ort.env.logLevel = 'error';
   ortReady = true;
 }
 
-const post = (type, data) => self.postMessage(Object.assign({ type }, data));
+const post = (type, data, transfer) => self.postMessage(Object.assign({ type }, data), transfer || []);
 
-async function separateStem(name, mix, baseUrl) {
-  const M = MODELS[name];
-  const chunk = HOP * (M.dim_t - 1), trim = M.n_fft >> 1, gen = chunk - 2 * trim;
-  post('status', { stem: name, text: `Loading ${name} model…` });
-  const session = await self.ort.InferenceSession.create(baseUrl + 'models/' + M.file,
-    { executionProviders: ['wasm'], graphOptimizationLevel: 'all' });
-  const inName = session.inputNames[0];
-
-  const n = mix[0].length;
-  const padLen = trim + n + gen + chunk;
-  const padded = [new Float32Array(padLen), new Float32Array(padLen)];
-  for (let c = 0; c < 2; c++) padded[c].set(mix[c], trim);
-
-  const out = [new Float32Array(padLen), new Float32Array(padLen)];
-  const spec = new Spec(M.n_fft, M.dim_f, M.dim_t);
-  const nchunks = Math.ceil(n / gen);
-
-  for (let k = 0; k < nchunks; k++) {
-    const s = k * gen;
-    const seg = [padded[0].subarray(s, s + chunk), padded[1].subarray(s, s + chunk)];
-    const input = spec.forward(seg);
-    const tensor = new self.ort.Tensor('float32', input, [1, 4, M.dim_f, M.dim_t]);
-    const res = await session.run({ [inName]: tensor });
-    const y = res[session.outputNames[0]].data;
-    const wav = spec.inverse(y, chunk);
-    for (let c = 0; c < 2; c++) {
-      const dst = out[c], src = wav[c];
-      for (let i = 0; i < gen; i++) dst[s + trim + i] += src[trim + i] * M.comp;
-    }
-    post('progress', { stem: name, done: k + 1, total: nchunks });
+// chunk geometry, shared with the page so there is a single source of truth
+function geometry() {
+  const g = {};
+  for (const k in MODELS) {
+    const M = MODELS[k], chunk = HOP * (M.dim_t - 1), trim = M.n_fft >> 1;
+    g[k] = { file: M.file, chunk, trim, gen: chunk - 2 * trim };
   }
-  await session.release();
-  return [out[0].slice(trim, trim + n), out[1].slice(trim, trim + n)];
+  return g;
+}
+
+let session = null, curStem = null, spec = null, inName = null;
+
+async function loadModel(stem, bytes) {
+  if (session) { await session.release(); session = null; }
+  const M = MODELS[stem];
+  session = await self.ort.InferenceSession.create(new Uint8Array(bytes),
+    { executionProviders: ['wasm'], graphOptimizationLevel: 'all' });
+  inName = session.inputNames[0];
+  spec = new Spec(M.n_fft, M.dim_f, M.dim_t);
+  curStem = stem;
+}
+
+// one chunk: seg is [L, R], each `chunk` samples; returns the usable `gen` samples of each channel
+async function runChunk(stem, seg) {
+  const M = MODELS[stem], trim = M.n_fft >> 1, gen = HOP * (M.dim_t - 1) - 2 * trim;
+  const input = spec.forward(seg);
+  const tensor = new self.ort.Tensor('float32', input, [1, 4, M.dim_f, M.dim_t]);
+  const res = await session.run({ [inName]: tensor });
+  const y = res[session.outputNames[0]].data;
+  const wav = spec.inverse(y, seg[0].length);
+  const out = [new Float32Array(gen), new Float32Array(gen)];
+  for (let c = 0; c < 2; c++) for (let i = 0; i < gen; i++) out[c][i] = wav[c][trim + i] * M.comp;
+  return out;
 }
 
 self.onmessage = async (e) => {
-  const { mix, stems, baseUrl, sampleRate } = e.data;
+  const m = e.data;
   try {
-    await initOrt();
-    const n = mix[0].length;
-    const result = {};
-    const wanted = stems.filter(s => s !== 'other');
-    for (const name of wanted) {
-      const t0 = performance.now();
-      result[name] = await separateStem(name, mix, baseUrl);
-      post('status', { stem: name, text: `${name} done in ${((performance.now() - t0) / 1000).toFixed(0)}s` });
-    }
-    if (stems.includes('other')) {
-      const o = [new Float32Array(n), new Float32Array(n)];
-      for (let c = 0; c < 2; c++) {
-        o[c].set(mix[c]);
-        for (const name of wanted) {
-          const s = result[name][c];
-          for (let i = 0; i < n; i++) o[c][i] -= s[i];
-        }
+    if (m.type === 'init') {
+      await initOrt();
+      post('ready', { geometry: geometry() });
+    } else if (m.type === 'task') {
+      let loadSecs = 0;
+      if (m.model) {
+        const t = performance.now();
+        await loadModel(m.stem, m.model);
+        loadSecs = (performance.now() - t) / 1000;
       }
-      result.other = o;
+      if (curStem !== m.stem) throw new Error('worker has no ' + m.stem + ' model loaded');
+      const t0 = performance.now();
+      const out = await runChunk(m.stem, m.seg);
+      const secs = (performance.now() - t0) / 1000;
+      post('result', { id: m.id, stem: m.stem, k: m.k, out, secs, loadSecs }, [out[0].buffer, out[1].buffer]);
     }
-    const transfer = [];
-    for (const k in result) for (const ch of result[k]) transfer.push(ch.buffer);
-    self.postMessage({ type: 'done', result, sampleRate }, transfer);
   } catch (err) {
-    post('error', { message: (err && err.message) || String(err) });
+    post('error', { id: m.id, message: (err && err.message) || String(err) });
   }
 };

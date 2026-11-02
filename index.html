@@ -135,7 +135,7 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .hint{color:var(--mut);font-size:13px;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v30</small></h1>
+<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v31</small></h1>
 <p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded.</p>
 <p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or get the stems as files from the <a href="stems.html" style="color:var(--ac)">Stem Splitter</a>.</p>
 
@@ -275,6 +275,7 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 </section>
 </main>
 <script src="eta.js"></script>
+<script src="sep-pool.js"></script>
 <script>
 const $=id=>document.getElementById(id), tick=()=>new Promise(r=>setTimeout(r,15));
 let src=null,name='audio',res=null,url=null;
@@ -1301,25 +1302,16 @@ function runSeparation(scope){
  const r=scope==='preview'?exRange():{start:0,len:src.length};
  busy(true);$('sepPv').disabled=true;$('sepAll').disabled=true;$('mix').hidden=true;$('sbar').style.width='0';
  const ch=chans(src),mix=[new Float32Array(ch[0].subarray(r.start,r.start+r.len)),new Float32Array(ch[1].subarray(r.start,r.start+r.len))];
- const t0=performance.now();
- stemWorker=new Worker('./sep-worker.js');
- const eta=SepEta(STEMS,t=>ssay(t));eta.start();
- stemWorker.onmessage=ev=>{
-  const m=ev.data;
-  if(m.type==='status')eta.note(m.text);
-  else if(m.type==='progress'){
-   $('sbar').style.width=(eta.progress(m)*100).toFixed(1)+'%';
-  }
-  else if(m.type==='error'){eta.stop();ssay('Separation failed: '+m.message,1);stemWorker.terminate();$('sepPv').disabled=false;$('sepAll').disabled=false;busy(false)}
-  else if(m.type==='done'){
-   eta.stop();stemData=m.result;stemStart=r.start;stemLen=r.len;
-   $('sbar').style.width='100%';
-   ssay(`Separated ${scope==='preview'?'the 30-second section':'the whole song'} in ${((performance.now()-t0)/60000).toFixed(1)} min.`);
-   mixRows();stemWorker.terminate();$('sepPv').disabled=false;$('sepAll').disabled=false;busy(false);
-  }
- };
- stemWorker.onerror=e=>{eta.stop();ssay('Worker failed: '+(e.message||'could not start'),1);$('sepPv').disabled=false;$('sepAll').disabled=false;busy(false)};
- stemWorker.postMessage({mix,stems:STEMS,baseUrl:location.href.replace(/[^/]*$/,''),sampleRate:src.sampleRate},[mix[0].buffer,mix[1].buffer]);
+ const t0=performance.now(),free=()=>{$('sepPv').disabled=false;$('sepAll').disabled=false;busy(false)};
+ const eta=SepEta(t=>ssay(t));eta.start();
+ stemWorker=separateParallel({mix,stems:STEMS,baseUrl:location.href.replace(/[^/]*$/,''),sampleRate:src.sampleRate,eta,
+  onStatus:t=>eta.note(t),onProgress:()=>{$('sbar').style.width=(eta.frac()*100).toFixed(1)+'%'}});
+ stemWorker.then(d=>{
+  eta.stop();stemData=d.result;stemStart=r.start;stemLen=r.len;
+  $('sbar').style.width='100%';
+  ssay(`Separated ${scope==='preview'?'the 30-second section':'the whole song'} in ${((performance.now()-t0)/60000).toFixed(1)} min using ${d.workers} worker${d.workers>1?'s':''}.`);
+  mixRows();free();
+ }).catch(err=>{eta.stop();ssay('Separation failed: '+(err&&err.message||err),1);free()});
  ssay('Starting…');
 }
 $('wpBtn').onclick=()=>wpOn?wpStop():wpPlay();

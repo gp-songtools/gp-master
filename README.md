@@ -148,5 +148,5 @@ browser storage is per-device and is lost when site data is cleared.
 - Not a replacement for fixing problems in the mix.
 
 
-## Stem separation progress
-Both pages share `eta.js`: a cost-weighted progress bar and a ticking countdown. Rates are measured per stem; stems that have not started are predicted from the most recently timed one using relative costs (vocals 64 : drums 20 : bass 20, measured in Chromium), so early estimates are approximate.
+## Stem separation speed and progress
+Separation runs in parallel. `sep-pool.js` cuts the song into independent chunks and a pool of up to four workers (one per core, leaving one free) takes them from a shared queue, slowest model first. Each worker is single-threaded WebAssembly, so no special server headers are needed. The page downloads each model once and copies it to a worker only when that worker needs it. Output is identical to the old sequential worker, sample for sample. `eta.js` turns finished-chunk timings into a cost-weighted bar and a countdown of total time remaining.

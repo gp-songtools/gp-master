@@ -57,6 +57,7 @@ audio{width:100%}
 <section class="card" id="out" hidden></section>
 </main>
 <script src="eta.js"></script>
+<script src="sep-pool.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 const say=(t,e)=>{$('st').textContent=t;$('st').className=e?'err':''};
@@ -88,26 +89,16 @@ $('go').onclick=()=>{
  const L=buf.getChannelData(0), R=buf.numberOfChannels>1?buf.getChannelData(1):buf.getChannelData(0);
  const mix=[new Float32Array(L), new Float32Array(R)];
 
- worker=new Worker('./sep-worker.js');
  const t0=performance.now();
- const eta=SepEta(stems,t=>say(t)); eta.start();
- worker.onmessage=ev=>{
-  const m=ev.data;
-  if(m.type==='status') eta.note(m.text);
-  else if(m.type==='progress'){
-   $('bar').style.width=(eta.progress(m)*100).toFixed(1)+'%';
-  }
-  else if(m.type==='error'){ eta.stop(); say('Error: '+m.message,1); $('go').disabled=false; worker.terminate(); }
-  else if(m.type==='done'){
-   eta.stop();
-   $('bar').style.width='100%';
-   say(`Finished in ${((performance.now()-t0)/1000/60).toFixed(1)} min.`);
-   show(m.result, m.sampleRate); $('go').disabled=false; worker.terminate();
-  }
- };
- worker.onerror=e=>{ eta.stop(); say('Worker failed: '+(e.message||'could not start'),1); $('go').disabled=false; };
- const base=location.href.replace(/[^/]*$/,'');
- worker.postMessage({mix, stems, baseUrl:base, sampleRate:buf.sampleRate},[mix[0].buffer,mix[1].buffer]);
+ const eta=SepEta(t=>say(t)); eta.start();
+ worker=separateParallel({mix, stems, baseUrl:location.href.replace(/[^/]*$/,''), sampleRate:buf.sampleRate, eta,
+  onStatus:t=>eta.note(t), onProgress:()=>{ $('bar').style.width=(eta.frac()*100).toFixed(1)+'%'; }});
+ worker.then(d=>{
+  eta.stop();
+  $('bar').style.width='100%';
+  say(`Finished in ${((performance.now()-t0)/1000/60).toFixed(1)} min using ${d.workers} worker${d.workers>1?'s':''}.`);
+  show(d.result, d.sampleRate); $('go').disabled=false;
+ }).catch(err=>{ eta.stop(); say('Error: '+(err&&err.message||err),1); $('go').disabled=false; });
  say('Starting…');
 };
 
