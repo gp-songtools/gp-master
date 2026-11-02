@@ -331,6 +331,16 @@ td:first-child{white-space:nowrap;font-weight:600}
 </table>
 <p>The three levels are calibrated to add about −36, −28 and −21 dB of nonlinear content relative to the signal, measured on a real 40-second track and reproduced within 1 dB in the full chain. Only the harmonics and peak rounding are added back, so the fundamentals keep their level, and the results panel reports the figure for your song. Aliasing is controlled with anti-aliased waveshaping, which measured 15 to 19 dB lower aliasing than a plain shaper on a 10 kHz test tone.</p>
 <div class="note w"><p>The loudness stage still lands on your target, so heavier saturation changes density and tone, not volume. It applies to Full master only. Heavy Crunch is a deliberate effect; for a clean master, stay on Auto or Light.</p></div>
+<h3>Distortion</h3>
+<p>Distortion is deliberate grit, separate from Saturation. It builds a distorted copy of the signal (kept above 100–200 Hz so the bass stays clean), level-matches that copy to its dry counterpart by measuring your song, and blends it underneath at −24, −17 or −11 dB for Light, Medium and Heavy. Measured on a real track the finished result adds about −26, −19 and −13 dB relative to the signal, and the three types agree within 1.5 dB, so the levels mean the same whichever you choose.</p>
+<table>
+<tr><th>Type</th><th>What it does</th><th>Sounds like</th></tr>
+<tr><td>Overdrive</td><td>Soft, lopsided clip at 3, 6 or 12× drive</td><td>Guitar-pedal warmth, fairly musical</td></tr>
+<tr><td>Fuzz</td><td>Hard clip at 12, 30 or 80× drive</td><td>Buzzy, aggressive, every harmonic at once</td></tr>
+<tr><td>Crush</td><td>10, 8 or 6 bits, held for 2, 3 or 4 samples</td><td>Digital, lo-fi, aliasing on purpose</td></tr>
+</table>
+<p>Overdrive and Fuzz use anti-aliased waveshaping, which measured 10 to 14 dB lower aliasing than a plain shaper on a 10 kHz tone. Fuzz is still raw by design. Crush aliases deliberately.</p>
+<div class="note w"><p>On a whole mix this adds noise-like content in the mids, so keep it to Light there. It is usually better on single stems: with stems separated, the stem panel has a <b>Stem distortion</b> selector for each of vocals, drums, bass and other, using the type chosen under Distortion. The stem is distorted after its own EQ and compression and before its level fader, and the results panel lists what each stem received.</p></div>
 <a class="top" href="#">↑ top</a>
 
 <h2 id="clarity">14. Clarity</h2>
