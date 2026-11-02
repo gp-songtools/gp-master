@@ -123,7 +123,7 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 #refList button{border:0;background:transparent;color:var(--warn);font:inherit;font-size:13px;cursor:pointer;padding:2px 4px}
 #refName{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sdist{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin:2px 0 10px;font-size:14px}.sdist label{display:flex;justify-content:space-between;align-items:center;gap:8px}.sdist select{font:inherit;padding:4px 6px;border:1px solid var(--ln);border-radius:6px;background:var(--card);color:var(--ink)}
-.srow{display:grid;grid-template-columns:34px 62px 1fr 56px 34px;gap:8px;align-items:center;margin-top:8px;font-size:14px}
+.srow{display:grid;grid-template-columns:34px 62px 1fr 56px 30px 30px;gap:8px;align-items:center;margin-top:8px;font-size:14px}
 .sbtn{width:34px;height:34px;border:1px solid var(--ln);border-radius:50%;background:var(--card);color:var(--ink);font:inherit;font-size:13px;cursor:pointer;padding:0;line-height:1}
 .sbtn[aria-pressed=true]{background:var(--ac);color:var(--acf);border-color:var(--ac)}
 .swr{grid-column:1/-1;display:flex;align-items:center;gap:8px}
@@ -142,7 +142,9 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .srow b{font-weight:600;text-transform:capitalize}
 .srow input[type=range]{margin:0;width:100%}
 .srow span{text-align:right;color:var(--mut)}
-.srow input[type=checkbox]{accent-color:var(--ac);width:18px;height:18px;justify-self:center}
+.msb{width:30px;height:30px;border:1px solid var(--ln);border-radius:6px;background:var(--card);color:var(--ink);font:inherit;font-size:13px;font-weight:700;cursor:pointer;padding:0;line-height:1}
+.msb.m[aria-pressed=true]{background:#d9534f;border-color:#d9534f;color:#fff}
+.msb.s[aria-pressed=true]{background:#e0a800;border-color:#e0a800;color:#222}
 .spw{margin-top:16px;border-top:1px solid var(--ln);padding-top:14px}
 .spw svg{width:100%;height:auto;display:block}
 .sg{stroke:var(--ln);stroke-width:1}.sb{fill:none;stroke:var(--mut);stroke-width:2}.sa{fill:none;stroke:var(--ac);stroke-width:2.5}
@@ -150,7 +152,7 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .hint{color:var(--mut);font-size:13px;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v37</small></h1>
+<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v38</small></h1>
 <p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded.</p>
 <p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or use it just to split the song and download each stem as a WAV.</p>
 
@@ -1237,8 +1239,10 @@ function doubleVocal(ch,fs,lv){
 /* ---- stem balance ---- */
 const STEMS=['vocals','drums','bass','other'];
 let stemData=null,stemStart=0,stemLen=0,stemWorker=null;
-const sgain={},smute={};
-STEMS.forEach(s=>{sgain[s]=0;smute[s]=false});
+const sgain={},smute={},ssolo={};
+STEMS.forEach(s=>{sgain[s]=0;smute[s]=false;ssolo[s]=false});
+const anySolo=()=>HAVE().some(s=>ssolo[s]);
+const audible=s=>!smute[s]&&(!anySolo()||ssolo[s]);
 const ssay=(t,e)=>{$('sst').textContent=t;$('sst').className=e?'err':''};
 const exRange=()=>{
  const fs=src.sampleRate,cap=Math.min(src.length,Math.round(fs*30));
@@ -1249,7 +1253,7 @@ const exRange=()=>{
  }
  return{start:Math.min(Math.round(src.length*.35),src.length-cap),len:cap};
 };
-function clearStems(){spReset();stemData=null;$('mix').hidden=true;$('sbar').style.width='0';ssay('');STEMS.forEach(s=>{sgain[s]=0;smute[s]=false})}
+function clearStems(){spReset();stemData=null;$('mix').hidden=true;$('sbar').style.width='0';ssay('');STEMS.forEach(s=>{sgain[s]=0;smute[s]=false;ssolo[s]=false})}
 /* ---- stem player: audition separated stems alone or as the rebalanced mix ---- */
 const sp={mode:null,off:0,t0:0,raf:0,srcs:[],gn:{}};
 const spDur=()=>src&&stemLen?stemLen/src.sampleRate:0;
@@ -1268,7 +1272,7 @@ function spStop(){
 }
 function spReset(){spStop();sp.off=0;const t=$('spSeek');if(t){t.max=spDur()||1;t.value=0}spLabels()}
 function spGainFor(s,mode){
- if(mode==='mix')return smute[s]?0:Math.pow(10,sgain[s]/20);
+ if(mode==='mix')return !audible(s)?0:Math.pow(10,sgain[s]/20);
  const a=stemData[s][0],n=a.length;let q=0,c=0;for(let i=0;i<n;i+=4){q+=a[i]*a[i];c++}
  return Math.min(7.94,Math.pow(10,(-20-10*Math.log10(q/Math.max(1,c)+1e-18))/20));   // lift to about -20 dB RMS, capped at +18 dB
 }
@@ -1310,7 +1314,7 @@ function swDraw(s){
  if(c.width!==Math.round(W*dpr)||c.height!==Math.round(H*dpr)){c.width=Math.round(W*dpr);c.height=Math.round(H*dpr)}
  const g=c.getContext('2d'),cs=getComputedStyle(document.documentElement),P=swPeaks(s);
  g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
- g.fillStyle=cs.getPropertyValue('--ac').trim()||'#00796b';g.globalAlpha=smute[s]?.25:.9;
+ g.fillStyle=cs.getPropertyValue('--ac').trim()||'#00796b';g.globalAlpha=audible(s)?.9:.25;
  const B=P.mx.length;
  for(let x=0;x<W;x++){const k=Math.min(B-1,Math.floor(x*B/W)),h=Math.max(1,(P.mx[k]/(P.pk||1))*(H/2-2));g.fillRect(x,H/2-h,1,h*2)}
  g.globalAlpha=1;g.font='11px system-ui,sans-serif';
@@ -1344,12 +1348,17 @@ async function stemSave(s){
  btn.disabled=false;btn.textContent=old;
 }
 const HAVE=()=>stemData?STEMS.filter(s=>stemData[s]):STEMS;
+function msRefresh(){
+ HAVE().forEach(s=>{const m=$('sm-'+s),o=$('ss2-'+s);if(m)m.setAttribute('aria-pressed',!!smute[s]);if(o)o.setAttribute('aria-pressed',!!ssolo[s]);swDraw(s)});
+ spGains();
+}
 function mixRows(){
  const have=HAVE();
- $('mixRows').innerHTML=have.map(s=>`<div class="srow"><button type="button" class="sbtn" id="sp-${s}" aria-pressed="false" aria-label="Play ${s} alone" title="Play ${s} alone">▶</button><b>${s}</b><input type="range" id="sg-${s}" min="-24" max="12" step="0.5" value="${sgain[s]}" aria-label="${s} level"><span id="sv-${s}">${sgain[s]>0?'+':''}${sgain[s]} dB</span><input type="checkbox" id="sm-${s}" ${smute[s]?'':'checked'} aria-label="${s} on"><div class="swr"><div class="sw" id="sw-${s}" title="Click to jump here"><canvas id="swc-${s}"></canvas><i class="ph" id="ph-${s}"></i></div><button type="button" class="sdl" id="dl-${s}" aria-label="Download ${s} as WAV">⬇ WAV</button></div></div>`).join('');
+ $('mixRows').innerHTML=have.map(s=>`<div class="srow"><button type="button" class="sbtn" id="sp-${s}" aria-pressed="false" aria-label="Play ${s} alone" title="Play ${s} alone">▶</button><b>${s}</b><input type="range" id="sg-${s}" min="-24" max="12" step="0.5" value="${sgain[s]}" aria-label="${s} level"><span id="sv-${s}">${sgain[s]>0?'+':''}${sgain[s]} dB</span><button type="button" class="msb m" id="sm-${s}" aria-pressed="${!!smute[s]}" aria-label="Mute ${s}" title="Mute ${s}">M</button><button type="button" class="msb s" id="ss2-${s}" aria-pressed="${!!ssolo[s]}" aria-label="Solo ${s}" title="Solo ${s} (listening only)">S</button><div class="swr"><div class="sw" id="sw-${s}" title="Click to jump here"><canvas id="swc-${s}"></canvas><i class="ph" id="ph-${s}"></i></div><button type="button" class="sdl" id="dl-${s}" aria-label="Download ${s} as WAV">⬇ WAV</button></div></div>`).join('');
  have.forEach(s=>{
   $('sg-'+s).oninput=e=>{sgain[s]=+e.target.value;$('sv-'+s).textContent=(sgain[s]>0?'+':'')+sgain[s]+' dB';spGains()};
-  $('sm-'+s).onchange=e=>{smute[s]=!e.target.checked;spGains();swDraw(s)};
+  $('sm-'+s).onclick=()=>{smute[s]=!smute[s];msRefresh()};
+  $('ss2-'+s).onclick=()=>{ssolo[s]=!ssolo[s];msRefresh()};
   $('sp-'+s).onclick=()=>spPlay(s);
   $('sw-'+s).onclick=e=>{const r=e.currentTarget.getBoundingClientRect();spSeekTo(Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*spDur())};
   $('dl-'+s).onclick=()=>stemSave(s);
