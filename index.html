@@ -94,7 +94,7 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 #setList button.del{color:var(--warn)}
 #ioMsg{font-size:13px;color:var(--mut);margin-top:8px;min-height:18px}
 #ioMsg.err{color:var(--warn)}
-#wav{width:100%;height:90px;display:block;border:1px solid var(--ln);border-radius:8px;background:var(--card);touch-action:none;cursor:crosshair}
+#wav{width:100%;height:104px;display:block;border:1px solid var(--ln);border-radius:8px;background:var(--card);touch-action:none;cursor:crosshair}
 #regList{font-size:14px;margin-top:10px}
 .rr{display:grid;grid-template-columns:auto 1fr auto auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--ln)}
 .rr.sel{background:color-mix(in srgb,var(--ac) 10%,transparent)}
@@ -103,6 +103,18 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .rr .amt{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--mut)}
 .rr input[type=range]{width:88px;margin:0}
 .rr .x{border:0;background:transparent;color:var(--warn);font:inherit;font-size:13px;cursor:pointer;padding:2px 4px}
+.zbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
+.zbar button,.rform button{border:1px solid var(--ln);background:transparent;color:var(--ink);border-radius:8px;padding:6px 10px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.zbar button:disabled{opacity:.45;cursor:default}
+#zInfo{font-size:13px;color:var(--mut);margin-left:auto;font-variant-numeric:tabular-nums}
+#zPan{width:100%;margin:8px 0 0}
+.rform{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px;font-size:13px;color:var(--mut)}
+.rform label{display:flex;align-items:center;gap:5px}
+.ti{width:70px;font:inherit;font-size:13px;padding:4px;border:1px solid var(--ln);border-radius:6px;background:var(--card);color:var(--ink);font-variant-numeric:tabular-nums;text-align:center}
+.ti.bad{border-color:var(--warn)}
+.rr .tm{display:flex;align-items:center;gap:4px}
+.rr .rp{border:1px solid var(--ln);background:transparent;color:var(--ink);border-radius:50%;width:24px;height:24px;padding:0;font-size:10px;cursor:pointer}
+@media(max-width:560px){.rr{grid-template-columns:1fr auto auto}.rr .tm{grid-column:1/-1}}
 .rr .val{min-width:46px;text-align:right;font-variant-numeric:tabular-nums}
 .lbl{display:flex;align-items:baseline;gap:6px}
 .q{border:1px solid var(--ln);background:transparent;color:var(--mut);border-radius:50%;width:17px;height:17px;min-width:17px;padding:0;font:inherit;font-size:11px;font-weight:700;line-height:15px;cursor:pointer;text-align:center}
@@ -152,7 +164,7 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .hint{color:var(--mut);font-size:13px;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v38</small></h1>
+<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v39</small></h1>
 <p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded.</p>
 <p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or use it just to split the song and download each stem as a WAV.</p>
 
@@ -164,9 +176,13 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 
 <section class="card" id="regCard" hidden>
  <span class="lbl">Volume automation</span>
- <p class="hint" style="margin:0 0 10px">Drag across the waveform to select a part of the song, then choose what happens there: a level change, extra dynamic taming, or no tone processing at all. Everything outside your regions is mastered normally.</p>
- <canvas id="wav" height="90" aria-label="Waveform — drag to select a region"></canvas>
+ <p class="hint" style="margin:0 0 10px">Drag across the waveform to select a part of the song (zoom in for precision, or type exact times below), then choose what happens there: a level change, extra dynamic taming, or no tone processing at all. Everything outside your regions is mastered normally.</p>
+ <canvas id="wav" height="104" aria-label="Waveform — drag to select a region"></canvas>
+ <div class="zbar"><button type="button" id="zOut" aria-label="Zoom out" title="Zoom out">&minus;</button><button type="button" id="zIn" aria-label="Zoom in" title="Zoom in">+</button><button type="button" id="zFit" title="Show the whole song">Fit</button><button type="button" id="zSel" title="Zoom to the selected region">Zoom to region</button><span id="zInfo">Whole song</span></div>
+ <input type="range" id="zPan" min="0" max="1000" value="0" hidden aria-label="Scroll the zoomed waveform">
  <div class="prow" style="margin-top:8px"><button class="ppb" id="wpBtn">Play</button><span id="wpTime" style="flex:1;font-size:13px;color:var(--mut);font-variant-numeric:tabular-nums">0:00 / 0:00</span></div>
+ <div class="rform"><span>Add by time:</span><label>Start <input class="ti" id="rtS" inputmode="decimal" placeholder="0:00.0" aria-label="Region start time"></label><button type="button" id="rtSn" title="Use the playhead position">Now</button><label>End <input class="ti" id="rtE" inputmode="decimal" placeholder="0:10.0" aria-label="Region end time"></label><button type="button" id="rtEn" title="Use the playhead position">Now</button><button type="button" id="rtAdd">Add region</button></div>
+ <p class="hint" id="regMsg" role="status" style="margin:6px 0 0"></p>
  <div id="regList"></div>
  <p class="hint" id="regHint" style="margin:10px 0 0">No regions yet. Drag across the waveform above to add one.</p>
 </section>
@@ -627,7 +643,7 @@ $('file').onchange=async e=>{
   await tick();
   const L=lufs(kseg(chans(src),src.sampleRate));
   $('inStats').textContent=fmtT(src.duration)+', '+(src.sampleRate/1000)+' kHz, '+(src.numberOfChannels>1?'stereo':'mono')+', currently '+L.toFixed(1)+' LUFS';
-  src.inL=L;clearStems();wpStop();wpOff=0;regions=[];regSel=-1;noiseProf=null;buildPeaks();$('regCard').hidden=false;regSetup();regRender();drawWave();$('wpTime').textContent=wpTimeStr();$('go').disabled=false;$('pv').disabled=false;$('sepPv').disabled=false;$('sepAll').disabled=false;say('');
+  src.inL=L;clearStems();wpStop();wpOff=0;regions=[];regSel=-1;noiseProf=null;buildPeaks();$('regCard').hidden=false;regSetup();zoomSetup();vwUI();regRender();drawWave();$('wpTime').textContent=wpTimeStr();$('go').disabled=false;$('pv').disabled=false;$('sepPv').disabled=false;$('sepAll').disabled=false;say('');
  }catch{src=null;$('inStats').textContent='';say('That file couldn’t be decoded. Try an MP3, WAV, M4A or FLAC.',1)}
 };
 
@@ -654,7 +670,7 @@ function wpStop(){
  const b=$('wpBtn');if(b)b.textContent='Play';
  drawWave();
 }
-function wpTick(){if(!wpOn)return;$('wpTime').textContent=wpTimeStr();drawWave();wpRaf=requestAnimationFrame(wpTick)}
+function wpTick(){if(!wpOn)return;$('wpTime').textContent=wpTimeStr();if(src)vwShow(wpPos()/src.duration);drawWave();wpRaf=requestAnimationFrame(wpTick)}
 function wpSeek(sec){
  const was=wpOn;if(was)wpStop();
  wpOff=Math.max(0,Math.min((src?src.duration:0)-.05,sec));
@@ -664,50 +680,157 @@ function wpSeek(sec){
 const RMODE={gain:'Level',tame:'Tame dynamics',skip:'No tone processing',noise:'Noise profile'};
 const tc=s=>Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');
 
+const BLK=32;let wavCache=null;
 function buildPeaks(){
+ wavCache=null;
  if(!src){wavPeaks=null;return}
- const N=1200,ch=chans(src),n=src.length,step=n/N,p=new Float32Array(N*2);
+ const ch=chans(src),n=src.length,N=Math.ceil(n/BLK),p=new Float32Array(N*2);
  for(let i=0;i<N;i++){
-  const a=Math.floor(i*step),b=Math.min(n,Math.floor((i+1)*step));
+  const a=i*BLK,b=Math.min(n,a+BLK);
   let mn=0,mx=0;
   for(let j=a;j<b;j++){const v=(ch[0][j]+ch[1][j])/2;if(v<mn)mn=v;if(v>mx)mx=v}
   p[2*i]=mn;p[2*i+1]=mx;
  }
- wavPeaks=p;
+ wavPeaks=p;vw.a=0;vw.b=1;
+}
+function wavCols(W){
+ const key=vw.a+'|'+vw.b+'|'+W;
+ if(wavCache&&wavCache.key===key)return wavCache.o;
+ const N=wavPeaks.length/2,n=src.length,s0=vw.a*n,per=(vw.b-vw.a)*n/W,o=new Float32Array(2*W);
+ for(let x=0;x<W;x++){
+  let a=Math.floor((s0+x*per)/BLK),b=Math.ceil((s0+(x+1)*per)/BLK);
+  a=Math.max(0,Math.min(N-1,a));b=Math.max(a+1,Math.min(N,b));
+  let mn=0,mx=0;for(let k=a;k<b;k++){if(wavPeaks[2*k]<mn)mn=wavPeaks[2*k];if(wavPeaks[2*k+1]>mx)mx=wavPeaks[2*k+1]}
+  o[2*x]=mn;o[2*x+1]=mx;
+ }
+ wavCache={key,o};return o;
+}
+/* ---- zoom: vw is the visible part of the song as fractions 0..1 ---- */
+const vw={a:0,b:1};
+const tcf=s=>{const t=Math.round(Math.max(0,s)*10),m=Math.floor(t/600),r=(t%600)/10;return m+':'+(r<10?'0':'')+r.toFixed(1)};
+function parseT(str){
+ const p=String(str).trim().split(':');if(p.length<1||p.length>3)return null;
+ let t=0;
+ for(let i=0;i<p.length;i++){
+  const q=p[i].trim();
+  if(!/^\d+(\.\d+)?$/.test(q)||(i<p.length-1&&q.indexOf('.')>=0))return null;
+  t=t*60+parseFloat(q);
+ }
+ return t;
+}
+const vwMin=()=>src?Math.min(1,1/Math.max(1,src.duration)):1;
+function vwSet(a,b){
+ if(!src)return;
+ let sp=Math.max(vwMin(),Math.min(1,b-a));
+ a=Math.max(0,Math.min(1-sp,a));
+ vw.a=a;vw.b=a+sp;vwUI();drawWave();
+}
+function vwUI(){
+ const sp=vw.b-vw.a,full=sp>=.9999;
+ const pan=$('zPan');if(pan){pan.hidden=full;pan.value=full?0:Math.round(vw.a/(1-sp)*1000)}
+ const zi=$('zInfo');if(zi&&src)zi.textContent=full?'Whole song':tc(vw.a*src.duration)+' to '+tc(vw.b*src.duration)+' ('+(1/sp).toFixed(sp>.1?1:0)+'\u00d7)';
+ const set=(id,d)=>{const e=$(id);if(e)e.disabled=d};
+ set('zOut',full);set('zFit',full);set('zIn',!src||sp<=vwMin()+1e-9);set('zSel',regSel<0||!regions[regSel]);
+}
+function vwZoom(f,c){
+ const sp=vw.b-vw.a;if(c===undefined){const ph=src?wpPos()/src.duration:0;c=(ph>=vw.a&&ph<=vw.b)?ph:(vw.a+vw.b)/2}
+ const ns=Math.max(vwMin(),Math.min(1,sp/f)),k=(c-vw.a)/sp;
+ vwSet(c-k*ns,c-k*ns+ns);
+}
+function vwShow(frac){ // keep a position in view, used while playing or after a typed time
+ const sp=vw.b-vw.a;if(sp>=.9999)return;
+ if(frac<vw.a||frac>vw.b)vwSet(frac-sp*.1,frac-sp*.1+sp);
+}
+function vwToRegion(){
+ const r=regions[regSel];if(!r||!src)return;
+ const a=r.s/src.length,b=r.e/src.length,pad=(b-a)*.15;
+ vwSet(a-pad,b+pad);
+}
+function zoomSetup(){
+ if($('zIn')._w)return;$('zIn')._w=1;
+ $('zIn').onclick=()=>vwZoom(2);$('zOut').onclick=()=>vwZoom(.5);
+ $('zFit').onclick=()=>vwSet(0,1);$('zSel').onclick=vwToRegion;
+ $('zPan').oninput=e=>{const sp=vw.b-vw.a;vwSet(+e.target.value/1000*(1-sp),+e.target.value/1000*(1-sp)+sp)};
+ const c=$('wav');
+ c.addEventListener('wheel',e=>{
+  if(!src)return;const b=c.getBoundingClientRect(),sp=vw.b-vw.a,f=vw.a+Math.max(0,Math.min(1,(e.clientX-b.left)/b.width))*sp;
+  if(e.ctrlKey||e.metaKey){e.preventDefault();vwZoom(e.deltaY<0?1.3:1/1.3,f)}
+  else if(Math.abs(e.deltaX)>Math.abs(e.deltaY)&&sp<.9999){e.preventDefault();vwSet(vw.a+e.deltaX/b.width*sp,vw.b+e.deltaX/b.width*sp)}
+ },{passive:false});
+ $('rtSn').onclick=()=>{if(src)$('rtS').value=tcf(wpPos())};
+ $('rtEn').onclick=()=>{if(src)$('rtE').value=tcf(wpPos())};
+ $('rtAdd').onclick=addRegionByTime;
+ [$('rtS'),$('rtE')].forEach(i=>i.onkeydown=e=>{if(e.key==='Enter')addRegionByTime()});
+}
+const regMsg=t=>{const m=$('regMsg');if(m)m.textContent=t||''};
+function addRegionByTime(){
+ if(!src)return;
+ const a=parseT($('rtS').value),b=parseT($('rtE').value);
+ if(a===null||b===null){regMsg('Could not read that time. Use minutes and seconds like 1:23.5, or just seconds like 83.5.');return}
+ const fs=src.sampleRate,s0=Math.round(Math.max(0,Math.min(a,b))*fs),e0=Math.round(Math.min(src.duration,Math.max(a,b))*fs);
+ if(e0-s0<Math.round(.05*fs)){regMsg('The region needs to be at least 0.05 seconds long, and inside the song ('+tcf(src.duration)+').');return}
+ const r={s:s0,e:e0,mode:'gain',amt:0};regions.push(r);noiseProf=null;regions.sort((p,q)=>p.s-q.s);regSel=regions.indexOf(r);
+ regMsg('');$('rtS').value='';$('rtE').value='';regRender();drawWave();
+}
+function setRegTime(i,which,str){
+ const r=regions[i];if(!r||!src)return;
+ const t=parseT(str),fs=src.sampleRate,min=Math.round(.05*fs);
+ if(t===null){regMsg('Could not read that time. Use minutes and seconds like 1:23.5, or just seconds like 83.5.');regRender();return}
+ let v=Math.round(Math.max(0,Math.min(src.duration,t))*fs);
+ if(which==='s'&&v>r.e-min){regMsg('The start has to be before the end.');regRender();return}
+ if(which==='e'&&v<r.s+min){regMsg('The end has to be after the start.');regRender();return}
+ if(r[which]!==v){r[which]=v;noiseProf=null}
+ regions.sort((p,q)=>p.s-q.s);regSel=regions.indexOf(r);
+ regMsg('');regRender();drawWave();
+}
+function regPick(i){
+ regSel=i;
+ $('regList').querySelectorAll('.rr').forEach((e,k)=>e.classList.toggle('sel',k===i));
+ regHintSet();vwUI();drawWave();
 }
 const RFILL={gain:'rgba(0,150,136,.22)',tame:'rgba(230,145,30,.22)',skip:'rgba(130,140,150,.26)',noise:'rgba(150,60,200,.22)'};
 function drawWave(){
  const c=$('wav');if(!c)return;
- const W=c.clientWidth||520,H=90,dpr=window.devicePixelRatio||1;
+ const W=c.clientWidth||520,H=104,RH=16,HW=H-RH,dpr=window.devicePixelRatio||1;
  if(c.width!==Math.round(W*dpr)||c.height!==Math.round(H*dpr)){c.width=Math.round(W*dpr);c.height=Math.round(H*dpr)}
  const g=c.getContext('2d'),cs0=getComputedStyle(document.documentElement);
  g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
  if(!wavPeaks||!src)return;
  const n=src.length;
  regions.forEach((r,k)=>{
-  const x0=r.s/n*W,x1=r.e/n*W;
+  const sp=vw.b-vw.a,x0=(r.s/n-vw.a)/sp*W,x1=(r.e/n-vw.a)/sp*W;
+  if(x1<0||x0>W)return;
   g.fillStyle=RFILL[r.mode]||RFILL.gain;g.fillRect(x0,0,Math.max(1,x1-x0),H);
   if(k===regSel){
    g.strokeStyle=cs0.getPropertyValue('--ac').trim()||'#0a8';g.lineWidth=2;g.strokeRect(x0+1,1,Math.max(2,x1-x0-2),H-2)}
  });
  if(src){
-  const px=wpPos()/src.duration*W;
-  g.strokeStyle=cs0.getPropertyValue('--ink').trim()||'#000';g.lineWidth=1.5;
-  g.beginPath();g.moveTo(px,0);g.lineTo(px,H);g.stroke();
+  const px=(wpPos()/src.duration-vw.a)/(vw.b-vw.a)*W;
+  if(px>=0&&px<=W){g.strokeStyle=cs0.getPropertyValue('--ink').trim()||'#000';g.lineWidth=1.5;
+  g.beginPath();g.moveTo(px,0);g.lineTo(px,H);g.stroke()}
  }
  if(drag&&drag.x1!==undefined){
   const a=Math.min(drag.x0,drag.x1)*W,b=Math.max(drag.x0,drag.x1)*W;
   g.fillStyle='rgba(120,120,120,.25)';g.fillRect(a,0,Math.max(1,b-a),H);
  }
- const cs=cs0;
+ const cs=cs0,cy=HW/2,cols=wavCols(Math.max(1,Math.round(W)));
  g.strokeStyle=cs.getPropertyValue('--mut').trim()||'#777';g.lineWidth=1;g.beginPath();
- const N=wavPeaks.length/2;
- for(let i=0;i<N;i++){
-  const px=i/N*W+.5,hi=H/2-wavPeaks[2*i+1]*H*.47,lo=H/2-wavPeaks[2*i]*H*.47;
-  g.moveTo(px,hi);g.lineTo(px,Math.max(lo,hi+.6));
+ for(let x=0;x<W;x++){
+  const hi=cy-cols[2*x+1]*HW*.47,lo=cy-cols[2*x]*HW*.47;
+  g.moveTo(x+.5,hi);g.lineTo(x+.5,Math.max(lo,hi+.6));
  }
  g.stroke();
- g.strokeStyle=cs.getPropertyValue('--ln').trim()||'#ccc';g.beginPath();g.moveTo(0,H/2);g.lineTo(W,H/2);g.stroke();
+ g.strokeStyle=cs.getPropertyValue('--ln').trim()||'#ccc';g.beginPath();g.moveTo(0,cy);g.lineTo(W,cy);g.stroke();
+ // time ruler
+ const dur=src.duration,spanS=(vw.b-vw.a)*dur,steps=[.1,.2,.5,1,2,5,10,15,30,60,120,300,600];
+ let st=steps[steps.length-1];for(const q of steps){if(q/spanS*W>=64){st=q;break}}
+ g.fillStyle=cs.getPropertyValue('--mut').trim()||'#777';g.font='10px system-ui,sans-serif';g.textBaseline='bottom';g.textAlign='left';
+ g.strokeStyle=cs.getPropertyValue('--ln').trim()||'#ccc';g.beginPath();
+ for(let t=Math.ceil(vw.a*dur/st)*st;t<=vw.b*dur+1e-9;t+=st){
+  const x=(t/dur-vw.a)/(vw.b-vw.a)*W;g.moveTo(x+.5,HW);g.lineTo(x+.5,H-11);
+  g.fillText(st<1?tcf(t):tc(t),x+3,H-1);
+ }
+ g.stroke();
 }
 function regRender(){
  const fs=src?src.sampleRate:44100;
@@ -717,7 +840,7 @@ function regRender(){
    :r.mode==='tame'
    ?`<span class="amt"><input type="range" data-g="${i}" min="1" max="3" step="1" value="${r.amt}" aria-label="Taming strength"><span class="val">${['','Light','Medium','Strong'][r.amt]||'Light'}</span></span>`
    :r.mode==='noise'?`<span class="amt val">learn</span>`:`<span class="amt val">—</span>`;
-  return `<div class="rr${i===regSel?' sel':''}"><span class="tm" data-sel="${i}">${tc(r.s/fs)}–${tc(r.e/fs)}</span>`+
+  return `<div class="rr${i===regSel?' sel':''}"><span class="tm" data-sel="${i}"><input class="ti" data-ts="${i}" value="${tcf(r.s/fs)}" inputmode="decimal" aria-label="Region ${i+1} start"> &ndash; <input class="ti" data-te="${i}" value="${tcf(r.e/fs)}" inputmode="decimal" aria-label="Region ${i+1} end"><button type="button" class="rp" data-rp="${i}" aria-label="Play from the start of region ${i+1}" title="Play from the start of this region">&#9654;</button></span>`+
    `<select data-m="${i}">`+Object.entries(RMODE).map(([k,v])=>`<option value="${k}"${r.mode===k?' selected':''}>${v}</option>`).join('')+`</select>`+
    amt+`<button class="x" data-x="${i}" aria-label="Remove region">Remove</button></div>`;
  }).join('');
@@ -732,11 +855,17 @@ function regRender(){
  $('regList').querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{
   const i=+b.dataset.x;if(regions[i].mode==='noise')noiseProf=null;regions.splice(i,1);if(regSel>=regions.length)regSel=regions.length-1;regRender();drawWave();
  });
- $('regList').querySelectorAll('[data-sel]').forEach(b=>b.onclick=()=>{regSel=+b.dataset.sel;regRender();drawWave()});
- nrHintUpdate();
+ $('regList').querySelectorAll('[data-sel]').forEach(b=>b.onclick=()=>regPick(+b.dataset.sel));
+ $('regList').querySelectorAll('[data-ts]').forEach(i=>{i.onfocus=()=>{i.select();if(regSel!==+i.dataset.ts)regPick(+i.dataset.ts)};i.onchange=()=>setRegTime(+i.dataset.ts,'s',i.value)});
+ $('regList').querySelectorAll('[data-te]').forEach(i=>{i.onfocus=()=>{i.select();if(regSel!==+i.dataset.te)regPick(+i.dataset.te)};i.onchange=()=>setRegTime(+i.dataset.te,'e',i.value)});
+ $('regList').querySelectorAll('[data-rp]').forEach(b=>b.onclick=async e=>{e.stopPropagation();const r=regions[+b.dataset.rp];if(!r)return;regPick(+b.dataset.rp);vwShow(r.s/src.length);wpSeek(r.s/src.sampleRate);if(!wpOn)await wpPlay()});
+ vwUI();
+ nrHintUpdate();regHintSet();
+}
+function regHintSet(){
  $('regHint').textContent=regions.length
   ?(regSel>=0?'Preview uses the selected region. ':'')+'Level rides the fader before the mastering chain. Tame adds compression only inside the region. No tone processing keeps the original tone there, but still gets the final loudness and limiting so the level matches.'
-  :'No regions yet. Drag across the waveform above to add one.';
+  :'No regions yet. Drag across the waveform above, or type a start and end time, to add one.';
 }
 function nrHintUpdate(){
  const nz=regions.filter(r=>r.mode==='noise').length;
@@ -748,13 +877,14 @@ function nrHintUpdate(){
 function regSetup(){
  const c=$('wav');if(!c||c._wired)return;c._wired=true;
  const xof=e=>{const b=c.getBoundingClientRect();return Math.max(0,Math.min(1,(e.clientX-b.left)/b.width))};
+ const absf=f=>vw.a+f*(vw.b-vw.a);
  c.addEventListener('pointerdown',e=>{if(!src)return;drag={x0:xof(e)};try{c.setPointerCapture(e.pointerId)}catch(_){}} );
  c.addEventListener('pointermove',e=>{if(!drag)return;drag.x1=xof(e);drawWave()});
  c.addEventListener('pointerup',e=>{
   if(!drag||!src)return;
-  const x1=drag.x1!==undefined?drag.x1:xof(e),a=Math.min(drag.x0,x1),b=Math.max(drag.x0,x1);
+  const x1=drag.x1!==undefined?drag.x1:xof(e),va=Math.min(drag.x0,x1),vb=Math.max(drag.x0,x1),a=absf(va),b=absf(vb);
   drag=null;
-  if(b-a<.012){
+  if(vb-va<.012){
    const pos=a*src.length;let hit=-1;
    regions.forEach((r,i)=>{if(pos>=r.s&&pos<=r.e)hit=i});
    regSel=hit;
@@ -1744,6 +1874,7 @@ const HELP={
 <p><b>Mark a quiet passage</b> with a Noise profile region on the waveform for the best result: that measures the actual noise rather than guessing. Without one, the floor is estimated from the quietest 5% of each frequency band across the song, which on a test with known added noise came within 0.5 dB of the region result.</p>
 <p>Light is 6 dB of reduction, Medium 12 dB, Strong 20 dB. It runs first, before any EQ or compression, so the chain never amplifies noise. Gains are smoothed across frequency and time to avoid the warbling that makes denoisers obvious, but strong settings on dense music can still sound watery — check on Preview.</p>`,
 'Volume automation':`<p>Press Play under the waveform to hear the song and find the part you want, then drag across the waveform to select it. Clicking moves the playhead, and clicking inside a region also selects it.</p>
+<p><b>Zoom and exact times.</b> Under the waveform, <b>+</b> and <b>&minus;</b> zoom in and out (Ctrl or Cmd with the mouse wheel zooms at the pointer), <b>Fit</b> shows the whole song, and <b>Zoom to region</b> frames the selected region. When zoomed, a slider (or sideways scrolling) moves along the song, a time ruler appears, and the view follows the playhead while it plays. You can zoom in to about one second across. Every region's start and end are editable boxes in minutes and seconds with tenths, for example <code>1:23.5</code>, or just seconds like <code>83.5</code>. To add a region without dragging, type a start and end under <b>Add by time</b> (the <b>Now</b> buttons copy the playhead position). The round &#9654; on a region plays from its start.</p>
 <p>Mastering normally applies one setting to the whole song, but problems are usually local — one chorus that jumps, one verse too quiet, an intro you want left alone. Drag across the waveform to select a part and choose what happens there.</p>
 <p><b>Level</b> rides the fader by up to ±12 dB <i>before</i> the mastering chain, so the compressors respond to the corrected balance rather than fighting it. <b>Tame dynamics</b> adds compression inside the region only. <b>No tone processing</b> keeps the original tone there but still applies the final loudness and limiting, so the level still matches the rest.</p>
 <p>Region edges get 20 ms fades so boundaries do not click. With a region selected, Preview renders around it instead of the middle of the song. Regions belong to the loaded file and are cleared when you load another.</p>`,
