@@ -6,7 +6,11 @@
    running a model at the wrong n_fft silently produces a weak, hollow stem. */
 
 const ORT_VERSION = '1.20.1';
-const ORT_BASE = `https://cdn.jsdelivr.net/npm/onnxruntime-web@${ORT_VERSION}/dist/`;
+// The runtime ships in the ort/ folder next to the page, so splitting works offline and on
+// networks that block CDNs. If that copy cannot be used, fall back to the CDN.
+const ORT_LOCAL = new URL('./ort/', self.location.href).href;
+const ORT_CDN = `https://cdn.jsdelivr.net/npm/onnxruntime-web@${ORT_VERSION}/dist/`;
+let ORT_BASE = ORT_LOCAL;
 
 const HOP = 1024;
 const MODELS = {
@@ -187,9 +191,25 @@ class Spec {
 
 /* ---------- inference ---------- */
 let ortReady = false;
+// The local copy is only used if the files are present and the module is served as JavaScript;
+// ORT cannot retry a failed backend start, so this is checked before committing to it.
+async function localRuntimeOk() {
+  try {
+    const [m, w] = await Promise.all([
+      fetch(ORT_LOCAL + 'ort-wasm-simd-threaded.mjs', { method: 'HEAD' }),
+      fetch(ORT_LOCAL + 'ort-wasm-simd-threaded.wasm', { method: 'HEAD' })]);
+    return m.ok && w.ok && /javascript/i.test(m.headers.get('content-type') || '');
+  } catch (e) { return false; }
+}
 async function initOrt() {
   if (ortReady) return;
-  importScripts(ORT_BASE + 'ort.min.js');
+  if (await localRuntimeOk()) {
+    try { importScripts(ORT_LOCAL + 'ort.min.js'); ORT_BASE = ORT_LOCAL; } catch (e) { /* fall through to the CDN */ }
+  }
+  if (!self.ort) {
+    try { importScripts(ORT_CDN + 'ort.min.js'); ORT_BASE = ORT_CDN; }
+    catch (e) { throw new Error('runtime-unavailable: ' + ((e && e.message) || e)); }
+  }
   self.ort.env.wasm.wasmPaths = ORT_BASE;
   self.ort.env.wasm.numThreads = 1;   // one thread per worker; the pool provides the parallelism
   self.ort.env.wasm.simd = true;

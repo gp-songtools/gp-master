@@ -10,6 +10,22 @@ function sepWorkerCount() {
   return Math.max(1, Math.min(4, (navigator.hardwareConcurrency || 2) - 1));
 }
 
+/* Turn the raw browser messages into something a person can act on. The original text is kept
+   in brackets so it can still be reported. */
+function sepExplain(err) {
+  const raw = (err && err.message) || String(err || 'unknown error');
+  let nice = null;
+  if (/origin 'null'|file:\/\/|SecurityError/i.test(raw))
+    nice = 'Stem separation cannot run when the page is opened as a file from a folder, because browsers block the background workers it uses. Use the hosted copy on GitHub Pages, or start a small local server in the project folder (for example, run "python3 -m http.server" there and open http://localhost:8000).';
+  else if (/runtime-unavailable|importScripts|failed to load/i.test(raw))
+    nice = 'The separation runtime could not be loaded, either from this site or from the backup copy on a CDN. Check your connection, and whether an ad blocker, firewall or school or work network is blocking it.';
+  else if (/out of memory|allocation failed|array buffer allocation|memory access out of bounds|RangeError: Invalid typed array length/i.test(raw))
+    nice = 'The browser ran out of memory. Each worker needs about 1 GB. Choose fewer workers in the Workers menu, close other tabs, or separate the 30-second section or fewer stems.';
+  else if (/Failed to fetch|NetworkError|Load failed/i.test(raw))
+    nice = 'A model file could not be downloaded. Check your connection and try again; the models are about 123 MB and are cached after the first download.';
+  return nice ? (raw === 'file://' ? nice : nice + ' [' + raw + ']') : raw;
+}
+
 function separateParallel(o) {
   const stems = o.stems.filter(s => s !== 'other'), wantOther = o.stems.includes('other');
   const n = o.mix[0].length, eta = o.eta, say = o.onStatus || (() => {});
@@ -18,7 +34,7 @@ function separateParallel(o) {
   const result = {}, doneCount = {}, modelBuf = {}, modelWait = {}, queue = [];
   let remaining = 0, resolveFn, rejectFn;
 
-  const fail = err => { if (dead) return; dead = true; workers.forEach(w => w.w.terminate()); rejectFn(err); };
+  const fail = err => { if (dead) return; dead = true; workers.forEach(w => w.w.terminate()); rejectFn(err instanceof Error ? new Error(sepExplain(err)) : err); };
   const abort = () => fail(new Error('Separation cancelled'));
 
   // ---- model download, one at a time in the order they are needed ----
@@ -104,7 +120,7 @@ function separateParallel(o) {
   let ready = 0;
   for (let i = 0; i < W; i++) {
     let w;
-    try { w = new Worker('./sep-worker.js'); } catch (e) { fail(e); break; }
+    try { w = new Worker('./sep-worker.js'); } catch (e) { fail(new Error(sepExplain(e))); break; }
     const rec = { w, busy: false, dead: false, stem: null, task: null, id: i };
     workers.push(rec);
     w.onerror = e => onWorkerFault(rec, 'A worker failed: ' + (e.message || 'could not start'));

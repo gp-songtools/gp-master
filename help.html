@@ -451,6 +451,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 <a class="top" href="#">↑ top</a>
 
 <h2 id="trouble">22. Troubleshooting</h2>
+<h3>Stem separation fails or says it cannot run</h3><ul><li><b>Opened from a folder (the address starts with file://).</b> Browsers block the background workers separation needs. Use the hosted copy, or run <code>python3 -m http.server</code> in the project folder and open <code>http://localhost:8000</code>.</li><li><b>&ldquo;Runtime could not be loaded.&rdquo;</b> The app ships its own copy, so this means the files in <code>ort/</code> are missing and the backup CDN is blocked too. Re-download the project, or check ad blockers and firewalls.</li><li><b>&ldquo;Ran out of memory.&rdquo;</b> Pick fewer workers, close other tabs, or separate only the 30-second section.</li></ul>
 <table>
 <tr><th>Problem</th><th>Cause and fix</th></tr>
 <tr><td>Nothing happens on tapping the upload box</td><td>Some in-app browsers block file pickers. Use the plain picker underneath, or open the site in Safari or Chrome.</td></tr>

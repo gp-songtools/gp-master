@@ -148,6 +148,9 @@ browser storage is per-device and is lost when site data is cleared.
 - Not a replacement for fixing problems in the mix.
 
 
+## Running locally
+Stem separation needs the page to be served over http, not opened as a file (browsers block workers on file://). From the project folder run `python3 -m http.server` and open http://localhost:8000. The ONNX Runtime files it needs are bundled in `ort/` (onnxruntime-web 1.20.1, MIT); the jsDelivr CDN is only a fallback.
+
 ## Stem separation speed and progress
 Separation runs in parallel. `sep-pool.js` cuts the song into independent chunks and a pool of up to four workers by default (one per core, leaving one free; choosable from 1 to 8; roughly 1 to 1.2 GB of memory each, measured) takes them from a shared queue, slowest model first. Each worker is single-threaded WebAssembly, so no special server headers are needed. The page downloads each model once and copies it to a worker only when that worker needs it. Output is identical to the old sequential worker, sample for sample. `eta.js` turns finished-chunk timings into a cost-weighted bar and a countdown of total time remaining.
 
