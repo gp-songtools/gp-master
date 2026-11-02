@@ -79,7 +79,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 <b>8</b> Pumper — the kick ducks the mid and high bands (off unless you turn it on)<br>
 <b>9</b> Stereo stage — bass summed to mono, mid and high width adjusted<br>
 <b>10</b> De-esser — reduces 5–9 kHz when it spikes<br>
-<b>11</b> Saturation — soft clipping for density<br>
+<b>11</b> Saturation — peak soft-clip, plus optional Tape, Tube or Crunch harmonics<br>
 <b>12</b> Loudness match and limiter — iterates gain until the target is hit, then true-peak limits<br>
 <b>13</b> Dither — triangular, applied on conversion to 24-bit or 16-bit
 </div>
@@ -321,6 +321,16 @@ td:first-child{white-space:nowrap;font-weight:600}
 </table>
 <p>Measured on real material, Gentle made four tone moves up to 1.4 dB with the dynamic EQ averaging 0.0 dB and peaking at 1.6 dB; Strong made seven moves up to 3.5 dB with the dynamic EQ averaging 0.8 dB and peaking at 4.2 dB.</p>
 <p>Gentle is the default because over-processing is harder to hear than under-processing, and much harder to undo. Start there.</p>
+<h3>Saturation setting and character</h3>
+<p>The Saturation control sits separately from the amount. <b>Auto</b> is the gentle peak soft-clip in the table above. <b>Off</b> bypasses it. <b>Light</b>, <b>Medium</b> and <b>Heavy</b> add real harmonic saturation on top, in one of three characters:</p>
+<table>
+<tr><th>Character</th><th>Shape</th><th>Sounds like</th><th>Range</th></tr>
+<tr><td>Tape</td><td>Symmetric, soft</td><td>Smooth density, mostly odd harmonics, highs rolled off above 12 kHz</td><td>Above 120 Hz</td></tr>
+<tr><td>Tube</td><td>Lopsided</td><td>Warmth from even harmonics, including an octave above</td><td>Above 120 Hz</td></tr>
+<tr><td>Crunch</td><td>Blunt, reacts to quiet material too</td><td>Grit and bite</td><td>Above 250 Hz</td></tr>
+</table>
+<p>The three levels are calibrated to add about −36, −28 and −21 dB of nonlinear content relative to the signal, measured on a real 40-second track and reproduced within 1 dB in the full chain. Only the harmonics and peak rounding are added back, so the fundamentals keep their level, and the results panel reports the figure for your song. Aliasing is controlled with anti-aliased waveshaping, which measured 15 to 19 dB lower aliasing than a plain shaper on a 10 kHz test tone.</p>
+<div class="note w"><p>The loudness stage still lands on your target, so heavier saturation changes density and tone, not volume. It applies to Full master only. Heavy Crunch is a deliberate effect; for a clean master, stay on Auto or Light.</p></div>
 <a class="top" href="#">↑ top</a>
 
 <h2 id="clarity">14. Clarity</h2>
