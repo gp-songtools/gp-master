@@ -134,7 +134,7 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .hint{color:var(--mut);font-size:13px;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v26</small></h1>
+<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v27</small></h1>
 <p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded.</p>
 <p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or get the stems as files from the <a href="stems.html" style="color:var(--ac)">Stem Splitter</a>.</p>
 
@@ -217,6 +217,10 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
   <button type="button" data-v="-3">Soften</button><button type="button" data-v="0" aria-pressed="true">Off</button><button type="button" data-v="3">Punchy</button><button type="button" data-v="6">Very punchy</button>
  </div>
  <p class="hint" style="margin:-6px 0 18px">Brings percussive hits forward relative to sustained sounds, or pushes them back. Measurable but subtle on already-compressed material — see the guide for what it can and cannot do.</p>
+ <span class="lbl">Saturation</span>
+ <div class="chips" id="sa"><button type="button" data-v="auto" aria-pressed="true">Auto</button><button type="button" data-v="off" aria-pressed="false">Off</button><button type="button" data-v="1" aria-pressed="false">Light</button><button type="button" data-v="2" aria-pressed="false">Medium</button><button type="button" data-v="3" aria-pressed="false">Heavy</button></div>
+ <div class="chips" id="sc"><button type="button" data-v="tape" aria-pressed="true">Tape</button><button type="button" data-v="tube" aria-pressed="false">Tube</button><button type="button" data-v="crunch" aria-pressed="false">Crunch</button></div>
+ <p class="hint" style="margin:-6px 0 18px">Auto keeps the gentle peak soft-clipping your amount setting controls. Light, Medium and Heavy add real harmonic saturation of the chosen character on top. Full master only.</p>
  <span class="lbl">Noise reduction</span>
  <div class="chips" id="nr">
   <button type="button" data-v="0" aria-pressed="true">Off</button><button type="button" data-v="6">Light</button><button type="button" data-v="12">Medium</button><button type="button" data-v="20">Strong</button>
@@ -419,6 +423,7 @@ async function fullMaster(b){
  const env=[0,0,0],pw=[0,0,0],gr=[0,0,0],rms=[-60,-60,-60],sg=[0,0,0],bd=[new Float64Array(2),new Float64Array(2),new Float64Array(2)];
  const aE=Math.exp(-1/(.0005*fs)),rE=Math.exp(-1/(.05*fs)),cA=BP.map(p=>1-Math.exp(-1/(p.a*.001*fs))),cR=BP.map(p=>1-Math.exp(-1/(p.l*.001*fs))),c0=1/(3*fs),K=1+(P.k-1)*IQ.sat;
  const aD=1-Math.exp(-1/(.001*fs)),rD=1-Math.exp(-1/(.04*fs));let de=0,dp=0,dg=0,dsum=0,dmax=0,drms=-60;
+ let satD=0,satX=0;const SAT=isNum(satMode)?makeSat(satChar,satMode,fs,Math.sqrt((a0.reduce((q,v)=>q+v*v,0)+b0.reduce((q,v)=>q+v*v,0))/(2*n))):null;
  /* Transient shaper: a fast and a slow envelope follower on the same signal.
     Where the fast one runs ahead of the slow one, an attack is happening.
     Measured on real material, that ratio sits around 2.1 dB in steady parts
@@ -496,7 +501,8 @@ async function fullMaster(b){
     dg+=(t-dg)*(t>dg?aD:rD);dsum+=dg;if(dg>dmax)dmax=dg;
     const q=1-Math.exp(-dg*.1151293);yl-=s0*q;yr-=s1*q;
    }
-   let ol=Math.tanh(K*yl)/K,or2=Math.tanh(K*yr)/K;
+   if(SAT){const a=SAT(yl,0),b2=SAT(yr,1);satD+=(a-yl)*(a-yl)+(b2-yr)*(b2-yr);satX+=yl*yl+yr*yr;yl=a;yr=b2}
+   let ol=satMode==='off'?yl:Math.tanh(K*yl)/K,or2=satMode==='off'?yr:Math.tanh(K*yr)/K;
    /* After saturation, not before: the tanh stage would otherwise squash the
       punch the shaper just added, inverting the control. */
    if(TR!==0){
@@ -516,7 +522,7 @@ async function fullMaster(b){
   say('Full master… '+Math.round(e/n*100)+'%');await tick();
  }
  const sgn=v=>(v>0?'+':'')+v.toFixed(1),moves=spec.slice(1).filter(s=>Math.abs(s[2])>=.5).map(s=>(s[1]>=1000?s[1]/1000+'k':s[1])+' '+sgn(s[2]));
- return[X,[['Tone moves (dB)',moves.length?moves.join(', '):'none needed'],['Avg compression','low '+(sg[0]/n).toFixed(1)+' / mid '+(sg[1]/n).toFixed(1)+' / high '+(sg[2]/n).toFixed(1)+' dB'],['Tone target',RF?'matched to '+refAvg.count+' reference track'+(refAvg.count>1?'s':''):(genre==='auto'?'built-in curve':genre+' curve')],['Processing amount',amount],['Clarity',CL.on?'side high-pass '+Math.round(CL.fc)+' Hz'+(CL.mp?', 140 Hz '+CL.mc.toFixed(1)+' dB':'')+' (low-mid side/mid '+an.lm.toFixed(1)+' dB)':'off'],['Dynamic EQ',P.dq>0?DQ.map((d,k)=>d.f+' Hz '+(DS[k].sum/n).toFixed(1)+'/'+DS[k].max.toFixed(1)).join(', ')+' dB (avg/max)':'off'],...(TR!==0?[['Transients',(TR>0?'+':'')+TR+' dB target, avg '+(tcnt?tsum/tcnt:0).toFixed(1)+' dB, max '+tmx.toFixed(1)+' dB']]:[]),...(PDEP>0?[['Pumper','avg '+(psum/n).toFixed(1)+' dB, max '+pmax.toFixed(1)+' dB']]:[]),...(VA>0?[['Vocal enhancer','+'+VA+' dB presence at 3 kHz, +'+(.5*VA)+' dB air, leveling avg '+(vd.sum/n).toFixed(1)+' dB']]:[]),['De-esser',P.ds>0?'avg '+(dsum/n).toFixed(1)+' dB, max '+dmax.toFixed(1)+' dB':'off'],['Stereo','bass mono below 150 Hz, width '+W.toFixed(2)+'x']]];
+ return[X,[['Tone moves (dB)',moves.length?moves.join(', '):'none needed'],['Avg compression','low '+(sg[0]/n).toFixed(1)+' / mid '+(sg[1]/n).toFixed(1)+' / high '+(sg[2]/n).toFixed(1)+' dB'],['Tone target',RF?'matched to '+refAvg.count+' reference track'+(refAvg.count>1?'s':''):(genre==='auto'?'built-in curve':genre+' curve')],['Processing amount',amount],['Clarity',CL.on?'side high-pass '+Math.round(CL.fc)+' Hz'+(CL.mp?', 140 Hz '+CL.mc.toFixed(1)+' dB':'')+' (low-mid side/mid '+an.lm.toFixed(1)+' dB)':'off'],['Dynamic EQ',P.dq>0?DQ.map((d,k)=>d.f+' Hz '+(DS[k].sum/n).toFixed(1)+'/'+DS[k].max.toFixed(1)).join(', ')+' dB (avg/max)':'off'],...(TR!==0?[['Transients',(TR>0?'+':'')+TR+' dB target, avg '+(tcnt?tsum/tcnt:0).toFixed(1)+' dB, max '+tmx.toFixed(1)+' dB']]:[]),...(satMode!=='auto'?[['Saturation',satMode==='off'?'off (peak soft-clip bypassed)':SATN[satChar]+', '+['','light','medium','heavy'][satMode]+', nonlinear content '+(10*Math.log10(satD/(satX+1e-20)+1e-12)).toFixed(0)+' dB re signal']]:[]),...(PDEP>0?[['Pumper','avg '+(psum/n).toFixed(1)+' dB, max '+pmax.toFixed(1)+' dB']]:[]),...(VA>0?[['Vocal enhancer','+'+VA+' dB presence at 3 kHz, +'+(.5*VA)+' dB air, leveling avg '+(vd.sum/n).toFixed(1)+' dB']]:[]),['De-esser',P.ds>0?'avg '+(dsum/n).toFixed(1)+' dB, max '+dmax.toFixed(1)+' dB':'off'],['Stereo','bass mono below 150 Hz, width '+W.toFixed(2)+'x']]];
 }
 
 /* ---- encoders ---- */
@@ -979,7 +985,7 @@ const refOn=()=>refAvg&&$('useRef').checked;
 const radio=n=>{const e=document.querySelector(`input[name=${n}]:checked`);return e?e.value:null};
 const setRadio=(n,v)=>{const e=document.querySelector(`input[name=${n}][value="${v}"]`);if(e)e.checked=true};
 function getCfg(){
- return{genre,amount,clar,widthSel,vocAmt,pumpDb,noiseDb,transDb,dblAmt,useRef:$('useRef').checked,
+ return{genre,amount,clar,widthSel,vocAmt,pumpDb,noiseDb,transDb,dblAmt,satMode,satChar,useRef:$('useRef').checked,
   lufs:+$('lufs').value,fmt:radio('f'),mode:radio('p'),
   useStems:$('useStems').checked,perStem:$('perStem').checked};
 }
@@ -994,6 +1000,8 @@ function applyCfg(c){
  pumpDb=pick(c.pumpDb,isNum,pumpDb);
  noiseDb=pick(c.noiseDb,isNum,noiseDb);
  transDb=pick(c.transDb,isNum,transDb);
+ satMode=pick(c.satMode,v=>v==='auto'||v==='off'||(isNum(v)&&v>=1&&v<=3),satMode);
+ satChar=pick(c.satChar,v=>typeof v==='string'&&SATC[v],satChar);
  dblAmt=pick(c.dblAmt,v=>isNum(v)&&v>=0&&v<=3,dblAmt);
  if(isNum(c.lufs)&&c.lufs>=-24&&c.lufs<=-6)sync(c.lufs);
  if(['wav','mp3','m4a'].includes(c.fmt))setRadio('f',c.fmt);
@@ -1003,7 +1011,7 @@ function applyCfg(c){
  if(typeof c.perStem==='boolean')$('perStem').checked=c.perStem;
  [...$('gen').children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.g===genre));
  [...$('cl').children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.c===String(clar)));
- sel('amt',amount);sel('wd',String(widthSel));sel('vc',String(vocAmt));sel('pu',String(pumpDb));sel('nr',String(noiseDb));sel('tr',String(transDb));sel('db',String(dblAmt));nrHintUpdate();
+ sel('amt',amount);sel('wd',String(widthSel));sel('vc',String(vocAmt));sel('pu',String(pumpDb));sel('nr',String(noiseDb));sel('tr',String(transDb));sel('db',String(dblAmt));sel('sa',String(satMode));sel('sc',satChar);nrHintUpdate();
  if(stemData)analyzeStems();
 }
 function cfgSave(){try{localStorage.setItem(CFGKEY,JSON.stringify(getCfg()))}catch(e){}}
@@ -1106,6 +1114,28 @@ function stemFX(name,ch,fs){
   o[0][i]=x[0];o[1][i]=x[1];
  }
  return{ch:o,note:`${name}: comp avg ${(gsum/n).toFixed(1)} dB`+(C.ds?`, de-ess ${(dsum/n).toFixed(1)} dB`:'')};
+}
+
+/* ---- saturation: anti-aliased waveshaper added in parallel ----
+   First-order antiderivative anti-aliasing (ADAA) instead of oversampling. The wet path is
+   high-passed so the bass does not intermodulate, and only the nonlinear part (harmonics plus
+   peak rounding) is added back, so the level of the fundamentals stays put. Drive values were
+   calibrated to add about -36, -28 and -21 dB of nonlinear energy relative to the signal. */
+const SATC={tape:{b:0,lp:12000,hp:120,g:[1.1,1.8,2.9]},tube:{b:.3,lp:16000,hp:120,g:[.5,1.15,2.5]},crunch:{b:0,lp:16000,hp:250,k:1,g:[.15,.4,1]}};
+const SATN={tape:'Tape',tube:'Tube',crunch:'Crunch'};
+let satMode='auto',satChar='tape';
+const lcosh=z=>{z=Math.abs(z);return z+Math.log1p(Math.exp(-2*z))-Math.LN2};
+function makeSat(ch,lv,fs,rmsIn){
+ const C=SATC[ch],g=C.g[lv-1],SN=.126/Math.max(rmsIn,1e-4),tb=Math.tanh(C.b),ng=C.k?1:1-tb*tb;
+ const f=C.k?(u=>u/(1+Math.abs(u))):(u=>(Math.tanh(u+C.b)-tb)/ng);
+ const F=C.k?(u=>Math.abs(u)-Math.log1p(Math.abs(u))):(u=>(lcosh(u+C.b)-u*tb)/ng);
+ const S=[0,1].map(()=>({v1:0,u1:0,hp:bqc('hp',C.hp,0,.7071,fs),lp:bqc('lp',C.lp,0,.7071,fs),dc:bqc('hp',15,0,.7071,fs)}));
+ return(x,c)=>{
+  const s=S[c],v=bq(s.hp,x),u=g*v*SN,du=u-s.u1;
+  const y=(Math.abs(du)>1e-5?(F(u)-F(s.u1))/du:f((u+s.u1)*.5))/(g*SN);
+  const vr=(v+s.v1)*.5;s.u1=u;s.v1=v;
+  return x+bq(s.lp,bq(s.dc,y-vr));
+ };
 }
 
 /* ---- vocal doubler: two detuned, delayed, band-limited copies of the vocal stem ---- */
@@ -1445,7 +1475,9 @@ $('cl').onclick=e=>{const c=e.target.dataset&&e.target.dataset.c;if(c==null)retu
 const sel=(id,v)=>[...$(id).children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.v===v));
 const chip=(id,fn)=>{$(id).onclick=e=>{const v=e.target.dataset&&e.target.dataset.v;if(v==null)return;fn(+v);sel(id,v)}};
 $('amt').onclick=e=>{const v=e.target.dataset&&e.target.dataset.v;if(!v)return;amount=v;sel('amt',v)};
-chip('pu',v=>pumpDb=v);chip('vc',v=>vocAmt=v);chip('nr',v=>{noiseDb=v;nrHintUpdate()});chip('tr',v=>transDb=v);chip('db',v=>dblAmt=v);
+chip('pu',v=>pumpDb=v);chip('vc',v=>vocAmt=v);chip('nr',v=>{noiseDb=v;nrHintUpdate()});chip('tr',v=>transDb=v);
+$('sa').onclick=e=>{const v=e.target.dataset&&e.target.dataset.v;if(v==null)return;satMode=v==='auto'||v==='off'?v:+v;sel('sa',v)};
+$('sc').onclick=e=>{const v=e.target.dataset&&e.target.dataset.v;if(!v)return;satChar=v;sel('sc',v)};chip('db',v=>dblAmt=v);
 $('wd').onclick=e=>{const v=e.target.dataset&&e.target.dataset.v;if(v==null)return;widthSel=v==='auto'?'auto':+v;sel('wd',v)};
 $('gen').onclick=e=>{const g=e.target.dataset&&e.target.dataset.g;if(!g)return;genre=g;if(stemData)analyzeStems();[...$('gen').children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.g===g));if(PRESETS[g].lufs!=null)sync(PRESETS[g].lufs)};
 
@@ -1494,7 +1526,7 @@ $('save').onclick=async()=>{
  }catch(e){say(e&&e.code==='declined'?'Save cancelled.':'Couldn’t save the file ('+((e&&e.code)||'error')+').',1)}
 };
 $('useRef').onchange=()=>{refSave();cfgSave()};
-['gen','cl','amt','wd','vc','pu','nr','tr','db'].forEach(id=>$(id).addEventListener('click',()=>setTimeout(cfgSave,0)));
+['gen','cl','amt','wd','vc','pu','nr','tr','db','sa','sc'].forEach(id=>$(id).addEventListener('click',()=>setTimeout(cfgSave,0)));
 $('lufs').addEventListener('change',cfgSave);
 document.querySelectorAll('input[name=f],input[name=p],#useStems,#perStem').forEach(e=>e.addEventListener('change',cfgSave));
 try{setupsLoad();setupsRender();cfgLoad();refLoad()}catch(e){}
@@ -1503,6 +1535,10 @@ const HELP={
 'Reference tracks':`<p>Load songs whose balance you like. The app measures their tone curve, stereo width and low-mid side energy, averages them, and aims for that instead of its own built-in target. <b>This is the single biggest quality improvement available here</b> — without references the app aims at a hand-chosen curve that may not suit your material.</p>
 <p>Pick by similarity to your song, not by taste: it copies tone and width, so instrumentation and arrangement density need to be comparable. Use lossless downloads or CD rips, not streaming or YouTube rips. Two or three is safer than one, and the app tells you if they disagree.</p>
 <p>Only the measurements are kept — about 300 bytes each. The audio is analyzed and discarded.</p>`,
+'Saturation':`<p>Adds harmonics: gentle overtones that make a mix sound denser, warmer or more aggressive, and rounds off the loudest peaks so the limiter has less to do. Only the harmonics and peak rounding are added back, so the level of the fundamentals does not change.</p>
+<p><b>Auto</b> is the original behavior: a mild soft-clip on peaks, scaled by your Processing amount. <b>Off</b> bypasses it. <b>Light</b>, <b>Medium</b> and <b>Heavy</b> add real saturation on top, calibrated to add about -36, -28 and -21 dB of nonlinear content relative to the signal.</p>
+<p><b>Tape</b> is symmetrical and soft, mostly odd harmonics, with the top rolled off above 12 kHz so it stays smooth. <b>Tube</b> is lopsided, which adds even harmonics (an octave above, a warmer sound). <b>Crunch</b> is the bluntest: it reacts even to quiet material and works only above 250 Hz so the low end stays clean.</p>
+<p>The bass is kept out of the saturator (it acts above 120 Hz) because saturating low frequencies together with the mids smears them into mud. Aliasing is controlled with anti-aliased waveshaping rather than oversampling. The loudness stage still lands on your target, so heavier saturation shows up as density, not volume.</p>`,
 'Vocal doubler':`<p>Takes the separated vocal, keeps only 180 Hz to 9 kHz of it, and adds two copies: one about 19 ms late leaning left, one about 27 ms late leaning right. Each copy's delay drifts slowly, which detunes it by up to about 10 cents, so it behaves like a second and third take rather than a fixed echo. Levels are Light (-14 dB), Medium (-10 dB) and Thick (-7 dB) relative to the lead vocal.</p>
 <p>It needs the vocal stem, so it only does anything after you split the song and leave <b>Master the rebalanced mix</b> on. Check <b>Listen in mono</b> afterwards: delayed copies can comb-filter when the stereo image collapses, and the mono-compatibility row in the results will show it if they do.</p>
 <p>The copies are made from whatever the stem contains. Any bleed in the vocal stem is doubled with it, and a vocal with audible artifacts will have them doubled too, so listen at Light before going further.</p>`,
