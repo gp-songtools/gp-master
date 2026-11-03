@@ -164,7 +164,7 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .hint{color:var(--mut);font-size:13px;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v39</small></h1>
+<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v40</small></h1>
 <p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded.</p>
 <p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or use it just to split the song and download each stem as a WAV.</p>
 
@@ -1815,7 +1815,7 @@ function show(i,t,o,pk,fmt,size,mono,notes,pv){
  if(mono.drop>1.2)parts.push(`Summing to mono loses ${mono.drop.toFixed(1)} dB, so some elements will thin out or disappear on a phone speaker or other mono output. Press "Listen in mono" below and check it before you release. Reducing the stereo width is the usual fix.`);
  if(Math.abs(o-t)>.5)parts.push('The target was too loud to reach without heavy limiting, so this is the closest result.');
  if(!pv&&hosted()&&fmt==='m4a')parts.push('M4A is saved as .mp4 — the same AAC audio. Rename it to .m4a if you prefer.');
- if(!pv&&!hosted())parts.push('This page\u2019s save dialog only accepts certain file types, so the '+fmt.toUpperCase()+' is saved inside a .zip. Unzip it to get the audio file.');
+ if(!pv&&hosted()&&fmt!=='m4a')parts.push('This view\u2019s save dialog only accepts certain file types, so the '+fmt.toUpperCase()+' is saved inside a .zip. Unzip it to get the audio file.');
  $('hint').textContent=parts.join(' ');
  $('save').hidden=!!pv;
  $('res').hidden=false;$('res').scrollIntoView({behavior:'smooth',block:'nearest'});
