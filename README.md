@@ -58,8 +58,8 @@ follower measured against its own running average.
 learned from a marked quiet region or estimated from the quietest 5% of each
 band. Runs before EQ and compression so noise is never amplified.
 
-**Tone EQ** — five vertical sliders: 100 Hz shelf, 300 Hz, 1 kHz and 3 kHz
-bells, 8 kHz shelf, ±6 dB each, heard live as you move them in every player. In a render it runs after the
+**Tone EQ** — a nine-band graphic EQ, one slider per octave from 63 Hz to
+16 kHz, ±15 dB each, with the combined curve drawn behind the sliders, heard live as you move them in every player. In a render it runs after the
 mastering chain but before loudness matching and the limiter. After a render,
 "Apply EQ" re-runs only that final stage, so you don't need to master again.
 
