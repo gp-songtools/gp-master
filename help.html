@@ -80,7 +80,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 <b>9</b> Stereo stage — bass summed to mono, mid and high width adjusted<br>
 <b>10</b> De-esser — reduces 5–9 kHz when it spikes<br>
 <b>11</b> Saturation — peak soft-clip, plus optional Tape, Tube or Crunch harmonics<br>
-<b>12</b> Tone EQ — your own five-band sliders (flat unless you move them)<br>
+<b>12</b> Tone EQ — your own nine-band graphic EQ (flat unless you move it)<br>
 <b>13</b> Loudness match and limiter — iterates gain until the target is hit, then true-peak limits<br>
 <b>14</b> Dither — triangular, applied on conversion to 24-bit or 16-bit
 </div>
@@ -176,15 +176,20 @@ td:first-child{white-space:nowrap;font-weight:600}
 <p>Streaming services turn loud masters down rather than rewarding them, so a −9 LUFS master played on Spotify is quieter and more squashed than a −14 LUFS one. Loud masters are worth making for download, local playback, and because quiet masters sound weak when a listener compares them manually.</p>
 <p>If the target is unreachable without extreme limiting the app stops at the closest achievable value and says so in the results.</p>
 <h3 id="eq">Tone EQ</h3>
-<p>Five vertical sliders under the loudness target, each ±6 dB in 0.5 dB steps, with the current setting shown above each slider and its frequency below. Double-click a slider to zero it; <b>Reset</b> zeroes all five.</p>
+<p>Nine vertical sliders under the loudness target, one per octave from 63 Hz to 16 kHz, each ±15 dB in 0.5 dB steps, with the setting shown above each slider and its frequency below. The curve drawn behind them is the combined response of all nine filters, which is what you actually hear: neighbouring bands overlap, so the curve does not always pass exactly through each slider. Double-click a slider to zero it; <b>Reset</b> zeroes all nine. Hover over the <b>i</b> under a slider, or tap it on a phone, for a short note on what that band does.</p>
 <table>
 <tr><th>Band</th><th>Filter</th><th>Typical use</th></tr>
-<tr><td>100 Hz</td><td>low shelf</td><td>weight and thump; cut if the mix is boomy</td></tr>
-<tr><td>300 Hz</td><td>bell, Q 1</td><td>mud and boxiness; a small cut often clears the mix</td></tr>
-<tr><td>1 kHz</td><td>bell, Q 1</td><td>body and nasal honk</td></tr>
-<tr><td>3 kHz</td><td>bell, Q 1</td><td>presence and vocal intelligibility; harshness if pushed</td></tr>
-<tr><td>8 kHz</td><td>high shelf</td><td>air and sparkle; hiss and sibilance if pushed</td></tr>
+<tr><td>63 Hz</td><td>low shelf</td><td>sub-bass weight; big boosts make the limiter work much harder</td></tr>
+<tr><td>125 Hz</td><td>bell, 1 octave</td><td>punch of kick and bass; cut if boomy</td></tr>
+<tr><td>250 Hz</td><td>bell, 1 octave</td><td>warmth, and where mud starts</td></tr>
+<tr><td>500 Hz</td><td>bell, 1 octave</td><td>body and boxiness</td></tr>
+<tr><td>1 kHz</td><td>bell, 1 octave</td><td>midrange focus and nasal honk</td></tr>
+<tr><td>2 kHz</td><td>bell, 1 octave</td><td>bite and attack; hardness if pushed</td></tr>
+<tr><td>4 kHz</td><td>bell, 1 octave</td><td>presence and vocal clarity; harshness if pushed</td></tr>
+<tr><td>8 kHz</td><td>bell, 1 octave</td><td>brilliance and cymbals; sibilance if pushed</td></tr>
+<tr><td>16 kHz</td><td>high shelf</td><td>air and sparkle; hiss if pushed</td></tr>
 </table>
+<p>±15 dB is a wide range. On a finished master, moves of 1 to 3 dB are typical; anything much past 6 dB usually means the mix itself needs fixing, and large low-end boosts mostly turn into extra limiting rather than extra bass.</p>
 <p><b>You hear it while you move it.</b> It runs live on the top player (on top of the mastered preview, and on the original until you first switch to Mastered), on Play all stems (not on the single-stem ▶ buttons), and on the B: Master side of the results player. A: Original is never EQ'd, so A/B still compares against the untouched song. <b>Bypass</b> switches it off while you listen; renders always use the sliders.</p>
 <p>In a render it sits after the whole mastering chain and <b>before loudness matching and the limiter</b>, so the result still hits your target and ceiling. A low boost therefore does not make the song louder; it gives the limiter more to do. Watch the true peak and listen for pumping if you push Low.</p>
 <p>Once a result exists, moving a slider plays the change live on the master and shows <b>Apply EQ to the master</b>. That re-runs only the last stage (EQ, loudness match, limiter, encoding), which takes seconds rather than a full re-master, and keeps your place in the player. <b>Save file</b> is disabled until you apply, so the file you save is always the one you heard. What you hear live before applying is very close but not exact, because the limiter has not re-run yet.</p>
@@ -204,7 +209,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 <h2 id="regions">8. The Listen card and volume automation</h2>
 <h3 id="toplayer">Hearing the master while you adjust it</h3>
 <p>The <b>Listen</b> card at the top holds the waveform and the player for the whole page. It plays the <b>Original</b> song, or a <b>Mastered</b> preview made with the real mastering chain and your current settings. It masters about five seconds at a time, a little ahead of the playhead, so you hear the actual processing rather than an imitation of it.</p>
-<p><b>Preview</b> buttons sit next to every setting it can render: genre, target loudness, processing amount, transients, saturation, distortion, noise reduction, clarity, width, vocal enhancer, pumper, processing mode, references and the stem controls. Change a setting, press its Preview, and within about a second the top player continues from the same spot with the change. All Preview buttons do the same thing (they apply every current setting), so use whichever is nearest. If you change something without pressing Preview, it arrives by itself at the next stretch that has not been rendered yet, usually within five to ten seconds.</p>
+<p><b>Apply to preview</b> buttons sit next to every setting it can render: genre, target loudness, processing amount, transients, saturation, distortion, noise reduction, clarity, width, vocal enhancer, pumper, processing mode, references and the stem controls. Change a setting, press its Apply to preview, and within about a second the top player continues from the same spot with the change. All of these buttons do the same thing (they apply every current setting), so use whichever is nearest. If you change something without pressing Apply to preview, it arrives by itself at the next stretch that has not been rendered yet, usually within five to ten seconds.</p>
 <p><b>Original / Mastered</b> switches instantly at the same spot, because both are always playing in step. With <b>Match levels when switching</b> on (the default), the louder of the two is turned down so you compare the sound rather than the volume; turn it off to hear how much louder the master is. Once you have switched to the master, Original is completely untouched, including no Tone EQ.</p>
 <p><b>Loop</b> repeats the selected region, or the whole song if no region is selected. A region left on Level 0 dB changes nothing in the master, so it is safe to drag one just to loop. Each pass after the first plays from memory, so a loop costs nothing to keep running.</p>
 <p><b>Undo</b> and <b>Redo</b> (Ctrl or Cmd + Z, and the same with Shift; Ctrl + Y also redoes) step back and forth through every change to the settings, the Tone EQ, your regions, and stem levels and mutes. A slider drag counts as one step. Loading a file, separating stems, reference tracks and saved setups are not part of the history. While typing in a text box, Ctrl + Z undoes the typing instead.</p>
