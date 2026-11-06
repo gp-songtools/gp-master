@@ -80,7 +80,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 <b>9</b> Stereo stage — bass summed to mono, mid and high width adjusted<br>
 <b>10</b> De-esser — reduces 5–9 kHz when it spikes<br>
 <b>11</b> Saturation — peak soft-clip, plus optional Tape, Tube or Crunch harmonics<br>
-<b>12</b> Tone EQ — your own low, mid and high sliders (flat unless you move them)<br>
+<b>12</b> Tone EQ — your own five-band sliders (flat unless you move them)<br>
 <b>13</b> Loudness match and limiter — iterates gain until the target is hit, then true-peak limits<br>
 <b>14</b> Dither — triangular, applied on conversion to 24-bit or 16-bit
 </div>
@@ -176,7 +176,15 @@ td:first-child{white-space:nowrap;font-weight:600}
 <p>Streaming services turn loud masters down rather than rewarding them, so a −9 LUFS master played on Spotify is quieter and more squashed than a −14 LUFS one. Loud masters are worth making for download, local playback, and because quiet masters sound weak when a listener compares them manually.</p>
 <p>If the target is unreachable without extreme limiting the app stops at the closest achievable value and says so in the results.</p>
 <h3 id="eq">Tone EQ</h3>
-<p>Three sliders under the loudness target: <b>Low</b> is a shelf at 100 Hz, <b>Mid</b> a broad bell at 1 kHz (Q 0.7), <b>High</b> a shelf at 8 kHz, each ±6 dB in 0.5 dB steps. Double-click a slider to zero it; <b>Reset</b> zeroes all three.</p>
+<p>Five vertical sliders under the loudness target, each ±6 dB in 0.5 dB steps, with the current setting shown above each slider and its frequency below. Double-click a slider to zero it; <b>Reset</b> zeroes all five.</p>
+<table>
+<tr><th>Band</th><th>Filter</th><th>Typical use</th></tr>
+<tr><td>100 Hz</td><td>low shelf</td><td>weight and thump; cut if the mix is boomy</td></tr>
+<tr><td>300 Hz</td><td>bell, Q 1</td><td>mud and boxiness; a small cut often clears the mix</td></tr>
+<tr><td>1 kHz</td><td>bell, Q 1</td><td>body and nasal honk</td></tr>
+<tr><td>3 kHz</td><td>bell, Q 1</td><td>presence and vocal intelligibility; harshness if pushed</td></tr>
+<tr><td>8 kHz</td><td>high shelf</td><td>air and sparkle; hiss and sibilance if pushed</td></tr>
+</table>
 <p><b>You hear it while you move it.</b> It runs live on the waveform player, on Play all stems (not on the single-stem ▶ buttons), and on the B: Master side of the results player. A: Original is never EQ'd, so A/B still compares against the untouched song. <b>Bypass</b> switches it off while you listen; renders always use the sliders.</p>
 <p>In a render it sits after the whole mastering chain and <b>before loudness matching and the limiter</b>, so the result still hits your target and ceiling. A low boost therefore does not make the song louder; it gives the limiter more to do. Watch the true peak and listen for pumping if you push Low.</p>
 <p>Once a result exists, moving a slider plays the change live on the master and shows <b>Apply EQ to the master</b>. That re-runs only the last stage (EQ, loudness match, limiter, encoding), which takes seconds rather than a full re-master, and keeps your place in the player. <b>Save file</b> is disabled until you apply, so the file you save is always the one you heard. What you hear live before applying is very close but not exact, because the limiter has not re-run yet.</p>
