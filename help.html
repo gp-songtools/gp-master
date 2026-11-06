@@ -80,8 +80,9 @@ td:first-child{white-space:nowrap;font-weight:600}
 <b>9</b> Stereo stage — bass summed to mono, mid and high width adjusted<br>
 <b>10</b> De-esser — reduces 5–9 kHz when it spikes<br>
 <b>11</b> Saturation — peak soft-clip, plus optional Tape, Tube or Crunch harmonics<br>
-<b>12</b> Loudness match and limiter — iterates gain until the target is hit, then true-peak limits<br>
-<b>13</b> Dither — triangular, applied on conversion to 24-bit or 16-bit
+<b>12</b> Tone EQ — your own five-band sliders (flat unless you move them)<br>
+<b>13</b> Loudness match and limiter — iterates gain until the target is hit, then true-peak limits<br>
+<b>14</b> Dither — triangular, applied on conversion to 24-bit or 16-bit
 </div>
 <p>If <b>Stem balance</b> is active, separation and the per-stem chains happen before stage 1, and what reaches stage 1 is your rebalanced mix rather than the original file.</p>
 <a class="top" href="#">↑ top</a>
@@ -174,6 +175,19 @@ td:first-child{white-space:nowrap;font-weight:600}
 </table>
 <p>Streaming services turn loud masters down rather than rewarding them, so a −9 LUFS master played on Spotify is quieter and more squashed than a −14 LUFS one. Loud masters are worth making for download, local playback, and because quiet masters sound weak when a listener compares them manually.</p>
 <p>If the target is unreachable without extreme limiting the app stops at the closest achievable value and says so in the results.</p>
+<h3 id="eq">Tone EQ</h3>
+<p>Five vertical sliders under the loudness target, each ±6 dB in 0.5 dB steps, with the current setting shown above each slider and its frequency below. Double-click a slider to zero it; <b>Reset</b> zeroes all five.</p>
+<table>
+<tr><th>Band</th><th>Filter</th><th>Typical use</th></tr>
+<tr><td>100 Hz</td><td>low shelf</td><td>weight and thump; cut if the mix is boomy</td></tr>
+<tr><td>300 Hz</td><td>bell, Q 1</td><td>mud and boxiness; a small cut often clears the mix</td></tr>
+<tr><td>1 kHz</td><td>bell, Q 1</td><td>body and nasal honk</td></tr>
+<tr><td>3 kHz</td><td>bell, Q 1</td><td>presence and vocal intelligibility; harshness if pushed</td></tr>
+<tr><td>8 kHz</td><td>high shelf</td><td>air and sparkle; hiss and sibilance if pushed</td></tr>
+</table>
+<p><b>You hear it while you move it.</b> It runs live on the top player (on top of the mastered preview, and on the original until you first switch to Mastered), on Play all stems (not on the single-stem ▶ buttons), and on the B: Master side of the results player. A: Original is never EQ'd, so A/B still compares against the untouched song. <b>Bypass</b> switches it off while you listen; renders always use the sliders.</p>
+<p>In a render it sits after the whole mastering chain and <b>before loudness matching and the limiter</b>, so the result still hits your target and ceiling. A low boost therefore does not make the song louder; it gives the limiter more to do. Watch the true peak and listen for pumping if you push Low.</p>
+<p>Once a result exists, moving a slider plays the change live on the master and shows <b>Apply EQ to the master</b>. That re-runs only the last stage (EQ, loudness match, limiter, encoding), which takes seconds rather than a full re-master, and keeps your place in the player. <b>Save file</b> is disabled until you apply, so the file you save is always the one you heard. What you hear live before applying is very close but not exact, because the limiter has not re-run yet.</p>
 <a class="top" href="#">↑ top</a>
 
 <h2 id="fmt">7. Output format</h2>
@@ -187,7 +201,18 @@ td:first-child{white-space:nowrap;font-weight:600}
 <p>Peak levels are measured as true peak with 4× sinc oversampling, so the number reported accounts for inter-sample peaks that a simple sample-peak meter misses.</p>
 <a class="top" href="#">↑ top</a>
 
-<h2 id="regions">8. Volume automation</h2>
+<h2 id="regions">8. The Listen card and volume automation</h2>
+<h3 id="toplayer">Hearing the master while you adjust it</h3>
+<p>The <b>Listen</b> card at the top holds the waveform and the player for the whole page. It plays the <b>Original</b> song, or a <b>Mastered</b> preview made with the real mastering chain and your current settings. It masters about five seconds at a time, a little ahead of the playhead, so you hear the actual processing rather than an imitation of it.</p>
+<p><b>Preview</b> buttons sit next to every setting it can render: genre, target loudness, processing amount, transients, saturation, distortion, noise reduction, clarity, width, vocal enhancer, pumper, processing mode, references and the stem controls. Change a setting, press its Preview, and within about a second the top player continues from the same spot with the change. All Preview buttons do the same thing (they apply every current setting), so use whichever is nearest. If you change something without pressing Preview, it arrives by itself at the next stretch that has not been rendered yet, usually within five to ten seconds.</p>
+<p><b>Original / Mastered</b> switches instantly at the same spot, because both are always playing in step. With <b>Match levels when switching</b> on (the default), the louder of the two is turned down so you compare the sound rather than the volume; turn it off to hear how much louder the master is. Once you have switched to the master, Original is completely untouched, including no Tone EQ.</p>
+<p><b>Loop</b> repeats the selected region, or the whole song if no region is selected. A region left on Level 0 dB changes nothing in the master, so it is safe to drag one just to loop. Each pass after the first plays from memory, so a loop costs nothing to keep running.</p>
+<p><b>Undo</b> and <b>Redo</b> (Ctrl or Cmd + Z, and the same with Shift; Ctrl + Y also redoes) step back and forth through every change to the settings, the Tone EQ, your regions, and stem levels and mutes. A slider drag counts as one step. Loading a file, separating stems, reference tracks and saved setups are not part of the history. While typing in a text box, Ctrl + Z undoes the typing instead.</p>
+<p><b>Reset settings</b> puts every setting back to its default, including the Tone EQ, but keeps your output format, regions, stems and references. It is one step in the history, so Undo brings your settings back.</p>
+<p>With Mastered playing, undo and redo are heard straight away. Preview chunks sit on a fixed five-second grid and are kept in memory per group of settings, so going back to something you have already heard needs no new rendering.</p>
+<p>When you scroll past the Listen card, a small player is pinned to the bottom of the screen with Play, Original / Mastered, Loop, the time, and Undo / Redo, so you can work through the settings while you listen.</p>
+<p>How close it is to the final file: the chain and settings are identical, and the tone analysis and level calibration are measured once on the whole song so every stretch agrees. Loudness is set from the first stretch rendered with each group of settings, so it can sit a fraction of a dB away from the full render. The Tone EQ stays live on top, as everywhere else. On a slow phone, or with noise reduction or per-stem mastering on, rendering can fall behind; the line under the player then says so, and that stretch plays with your previous settings, or unprocessed if there is nothing yet.</p>
+<h3>Regions</h3>
 <p>Mastering normally applies one setting to the whole song, but problems are usually local: one chorus that jumps forward, a verse sitting too low, an intro you want left alone. This is where you ride the fader instead.</p>
 <p><b>Zoom and exact times.</b> Under the waveform, <b>+</b> and <b>&minus;</b> zoom in and out (Ctrl or Cmd with the mouse wheel zooms at the pointer), <b>Fit</b> shows the whole song and <b>Zoom to region</b> frames the selected region. A slider moves along the zoomed song, and the view follows the playhead while it plays. Each region's start and end are editable in minutes and seconds, such as <code>1:23.5</code>, or plain seconds. <b>Add by time</b> creates a region from a typed start and end, and <b>Now</b> copies the playhead position.</p>
 <p>Drag across the waveform to select a part of the song. Each region gets one of three modes:</p>
