@@ -21,7 +21,7 @@ h1{font-size:28px;line-height:1.1;margin:8px 0 4px;letter-spacing:-.02em}
 .drop:hover,.drop:focus-within{border-color:var(--ac)}
 #inStats{color:var(--mut);font-size:14px;margin-top:8px;min-height:20px}
 .row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-output{font-weight:700;font-size:22px;letter-spacing:-.01em}
+output{font-weight:700;font-size:22px;letter-spacing:-.01em;white-space:nowrap}
 input[type=range]{width:100%;margin:12px 0 8px;accent-color:var(--ac);height:28px}
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
 .chips button{border:1px solid var(--ln);background:transparent;color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:14px;cursor:pointer}
@@ -81,7 +81,9 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 #mTime{flex:1;text-align:center;font-size:13px;color:var(--mut);font-variant-numeric:tabular-nums;min-width:0}
 @media(max-width:400px){#mTime{display:none}#mini .mi{justify-content:space-between;gap:4px}#mini .ppb{padding:8px 8px}#mini .om button{padding:8px 7px;font-size:13px}}
 body.mini main{padding-bottom:84px}
-.pvb{margin-left:auto;border:1px solid var(--ac);background:transparent;color:var(--ac);border-radius:999px;padding:2px 10px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+.pvw{margin-left:auto}
+@media(max-width:480px){.lbl{flex-wrap:wrap}.pvw{flex-basis:100%;margin:4px 0 2px}}
+.pvb{border:1px solid var(--ac);background:transparent;color:var(--ac);border-radius:999px;padding:2px 10px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
 .pvb:hover:not(:disabled){background:var(--ac);color:var(--acf)}
 .pvb:disabled{opacity:.4;cursor:default}
 .prow input{flex:1;margin:0}.prow span{font-size:13px;color:var(--mut);min-width:84px;text-align:right}
@@ -197,6 +199,15 @@ body.mini main{padding-bottom:84px}
 .eq .bd input[type=range]:focus-visible{outline:2px solid var(--ac);outline-offset:2px;border-radius:6px}
 .eq .bd b{margin-top:6px;font-size:13px;white-space:nowrap}
 .eq .bd small{color:var(--mut);font-size:11.5px;white-space:nowrap}
+.eq .bd{position:relative}
+.eqi{margin-top:4px;width:18px;height:18px;padding:0;border:1px solid var(--ln);border-radius:50%;background:transparent;color:var(--mut);font:italic 700 11px/16px Georgia,serif;cursor:help}
+.eqi:hover,.eqi:focus-visible,.eqi[aria-expanded=true]{border-color:var(--ac);color:var(--ac)}
+.eqt{position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%);z-index:15;width:210px;padding:9px 11px;border-radius:8px;background:var(--ink);color:var(--bg);font-size:12.5px;line-height:1.4;text-align:left;box-shadow:0 6px 18px rgba(0,0,0,.22);opacity:0;visibility:hidden;transition:opacity .12s;pointer-events:none}
+.eqt b{display:block;margin-bottom:3px;font-size:12.5px}
+.eqt::before{content:'';position:absolute;bottom:100%;left:50%;margin-left:-6px;border:6px solid transparent;border-bottom-color:var(--ink)}
+.eq .bd:nth-child(2) .eqt{left:0;transform:none}.eq .bd:nth-child(2) .eqt::before{left:22px}
+.eq .bd:nth-child(6) .eqt{left:auto;right:0;transform:none}.eq .bd:nth-child(6) .eqt::before{left:auto;right:16px}
+.eqi:hover+.eqt,.eqi:focus-visible+.eqt,.eqi[aria-expanded=true]+.eqt{opacity:1;visibility:visible}
 .eq .z{position:absolute;left:32px;right:0;top:90px;border-top:1px dashed var(--ln);pointer-events:none}
 .eqb{display:flex;gap:8px;align-items:center;margin:0 0 18px}
 .eqb button{border:1px solid var(--ln);background:transparent;color:var(--ink);border-radius:8px;padding:6px 10px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
@@ -204,7 +215,7 @@ body.mini main{padding-bottom:84px}
 #eqApply{width:100%;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v41</small></h1>
+<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v42</small></h1>
 <p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded.</p>
 <p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or use it just to split the song and download each stem as a WAV.</p>
 
@@ -216,7 +227,7 @@ body.mini main{padding-bottom:84px}
 
 <section class="card" id="lisCard" hidden>
  <span class="lbl">Listen</span>
- <p class="hint" style="margin:0 0 10px">Plays the song with everything on this page applied: the settings below, your region levels, the stem balance and the Tone EQ. Switch to Mastered, or press a Preview button next to any setting, to hear the master. Click the waveform to move the playhead.</p>
+ <p class="hint" style="margin:0 0 10px">Plays the song with everything on this page applied: the settings below, your region levels, the stem balance and the Tone EQ. Switch to Mastered, or press Apply to preview next to any setting, to hear the master. Click the waveform to move the playhead.</p>
  <canvas id="wav" height="104" aria-label="Waveform — drag to select a region"></canvas>
  <div class="zbar"><button type="button" id="zOut" aria-label="Zoom out" title="Zoom out">&minus;</button><button type="button" id="zIn" aria-label="Zoom in" title="Zoom in">+</button><button type="button" id="zFit" title="Show the whole song">Fit</button><button type="button" id="zSel" title="Zoom to the selected region">Zoom to region</button><span id="zInfo">Whole song</span></div>
  <input type="range" id="zPan" min="0" max="1000" value="0" hidden aria-label="Scroll the zoomed waveform">
@@ -294,11 +305,11 @@ body.mini main{padding-bottom:84px}
  <span class="lbl">Tone EQ <span style="font-weight:400;color:var(--mut)">(live while you listen)</span></span>
  <div class="eq">
   <div class="sc" aria-hidden="true"><span>+6</span><span>+3</span><span>0</span><span>−3</span><span>−6</span></div>
-  <div class="bd"><span id="eqv-lo">0</span><input type="range" id="eq-lo" min="-6" max="6" step="0.5" value="0" aria-label="Low, low shelf at 100 Hz, dB"><b>100 Hz</b><small>Low</small></div>
-  <div class="bd"><span id="eqv-lm">0</span><input type="range" id="eq-lm" min="-6" max="6" step="0.5" value="0" aria-label="Low-mid, bell at 300 Hz, dB"><b>300 Hz</b><small>Low-mid</small></div>
-  <div class="bd"><span id="eqv-mid">0</span><input type="range" id="eq-mid" min="-6" max="6" step="0.5" value="0" aria-label="Mid, bell at 1 kHz, dB"><b>1 kHz</b><small>Mid</small></div>
-  <div class="bd"><span id="eqv-hm">0</span><input type="range" id="eq-hm" min="-6" max="6" step="0.5" value="0" aria-label="High-mid, bell at 3 kHz, dB"><b>3 kHz</b><small>High-mid</small></div>
-  <div class="bd"><span id="eqv-hi">0</span><input type="range" id="eq-hi" min="-6" max="6" step="0.5" value="0" aria-label="High, high shelf at 8 kHz, dB"><b>8 kHz</b><small>High</small></div>
+  <div class="bd"><span id="eqv-lo">0</span><input type="range" id="eq-lo" min="-6" max="6" step="0.5" value="0" aria-label="Low, low shelf at 100 Hz, dB"><b>100 Hz</b><small>Low</small><button type="button" class="eqi" aria-label="About the 100 Hz slider" aria-describedby="eqt-lo" aria-expanded="false">i</button><div class="eqt" role="tooltip" id="eqt-lo"><b>100 Hz · Low shelf</b>Weight and thump: kick drum and bass. Boost for fullness; cut if the mix sounds boomy. A boost here gives the limiter more to do, so watch for pumping.</div></div>
+  <div class="bd"><span id="eqv-lm">0</span><input type="range" id="eq-lm" min="-6" max="6" step="0.5" value="0" aria-label="Low-mid, bell at 300 Hz, dB"><b>300 Hz</b><small>Low-mid</small><button type="button" class="eqi" aria-label="About the 300 Hz slider" aria-describedby="eqt-lm" aria-expanded="false">i</button><div class="eqt" role="tooltip" id="eqt-lm"><b>300 Hz · Bell</b>Mud and boxiness. A small cut of 1 to 2 dB often clears up a crowded mix; a boost adds warmth to a thin recording.</div></div>
+  <div class="bd"><span id="eqv-mid">0</span><input type="range" id="eq-mid" min="-6" max="6" step="0.5" value="0" aria-label="Mid, bell at 1 kHz, dB"><b>1 kHz</b><small>Mid</small><button type="button" class="eqi" aria-label="About the 1 kHz slider" aria-describedby="eqt-mid" aria-expanded="false">i</button><div class="eqt" role="tooltip" id="eqt-mid"><b>1 kHz · Bell</b>Body, and the nasal or honky part of the sound. Cut if it sounds like a telephone; boost to push guitars and vocals forward.</div></div>
+  <div class="bd"><span id="eqv-hm">0</span><input type="range" id="eq-hm" min="-6" max="6" step="0.5" value="0" aria-label="High-mid, bell at 3 kHz, dB"><b>3 kHz</b><small>High-mid</small><button type="button" class="eqi" aria-label="About the 3 kHz slider" aria-describedby="eqt-hm" aria-expanded="false">i</button><div class="eqt" role="tooltip" id="eqt-hm"><b>3 kHz · Bell</b>Presence and vocal clarity. Boost to help words cut through; cut if it sounds harsh or tiring when played loud.</div></div>
+  <div class="bd"><span id="eqv-hi">0</span><input type="range" id="eq-hi" min="-6" max="6" step="0.5" value="0" aria-label="High, high shelf at 8 kHz, dB"><b>8 kHz</b><small>High</small><button type="button" class="eqi" aria-label="About the 8 kHz slider" aria-describedby="eqt-hi" aria-expanded="false">i</button><div class="eqt" role="tooltip" id="eqt-hi"><b>8 kHz · High shelf</b>Air, sparkle and cymbals. Boost for brightness; cut to soften hiss, sibilance (sharp S sounds) or splashy cymbals.</div></div>
   <i class="z" aria-hidden="true"></i>
  </div>
  <div class="eqb"><button type="button" id="eqByp" aria-pressed="false">Bypass</button><button type="button" id="eqReset">Reset</button><span class="hint" id="eqMsg" style="margin:0"></span></div>
@@ -868,7 +879,7 @@ function wpStop(){
 }
 function wpRestart(){const p=wpPos();wpStop();wpOff=p;wpPlay()}
 function lpPreview(){if(!src)return;lp.active=true;lp.mode='m';lpUI();if(wpOn)wpRestart();else wpPlay()}
-function pvbUI(){document.querySelectorAll('.pvb').forEach(b=>{b.disabled=!src||lp.starting||mastering;b.textContent=lp.starting?'Rendering…':'▶ Preview'})}
+function pvbUI(){document.querySelectorAll('.pvb').forEach(b=>{b.disabled=!src||lp.starting||mastering;b.textContent=lp.starting?'Applying…':'▶ Apply to preview'})}
 let mastering=false;
 function lpUI(){
  $('wpO').setAttribute('aria-pressed',!(lp.active&&lp.mode==='m'));$('wpM').setAttribute('aria-pressed',lp.active&&lp.mode==='m');
@@ -881,7 +892,7 @@ function lpMsg(){
  let t;
  if(lp.err)t='The preview could not be rendered: '+lp.err;
  else if(lp.starting)t='Mastering from '+tc(wpOff)+'…';
- else if(!lp.active)t='Playing the original. Press Mastered, or Preview next to any setting below, to hear the master here.';
+ else if(!lp.active)t='Playing the original. Press Mastered, or Apply to preview next to any setting below, to hear the master here.';
  else if(!wpOn&&lp.mode==='m')t='Mastered is on. Press Play to hear it from the playhead; the first few seconds take a moment to render.';
  else if(lp.mode==='o')t='Original, untouched (no EQ). Mastered switches back instantly.';
  else if(wpOn&&lp.miss==='raw')t='Catching up: this stretch is playing unprocessed.';
@@ -2103,6 +2114,10 @@ EQB.forEach(b=>{
 $('eqByp').onclick=()=>{eqByp=!eqByp;eqLive();eqUI()};
 $('eqReset').onclick=()=>{eq={...EQ0};eqLive();eqUI();cfgSave()};
 $('eqApply').onclick=eqApply;
+/* EQ info tips: hover or keyboard focus shows them; a tap toggles on touch screens */
+document.querySelectorAll('.eqi').forEach(b=>b.onclick=e=>{e.stopPropagation();const o=b.getAttribute('aria-expanded')!=='true';document.querySelectorAll('.eqi').forEach(x=>x.setAttribute('aria-expanded','false'));b.setAttribute('aria-expanded',o)});
+document.addEventListener('click',()=>document.querySelectorAll('.eqi[aria-expanded=true]').forEach(x=>x.setAttribute('aria-expanded','false')));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.eqi').forEach(x=>{x.setAttribute('aria-expanded','false');if(document.activeElement===x)x.blur()})});
 
 /* ---- A/B player ---- */
 let pc=null;const pl={mono:false,ab:'m',off:0,t0:0,play:false,s:[],gn:[],dur:1,li:0,lm:0};
@@ -2239,7 +2254,7 @@ const HELP={
 <p><b>Mark a quiet passage</b> with a Noise profile region on the waveform for the best result: that measures the actual noise rather than guessing. Without one, the floor is estimated from the quietest 5% of each frequency band across the song, which on a test with known added noise came within 0.5 dB of the region result.</p>
 <p>Light is 6 dB of reduction, Medium 12 dB, Strong 20 dB. It runs first, before any EQ or compression, so the chain never amplifies noise. Gains are smoothed across frequency and time to avoid the warbling that makes denoisers obvious, but strong settings on dense music can still sound watery — check on Preview.</p>`,
 'Listen':`<p>The player for everything on the page. <b>Original</b> is the untouched song. <b>Mastered</b> is the real mastering chain with your current settings, region levels, stem balance and Tone EQ, rendered a few seconds ahead of the playhead; switching between them is instant. <b>Loop</b> repeats the selected region, or the whole song.</p>
-<p>Press <b>Preview</b> next to any setting to hear a change from the current spot, usually within a second. Settings you have already heard play from memory.</p>
+<p>Press <b>Apply to preview</b> next to any setting to hear a change from the current spot, usually within a second. Settings you have already heard play from memory.</p>
 <p><b>Undo</b> and <b>Redo</b> (Ctrl or Cmd + Z, and + Shift) step through every change to settings, EQ, regions and stem levels. <b>Reset settings</b> returns every setting to its default but keeps your regions, stems and references, and can itself be undone. When you scroll past this card, a small player stays pinned to the bottom of the screen.</p>`,
 'Volume automation':`<p>Drag across the waveform in the Listen card to select a part of the song. Clicking moves the playhead, and clicking inside a region also selects it.</p>
 <p><b>Zoom and exact times.</b> Under the waveform, <b>+</b> and <b>&minus;</b> zoom in and out (Ctrl or Cmd with the mouse wheel zooms at the pointer), <b>Fit</b> shows the whole song, and <b>Zoom to region</b> frames the selected region. When zoomed, a slider (or sideways scrolling) moves along the song, a time ruler appears, and the view follows the playhead while it plays. You can zoom in to about one second across. Every region's start and end are editable boxes in minutes and seconds with tenths, for example <code>1:23.5</code>, or just seconds like <code>83.5</code>. To add a region without dragging, type a start and end under <b>Add by time</b> (the <b>Now</b> buttons copy the playhead position). The round &#9654; on a region plays from its start.</p>
@@ -2273,7 +2288,7 @@ const HELP={
 <p>After raising width, check the Mono fold figure in the results and press "Listen in mono".</p>`,
 'Vocal enhancer':`<p>Centre-channel only, so it does not brighten what sits in the sides. Adds presence at 3 kHz (+1/+2/+3 dB), half that much air above 11 kHz, and levels the 1–4 kHz range when it lunges forward.</p>
 <p><b>Without separated stems it cannot tell a vocal from anything else centred</b> — it also lifts the snare crack, kick click and centred guitars. If it turns harsh, drop a level. For true vocal-only work, use Stem balance with per-stem mastering.</p>`,
-'Tone EQ':`<p>A five-band EQ you can hear <b>as you move it</b>: in the waveform player, in Play all stems, and on the B: Master side of the results player. 100 Hz and 8 kHz are shelves; 300 Hz, 1 kHz and 3 kHz are bells (Q 1, about 1.4 octaves wide). Each is ±6 dB. Double-click a slider to zero it.</p>
+'Tone EQ':`<p>A five-band EQ you can hear <b>as you move it</b>. Hover over (or tap) the <b>i</b> under a slider for what that band does: in the waveform player, in Play all stems, and on the B: Master side of the results player. 100 Hz and 8 kHz are shelves; 300 Hz, 1 kHz and 3 kHz are bells (Q 1, about 1.4 octaves wide). Each is ±6 dB. Double-click a slider to zero it.</p>
 <p>It runs after the whole mastering chain but <b>before loudness matching and the limiter</b>, so the result still lands on your target and true-peak ceiling. Adding low end therefore makes the limiter work harder rather than making the song louder.</p>
 <p>After a render, moving it plays the change live on the master. <b>Apply EQ</b> then re-runs only the last stage (a few seconds, no re-analysis) so the saved file matches what you hear. Bypass is for listening only: renders always use the sliders.</p>`,
 'Pumper':`<p>Ducks the mid and high bands each time the kick hits, for the rhythmic pumping common in dance music. Bass and kick stay at full level.</p>
@@ -2304,15 +2319,15 @@ const HELP={
   $('helpAll').textContent=open?'Hide all hints':'Show all hints';
  };
 })();
-/* ---- Preview buttons next to every setting the top player can render ---- */
+/* ---- Apply to preview buttons next to every setting the top player can render ---- */
 (()=>{
  const keys=['Stem balance','Vocal doubler','Stem distortion','Reference tracks','Genre preset','Target loudness','Processing amount','Transients','Saturation','Distortion','Noise reduction','Clarity','Stereo width','Vocal enhancer','Pumper','Processing mode'];
  document.querySelectorAll('.lbl').forEach(el=>{
   const t=el.textContent.trim(),k=keys.find(x=>t.startsWith(x));if(!k)return;
-  const b=document.createElement('button');b.type='button';b.className='pvb';b.textContent='▶ Preview';
+  const b=document.createElement('button');b.type='button';b.className='pvb';b.textContent='▶ Apply to preview';
   b.title='Master from the top player\u2019s position with the current settings and play it there';
-  b.setAttribute('aria-label','Preview '+k+' in the top player');
-  b.onclick=lpPreview;el.appendChild(b);
+  b.setAttribute('aria-label','Apply '+k+' and every other setting to the preview audio in the Listen card');
+  b.onclick=lpPreview;const w=document.createElement('span');w.className='pvw';w.appendChild(b);el.appendChild(w);
  });
  lpUI();
 })();
