@@ -61,6 +61,14 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .abb,.ppb{border:1px solid var(--ln);background:transparent;color:var(--ink);border-radius:8px;padding:10px;font:inherit;font-weight:600;cursor:pointer}
 .abb[aria-pressed=true]{background:var(--ac);color:var(--acf);border-color:var(--ac)}
 .prow{display:flex;gap:10px;align-items:center}
+.wprow{flex-wrap:wrap}
+.om{display:flex;border:1px solid var(--ln);border-radius:8px;overflow:hidden}
+.om button{border:0;background:transparent;color:var(--ink);font:inherit;font-size:14px;font-weight:600;padding:10px 12px;cursor:pointer}
+.om button+button{border-left:1px solid var(--ln)}
+.om button[aria-pressed=true],.ppb[aria-pressed=true]{background:var(--ac);color:var(--acf);border-color:var(--ac)}
+.pvb{margin-left:auto;border:1px solid var(--ac);background:transparent;color:var(--ac);border-radius:999px;padding:2px 10px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+.pvb:hover:not(:disabled){background:var(--ac);color:var(--acf)}
+.pvb:disabled{opacity:.4;cursor:default}
 .prow input{flex:1;margin:0}.prow span{font-size:13px;color:var(--mut);min-width:84px;text-align:right}
 .ppb{min-width:76px}
 .bar{height:6px;background:var(--ln);border-radius:3px;overflow:hidden;margin:8px 0}
@@ -197,7 +205,9 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
  <canvas id="wav" height="104" aria-label="Waveform — drag to select a region"></canvas>
  <div class="zbar"><button type="button" id="zOut" aria-label="Zoom out" title="Zoom out">&minus;</button><button type="button" id="zIn" aria-label="Zoom in" title="Zoom in">+</button><button type="button" id="zFit" title="Show the whole song">Fit</button><button type="button" id="zSel" title="Zoom to the selected region">Zoom to region</button><span id="zInfo">Whole song</span></div>
  <input type="range" id="zPan" min="0" max="1000" value="0" hidden aria-label="Scroll the zoomed waveform">
- <div class="prow" style="margin-top:8px"><button class="ppb" id="wpBtn">Play</button><span id="wpTime" style="flex:1;font-size:13px;color:var(--mut);font-variant-numeric:tabular-nums">0:00 / 0:00</span></div>
+ <div class="prow wprow" style="margin-top:8px"><button class="ppb" id="wpBtn">Play</button><div class="om" role="group" aria-label="What the top player plays"><button type="button" id="wpO" aria-pressed="true">Original</button><button type="button" id="wpM" aria-pressed="false">Mastered</button></div><button type="button" class="ppb" id="wpLoop" aria-pressed="false" title="Repeat the selected region, or the whole song if none is selected">&#10227; Loop</button><span id="wpTime" style="flex:1;font-size:13px;color:var(--mut);font-variant-numeric:tabular-nums">0:00 / 0:00</span></div>
+ <label class="chk" style="margin:8px 0 0"><input type="checkbox" id="wpMatch" checked><span>Match levels when switching<small>Turns the louder one down so you compare the sound, not the volume.</small></span></label>
+ <p class="hint" id="wpMsg" role="status" style="margin:4px 0 0"></p>
  <div class="rform"><span>Add by time:</span><label>Start <input class="ti" id="rtS" inputmode="decimal" placeholder="0:00.0" aria-label="Region start time"></label><button type="button" id="rtSn" title="Use the playhead position">Now</button><label>End <input class="ti" id="rtE" inputmode="decimal" placeholder="0:10.0" aria-label="Region end time"></label><button type="button" id="rtEn" title="Use the playhead position">Now</button><button type="button" id="rtAdd">Add region</button></div>
  <p class="hint" id="regMsg" role="status" style="margin:6px 0 0"></p>
  <div id="regList"></div>
@@ -344,9 +354,10 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 <script src="eta.js"></script>
 <script src="sep-pool.js"></script>
 <script>
-const $=id=>document.getElementById(id), tick=()=>new Promise(r=>setTimeout(r,15));
+let sayMute=false;
+const $=id=>document.getElementById(id), tick=()=>new Promise(r=>setTimeout(r,sayMute?0:15));
 let src=null,name='audio',res=null,url=null;
-const say=(t,e)=>{$('st').textContent=t;$('st').className=e?'err':''};
+const say=(t,e)=>{if(sayMute)return;$('st').textContent=t;$('st').className=e?'err':''};
 const chans=b=>{const a=b.getChannelData(0);return[a,b.numberOfChannels>1?b.getChannelData(1):a]};
 const fmtT=s=>Math.floor(s/60)+':'+String(Math.round(s%60)).padStart(2,'0');
 
@@ -480,11 +491,11 @@ function analyze(A,B,fs){
  }
  return{dB:Array.from(P,p=>10*Math.log10(p/cnt+1e-20)),side:10*Math.log10((ss+1e-20)/(sm+1e-20)),lm:10*Math.log10((ps2+1e-20)/(pm2+1e-20))};
 }
-async function fullMaster(b){
+async function fullMaster(b,G){
  const fs=b.sampleRate,[a0,b0]=chans(b),n=a0.length,X=[Float32Array.from(a0),Float32Array.from(b0)];
  say('Analyzing the track…');await tick();
  const P=PRESETS[genre]||PRESETS.auto,IQ=AMT[amount]||AMT.standard;
- const an=analyze(a0,b0,fs),avg=(v)=>{let s=0;for(let i=2;i<=6;i++)s+=v[i];return s/5},mr=avg(an.dB),RF=refOn(),TG=RF?refAvg.dB.slice():TGT.map((v,i)=>v+(i<3?P.lo:i>4?P.hi:0)),tr=avg(TG);
+ const an=G?G.an:analyze(a0,b0,fs),avg=(v)=>{let s=0;for(let i=2;i<=6;i++)s+=v[i];return s/5},mr=avg(an.dB),RF=refOn(),TG=RF?refAvg.dB.slice():TGT.map((v,i)=>v+(i<3?P.lo:i>4?P.hi:0)),tr=avg(TG);
  const cl=(v,l,h)=>Math.max(l,Math.min(h,v)),cor=an.dB.map((d,i)=>cl(.5*IQ.eq*((TG[i]-tr)-(d-mr)),-2.5*IQ.eq,2.5*IQ.eq));
  const spec=[['hp',25,0,.7071]];
  for(let i=0;i<7;i++)if(Math.abs(cor[i])>=.3)spec.push(['pk',OCT[i],cor[i],1]);
@@ -499,8 +510,8 @@ async function fullMaster(b){
  const env=[0,0,0],pw=[0,0,0],gr=[0,0,0],rms=[-60,-60,-60],sg=[0,0,0],bd=[new Float64Array(2),new Float64Array(2),new Float64Array(2)];
  const aE=Math.exp(-1/(.0005*fs)),rE=Math.exp(-1/(.05*fs)),cA=BP.map(p=>1-Math.exp(-1/(p.a*.001*fs))),cR=BP.map(p=>1-Math.exp(-1/(p.l*.001*fs))),c0=1/(3*fs),K=1+(P.k-1)*IQ.sat;
  const aD=1-Math.exp(-1/(.001*fs)),rD=1-Math.exp(-1/(.04*fs));let de=0,dp=0,dg=0,dsum=0,dmax=0,drms=-60;
- const RMSIN=Math.sqrt((a0.reduce((q,v)=>q+v*v,0)+b0.reduce((q,v)=>q+v*v,0))/(2*n));
- let satD=0,satX=0,dsD=0,dsX=0;const SAT=isNum(satMode)?makeSat(satChar,satMode,fs,RMSIN):null,DIST=distMode>0?makeDist(distType,distMode,fs,distSample(a0),RMSIN):null;
+ const RMSIN=G?G.rms:Math.sqrt((a0.reduce((q,v)=>q+v*v,0)+b0.reduce((q,v)=>q+v*v,0))/(2*n));
+ let satD=0,satX=0,dsD=0,dsX=0;const SAT=isNum(satMode)?makeSat(satChar,satMode,fs,RMSIN):null,DIST=distMode>0?makeDist(distType,distMode,fs,G?G.ds:distSample(a0),RMSIN):null;
  /* Transient shaper: a fast and a slow envelope follower on the same signal.
     Where the fast one runs ahead of the slow one, an attack is happening.
     Measured on real material, that ratio sits around 2.1 dB in steady parts
@@ -672,7 +683,7 @@ $('file').onchange=async e=>{
   await tick();
   const L=lufs(kseg(chans(src),src.sampleRate));
   $('inStats').textContent=fmtT(src.duration)+', '+(src.sampleRate/1000)+' kHz, '+(src.numberOfChannels>1?'stereo':'mono')+', currently '+L.toFixed(1)+' LUFS';
-  src.inL=L;clearStems();wpStop();wpOff=0;regions=[];regSel=-1;noiseProf=null;buildPeaks();$('regCard').hidden=false;regSetup();zoomSetup();vwUI();regRender();drawWave();$('wpTime').textContent=wpTimeStr();$('go').disabled=false;$('pv').disabled=false;$('sepPv').disabled=false;$('sepAll').disabled=false;say('');
+  src.inL=L;clearStems();wpStop();wpOff=0;lpReset();regions=[];regSel=-1;noiseProf=null;buildPeaks();$('regCard').hidden=false;regSetup();zoomSetup();vwUI();regRender();drawWave();$('wpTime').textContent=wpTimeStr();$('go').disabled=false;$('pv').disabled=false;$('sepPv').disabled=false;$('sepAll').disabled=false;say('');
  }catch{src=null;$('inStats').textContent='';say('That file couldn’t be decoded. Try an MP3, WAV, M4A or FLAC.',1)}
 };
 
@@ -680,26 +691,182 @@ $('file').onchange=async e=>{
 let regions=[],regSel=-1,wavPeaks=null,drag=null;
 /* Source player for the waveform, separate from the A/B master player.
    Only one of the two may sound at a time. */
-let wpSrc=null,wpT0=0,wpOff=0,wpOn=false,wpRaf=0;
-const wpPos=()=>wpOn?Math.min(src?src.duration:0,pc.currentTime-wpT0):wpOff;
-function wpTimeStr(){const d=src?src.duration:0;return tc(wpPos())+' / '+tc(d)}
+/* The top player plays the original song, or a mastered preview made with
+   the real chain a few seconds at a time just ahead of the playhead. Both are
+   scheduled in step on two buses, so Original / Mastered switches instantly.
+   Chunks are cached per settings, so a loop costs nothing after its first
+   pass. Settings changed without pressing Preview arrive at the next chunk
+   that has not been rendered yet; Preview re-renders from the playhead now. */
+let wpOff=0,wpOn=false,wpRaf=0,wpEqO=null;
+const SEG=5,PRE=2,XF=.015;
+const wp={segs:[],nextS:0,nextW:0,timer:0,gen:0,og:null,mg:null,lp:0};
+const lp={active:false,mode:'o',loop:false,cache:new Map(),last:new Map(),g:{},G:null,busy:false,starting:false,miss:'',sig:'',err:''};
+const wpDur=()=>src?src.duration:0;
+function wpRange(){
+ const d=wpDur(),r=lp.loop&&regions[regSel];
+ if(r){const a=r.s/src.sampleRate,b=r.e/src.sampleRate;if(b-a>=.25)return[a,b]}
+ return[0,d];
+}
+function wpNext(s){const[lo,hi]=wpRange(),e=Math.min(s+SEG,hi);return{e,n:e>=hi-1e-3?(lp.loop?lo:null):e}}
+const hsh=t=>{let h=0;for(let i=0;i<t.length;i++)h=(h*31+t.charCodeAt(i))|0;return h.toString(36)};
+function lpSig(){const c=getCfg();delete c.eq;delete c.fmt;return hsh(JSON.stringify([c,regions.map(r=>[r.s,r.e,r.mode,r.amt]),sgain,smute,refOn()?refAvg:0,stemData?stemLen:0]))}
+const pk=(s,e)=>Math.round(s*1000)+'-'+Math.round(e*1000),lpKey=(sig,s,e)=>sig+'|'+pk(s,e);
+function lpPut(sig,s,e,b){
+ lp.cache.set(lpKey(sig,s,e),b);lp.last.delete(pk(s,e));lp.last.set(pk(s,e),b);
+ for(const m of[lp.cache,lp.last])while(m.size>30)m.delete(m.keys().next().value);
+}
+function lpReset(){lp.cache.clear();lp.last.clear();lp.g={};lp.G=null;lp.active=false;lp.mode='o';lp.miss='';lp.err='';lpUI()}
+/* Render [s,e) seconds with 2 s of pre-roll so compressors and averages have
+   settled. Whole-song measurements (tone analysis, level calibration) are
+   taken once from the full song so chunks agree with each other. Loudness is
+   fixed per settings from the first chunk: the gain the whole song would need,
+   corrected for what the limiter takes away on that chunk. */
+async function lpRender(s,e,sig){
+ const fs=src.sampleRate,i0=Math.round(Math.max(0,s-PRE)*fs),k=Math.round(s*fs)-i0,i1=Math.min(src.length,Math.round((e+XF)*fs)),len=i1-i0;
+ if(!lp.G){const c=chans(src),n=src.length;let q=0;for(let i=0;i<n;i++)q+=c[0][i]*c[0][i]+c[1][i]*c[1][i];lp.G={an:analyze(c[0],c[1],fs),rms:Math.sqrt(q/(2*n)),ds:distSample(c[0])}}
+ const T=+$('lufs').value,{buf}=sourceFor(i0,len);
+ let r;sayMute=true;try{r=await pipeline(buf,T,'wav',radio('p'),i0,{raw:true,G:lp.G})}finally{sayMute=false}
+ const base=r.base,tp=tpEnv(base[0],base[1]),o=[new Float32Array(len),new Float32Array(len)];
+ let g=lp.g[sig];
+ if(g==null){
+  const ch=chans(src),Lr=lufs(kseg([ch[0].subarray(i0,i1),ch[1].subarray(i0,i1)],fs)),Lb=lufs(kseg(base,fs)),fix=Lr>-50&&Lb>-50;
+  const want=fix?T-(src.inL+Lb-Lr):T-src.inL;g=Math.max(-24,Math.min(24,want));
+  if(fix){
+   const Lt=Lb+want;
+   for(let it=0;it<5;it++){limit(base,Math.pow(10,g/20),-1,fs,o,tp);const err=Lt-lufs(kseg(o,fs));if(Math.abs(err)<.1)break;g=Math.max(-24,Math.min(24,g+err))}
+   lp.g[sig]=g;
+  }
+ }
+ limit(base,Math.pow(10,g/20),-1,fs,o,tp);
+ const b=pc.createBuffer(2,len-k,fs);b.copyToChannel(o[0].subarray(k),0);b.copyToChannel(o[1].subarray(k),1);
+ return b;
+}
+async function lpAhead(){
+ if(lp.busy||!wpOn||!lp.active)return;
+ const sig=lp.sig,gen=wp.gen;let s=wp.nextS;
+ for(let j=0;j<3&&s!=null;j++){
+  const{e,n}=wpNext(s);
+  if(e-s>.02&&!lp.cache.has(lpKey(sig,s,e))){
+   lp.busy=true;
+   try{lpPut(sig,s,e,await lpRender(s,e,sig));lp.err=''}catch(err){lp.err=err.message||'unknown error'}
+   lp.busy=false;if(gen===wp.gen&&!lp.err)wpPump();return;
+  }
+  s=n;
+ }
+}
+function wpSched(s,e,m){
+ const w=wp.nextW,d=e-s,xs=[];
+ const play=(buf,bus,off)=>{const x=pc.createBufferSource(),g=pc.createGain();x.buffer=buf;x.connect(g);g.connect(bus);
+  g.gain.setValueAtTime(0,w);g.gain.linearRampToValueAtTime(1,w+XF);g.gain.setValueAtTime(1,w+d);g.gain.linearRampToValueAtTime(0,w+d+XF);
+  x.start(w,off,d+XF);xs.push(x)};
+ play(src,wp.og,s);
+ if(lp.active)m?play(m,wp.mg,0):play(src,wp.mg,s);
+ wp.segs.push({s,w,d,xs});wp.nextW=w+d;
+}
+function wpPump(){
+ if(!wpOn)return;
+ const now=pc.currentTime;
+ if(lp.active)lp.sig=lpSig();
+ wp.segs=wp.segs.filter(g=>g.w+g.d+XF>now-1);
+ while(wp.nextS!=null&&wp.nextW-now<.5){
+  const s=wp.nextS,{e,n}=wpNext(s);
+  if(e-s<.02){if(n==null||n===s){wp.nextS=null;break}wp.nextS=n;continue}
+  let m=null;
+  if(lp.active){
+   m=lp.cache.get(lpKey(lp.sig,s,e))||null;
+   if(m)lp.miss='';
+   else{
+    if(wp.nextW-now>.06)break;               // still time for the render to land
+    m=lp.last.get(pk(s,e))||null;lp.miss=m?'old':'raw';
+   }
+  }
+  wpSched(s,e,m);wp.nextS=n;
+ }
+ lpAhead();
+}
+function wpLevels(){
+ if(!wp.og)return;
+ const m=lp.active&&lp.mode==='m',d=lp.active&&$('wpMatch').checked?(+$('lufs').value)-src.inL:0;
+ wp.og.gain.setTargetAtTime(m?0:(d<0?Math.pow(10,d/20):1),pc.currentTime,.01);
+ wp.mg.gain.setTargetAtTime(m?(d>0?Math.pow(10,-d/20):1):0,pc.currentTime,.01);
+}
+const wpPos=()=>{
+ if(!wpOn)return wpOff;
+ const t=pc.currentTime;let p=null;
+ for(const g of wp.segs)if(t>=g.w&&t<g.w+g.d)p=g.s+(t-g.w);
+ if(p==null)p=wp.segs.length&&t<wp.segs[0].w?wp.segs[0].s:wp.lp;
+ wp.lp=p;return Math.min(wpDur(),p);
+};
+function wpTimeStr(){return tc(wpPos())+' / '+tc(wpDur())}
 async function wpPlay(){
- if(!src||wpOn)return;
+ if(!src||wpOn||lp.starting)return;
  stopP();spStop();
  pc=pc||new AudioContext();await pc.resume();
- wpSrc=pc.createBufferSource();wpSrc.buffer=src;wpEq=eqNodes(pc,eqNow());wpSrc.connect(wpEq[0]);wpEq.at(-1).connect(pc.destination);
- wpT0=pc.currentTime-wpOff;wpOn=true;$('wpBtn').textContent='Pause';
- wpSrc.start(0,Math.max(0,Math.min(src.duration-.01,wpOff)));
- wpSrc.onended=()=>{if(wpOn){wpStop();wpOff=0;$('wpTime').textContent=wpTimeStr();drawWave()}};
- wpTick();
+ const[lo,hi]=wpRange();
+ if(wpOff>=wpDur()-.05)wpOff=0;
+ if(lp.loop&&(wpOff<lo||wpOff>=hi-.05))wpOff=lo;
+ const gen=++wp.gen;
+ if(lp.active){
+  const sig=lpSig(),s=wpOff,{e}=wpNext(s);lp.sig=sig;
+  if(!lp.cache.has(lpKey(sig,s,e))){
+   lp.starting=true;lpUI();
+   while(lp.busy)await new Promise(r=>setTimeout(r,25));
+   if(gen===wp.gen&&!lp.cache.has(lpKey(sig,s,e))){
+    lp.busy=true;
+    try{lpPut(sig,s,e,await lpRender(s,e,sig));lp.err=''}catch(err){lp.err=err.message||'unknown error'}
+    lp.busy=false;
+   }
+   lp.starting=false;lpUI();
+   if(gen!==wp.gen||lp.err)return;
+  }
+ }
+ wp.og=pc.createGain();wp.mg=pc.createGain();
+ wpEqO=eqNodes(pc,lp.active?EQ0:eqNow());wpEq=eqNodes(pc,eqNow());
+ wp.og.connect(wpEqO[0]);wpEqO.at(-1).connect(pc.destination);
+ wp.mg.connect(wpEq[0]);wpEq.at(-1).connect(pc.destination);
+ wp.og.gain.value=0;wp.mg.gain.value=0;
+ wp.segs=[];wp.nextS=wpOff;wp.nextW=pc.currentTime+.05;wp.lp=wpOff;wpOn=true;lp.miss='';
+ wpLevels();$('wpBtn').textContent='Pause';
+ wpPump();wp.timer=setInterval(wpPump,100);wpTick();
 }
 function wpStop(){
- if(wpOn&&wpSrc){wpOff=Math.min(src?src.duration:0,pc.currentTime-wpT0);try{wpSrc.onended=null;wpSrc.stop()}catch(_){}}
- wpOn=false;wpSrc=null;wpEq=null;cancelAnimationFrame(wpRaf);
+ if(wpOn){
+  wpOff=Math.min(wpDur(),wpPos());
+  for(const g of wp.segs)g.xs.forEach(x=>{try{x.stop()}catch(_){}});
+  [wp.og,wp.mg].forEach(n=>{try{n.disconnect()}catch(_){}});
+ }
+ clearInterval(wp.timer);wp.gen++;wp.segs=[];wpOn=false;wp.og=wp.mg=null;wpEq=wpEqO=null;
+ if(lp.starting){lp.starting=false;lpUI()}
+ cancelAnimationFrame(wpRaf);
  const b=$('wpBtn');if(b)b.textContent='Play';
  drawWave();
 }
-function wpTick(){if(!wpOn)return;$('wpTime').textContent=wpTimeStr();if(src)vwShow(wpPos()/src.duration);drawWave();wpRaf=requestAnimationFrame(wpTick)}
+function wpRestart(){const p=wpPos();wpStop();wpOff=p;wpPlay()}
+function lpPreview(){if(!src)return;lp.active=true;lp.mode='m';lpUI();if(wpOn)wpRestart();else wpPlay()}
+function pvbUI(){document.querySelectorAll('.pvb').forEach(b=>{b.disabled=!src||lp.starting||mastering;b.textContent=lp.starting?'Rendering…':'▶ Preview'})}
+let mastering=false;
+function lpUI(){
+ $('wpO').setAttribute('aria-pressed',!(lp.active&&lp.mode==='m'));$('wpM').setAttribute('aria-pressed',lp.active&&lp.mode==='m');
+ $('wpLoop').setAttribute('aria-pressed',lp.loop);
+ pvbUI();lpMsg();
+}
+function lpMsg(){
+ const el=$('wpMsg');if(!el)return;
+ const lr=lp.loop?(regions[regSel]?' Looping the selected region.':' Looping the whole song; select a region to loop just that.'):'';
+ let t;
+ if(lp.err)t='The preview could not be rendered: '+lp.err;
+ else if(lp.starting)t='Mastering from '+tc(wpOff)+'…';
+ else if(!lp.active)t='Playing the original. Press Mastered, or Preview next to any setting below, to hear the master here.';
+ else if(!wpOn&&lp.mode==='m')t='Mastered is on. Press Play to hear it from the playhead; the first few seconds take a moment to render.';
+ else if(lp.mode==='o')t='Original, untouched (no EQ). Mastered switches back instantly.';
+ else if(wpOn&&lp.miss==='raw')t='Catching up: this stretch is playing unprocessed.';
+ else if(wpOn&&lp.miss==='old')t='Catching up: this stretch uses your previous settings.';
+ else t='Mastered preview, rendered a few seconds ahead with your current settings. Loudness is close but approximate; Master full song gives the exact result.';
+ el.textContent=t+lr;
+}
+function wpTick(){if(!wpOn)return;
+ if(wp.nextS==null&&wp.segs.length){const L=wp.segs[wp.segs.length-1];if(pc.currentTime>L.w+L.d){wpStop();wpOff=0;$('wpTime').textContent=wpTimeStr();return}}
+ lpMsg();$('wpTime').textContent=wpTimeStr();if(src)vwShow(wpPos()/src.duration);drawWave();wpRaf=requestAnimationFrame(wpTick)}
 function wpSeek(sec){
  const was=wpOn;if(was)wpStop();
  wpOff=Math.max(0,Math.min((src?src.duration:0)-.05,sec));
@@ -813,7 +980,8 @@ function setRegTime(i,which,str){
  regMsg('');regRender();drawWave();
 }
 function regPick(i){
- regSel=i;
+ const was=regSel;regSel=i;
+ if(lp.loop&&wpOn&&was!==i)wpRestart();
  $('regList').querySelectorAll('.rr').forEach((e,k)=>e.classList.toggle('sel',k===i));
  regHintSet();vwUI();drawWave();
 }
@@ -1623,13 +1791,17 @@ function runSeparation(scope){
  }).catch(err=>{eta.stop();ssay('Separation failed: '+(err&&err.message||err),1);free()});
  ssay('Starting…');
 }
-$('wpBtn').onclick=()=>wpOn?wpStop():wpPlay();
+$('wpBtn').onclick=()=>wpOn||lp.starting?wpStop():wpPlay();
+$('wpO').onclick=()=>{lp.mode='o';lpUI();wpLevels()};
+$('wpM').onclick=()=>{lp.mode='m';if(!lp.active){lp.active=true;lpUI();if(wpOn)wpRestart()}else{lpUI();wpLevels()}};
+$('wpLoop').onclick=()=>{lp.loop=!lp.loop;lpUI();if(wpOn)wpRestart()};
+$('wpMatch').onchange=wpLevels;
 $('sepPv').onclick=()=>runSeparation('preview');
 $('sepAll').onclick=()=>runSeparation('full');
 
-const busy=b=>{$('go').disabled=b||!src;$('pv').disabled=b||!src;$('sepPv').disabled=b||!src;$('sepAll').disabled=b||!src;if(b){stopP();$('res').hidden=true;eqUI()}};
+const busy=b=>{$('go').disabled=b||!src;$('pv').disabled=b||!src;$('sepPv').disabled=b||!src;$('sepAll').disabled=b||!src;mastering=b;if(b){stopP();wpStop();$('res').hidden=true;eqUI()}pvbUI()};
 const opts=()=>({T:+$('lufs').value,fmt:document.querySelector('input[name=f]:checked').value,pm:document.querySelector('input[name=p]:checked').value});
-async function pipeline(b,T,fmt,pm,off){
+async function pipeline(b,T,fmt,pm,off,O={}){
  const fs=b.sampleRate;let base,notes=[];
  const R=regEnv(b.length,off||0,fs);
  say('Preparing audio…');await tick();
@@ -1647,7 +1819,7 @@ async function pipeline(b,T,fmt,pm,off){
   notes=notes.concat([['Noise reduction','up to '+noiseDb+' dB, avg '+d.avg.toFixed(1)+' dB applied; profile from '+(np.from==='region'?'your marked region':'the whole song')]]);
  }
  const nrNotes=notes;notes=[];
- if(pm==='full')[base,notes]=await fullMaster(inBuf);else base=pm==='polish'?await render(inBuf):chans(inBuf);
+ if(pm==='full')[base,notes]=await fullMaster(inBuf,O.G);else base=pm==='polish'?await render(inBuf):chans(inBuf);
  notes=nrNotes.concat(notes);
  if(R){
   base=[Float32Array.from(base[0]),Float32Array.from(base[1])];
@@ -1663,6 +1835,7 @@ async function pipeline(b,T,fmt,pm,off){
   if(s.length)bits.push(s.length+' unprocessed');
   if(bits.length)notes=notes.concat([['Regions',bits.join('; ')]]);
  }
+ if(O.raw)return{base,notes,fs};
  const pre=base,eqG={...eq};
  if(!eqZero(eqG)){say('Applying tone EQ…');await tick();base=await eqRender(base,fs,eqG)}
  return{...await finish(base,T,fmt,fs),notes,fs,pre,eq:eqG};
@@ -1807,7 +1980,7 @@ async function eqRender(base,fs,g){
  const s=off.createBufferSource(),f=eqNodes(off,g);s.buffer=b;s.connect(f[0]);f.at(-1).connect(off.destination);s.start();
  const r=await off.startRendering();return[r.getChannelData(0),r.getChannelData(1)];
 }
-function eqLive(){if(!pc)return;eqSet(wpEq,eqNow());eqSet(spEq,eqNow());eqSet(pl.eqN,eqDelta())}
+function eqLive(){if(!pc)return;eqSet(wpEq,eqNow());eqSet(wpEqO,lp.active?EQ0:eqNow());eqSet(spEq,eqNow());eqSet(pl.eqN,eqDelta())}
 function eqUI(){
  EQB.forEach(b=>{$('eq-'+b.k).value=eq[b.k];$('eqv-'+b.k).textContent=(eq[b.k]>0?'+':'')+eq[b.k]});
  $('eqByp').setAttribute('aria-pressed',eqByp);
@@ -1976,7 +2149,7 @@ const HELP={
 'Noise reduction':`<p>Removes steady background noise — hiss, hum, room tone, and the warble AI generators sometimes leave behind. It measures the noise floor per frequency band, then attenuates each band when it drops toward that floor.</p>
 <p><b>Mark a quiet passage</b> with a Noise profile region on the waveform for the best result: that measures the actual noise rather than guessing. Without one, the floor is estimated from the quietest 5% of each frequency band across the song, which on a test with known added noise came within 0.5 dB of the region result.</p>
 <p>Light is 6 dB of reduction, Medium 12 dB, Strong 20 dB. It runs first, before any EQ or compression, so the chain never amplifies noise. Gains are smoothed across frequency and time to avoid the warbling that makes denoisers obvious, but strong settings on dense music can still sound watery — check on Preview.</p>`,
-'Volume automation':`<p>Press Play under the waveform to hear the song and find the part you want, then drag across the waveform to select it. Clicking moves the playhead, and clicking inside a region also selects it.</p>
+'Volume automation':`<p>Press Play under the waveform to hear the song and find the part you want, then drag across the waveform to select it. <b>Mastered</b> plays a preview made with the real chain and your current settings, <b>Original</b> switches back instantly, and <b>Loop</b> repeats the selected region (or the whole song). The <b>Preview</b> buttons next to the settings below apply a change from the current spot.</p><p> Clicking moves the playhead, and clicking inside a region also selects it.</p>
 <p><b>Zoom and exact times.</b> Under the waveform, <b>+</b> and <b>&minus;</b> zoom in and out (Ctrl or Cmd with the mouse wheel zooms at the pointer), <b>Fit</b> shows the whole song, and <b>Zoom to region</b> frames the selected region. When zoomed, a slider (or sideways scrolling) moves along the song, a time ruler appears, and the view follows the playhead while it plays. You can zoom in to about one second across. Every region's start and end are editable boxes in minutes and seconds with tenths, for example <code>1:23.5</code>, or just seconds like <code>83.5</code>. To add a region without dragging, type a start and end under <b>Add by time</b> (the <b>Now</b> buttons copy the playhead position). The round &#9654; on a region plays from its start.</p>
 <p>Mastering normally applies one setting to the whole song, but problems are usually local — one chorus that jumps, one verse too quiet, an intro you want left alone. Drag across the waveform to select a part and choose what happens there.</p>
 <p><b>Level</b> rides the fader by up to ±12 dB <i>before</i> the mastering chain, so the compressors respond to the corrected balance rather than fighting it. <b>Tame dynamics</b> adds compression inside the region only. <b>No tone processing</b> keeps the original tone there but still applies the final loudness and limiting, so the level still matches the rest.</p>
@@ -2038,6 +2211,18 @@ const HELP={
   document.querySelectorAll('.q').forEach(q=>q.setAttribute('aria-expanded',String(open)));
   $('helpAll').textContent=open?'Hide all hints':'Show all hints';
  };
+})();
+/* ---- Preview buttons next to every setting the top player can render ---- */
+(()=>{
+ const keys=['Stem balance','Vocal doubler','Stem distortion','Reference tracks','Genre preset','Target loudness','Processing amount','Transients','Saturation','Distortion','Noise reduction','Clarity','Stereo width','Vocal enhancer','Pumper','Processing mode'];
+ document.querySelectorAll('.lbl').forEach(el=>{
+  const t=el.textContent.trim(),k=keys.find(x=>t.startsWith(x));if(!k)return;
+  const b=document.createElement('button');b.type='button';b.className='pvb';b.textContent='▶ Preview';
+  b.title='Master from the top player\u2019s position with the current settings and play it there';
+  b.setAttribute('aria-label','Preview '+k+' in the top player');
+  b.onclick=lpPreview;el.appendChild(b);
+ });
+ lpUI();
 })();
 window.addEventListener('error',e=>say('Error: '+e.message,1));
 </script></body></html>

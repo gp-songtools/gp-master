@@ -63,6 +63,11 @@ bells, 8 kHz shelf, ±6 dB each, heard live as you move them in every player. In
 mastering chain but before loudness matching and the limiter. After a render,
 "Apply EQ" re-runs only that final stage, so you don't need to master again.
 
+**Top player preview** — the player under the waveform switches between the
+original and a mastered preview, rendered with the real chain about five
+seconds at a time ahead of the playhead. Preview buttons next to each setting
+apply a change from the current spot; Loop repeats the selected region.
+
 **Saved setups** — name a combination of reference measurements plus every
 setting on the page, then reload it later. Export writes all setups to a JSON
 file you can keep or move to another machine; import merges a file back,
