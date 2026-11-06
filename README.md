@@ -58,6 +58,11 @@ follower measured against its own running average.
 learned from a marked quiet region or estimated from the quietest 5% of each
 band. Runs before EQ and compression so noise is never amplified.
 
+**Tone EQ** — low (100 Hz shelf), mid (1 kHz) and high (8 kHz shelf), ±6 dB,
+heard live as you move them in every player. In a render it runs after the
+mastering chain but before loudness matching and the limiter. After a render,
+"Apply EQ" re-runs only that final stage, so you don't need to master again.
+
 **Saved setups** — name a combination of reference measurements plus every
 setting on the page, then reload it later. Export writes all setups to a JSON
 file you can keep or move to another machine; import merges a file back,

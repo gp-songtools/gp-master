@@ -162,9 +162,16 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .sg{stroke:var(--ln);stroke-width:1}.sb{fill:none;stroke:var(--mut);stroke-width:2}.sa{fill:none;stroke:var(--ac);stroke-width:2.5}
 .st{fill:var(--mut);font-size:11px}.up{fill:var(--ac)}.dn{fill:var(--warn)}
 .hint{color:var(--mut);font-size:13px;margin:10px 0 0}
+.eq{display:grid;grid-template-columns:42px 1fr 58px;gap:4px 10px;align-items:center;font-size:14px;margin:0 0 6px}
+.eq input[type=range]{margin:0}
+.eq span{text-align:right;color:var(--mut);font-variant-numeric:tabular-nums}
+.eqb{display:flex;gap:8px;align-items:center;margin:0 0 18px}
+.eqb button{border:1px solid var(--ln);background:transparent;color:var(--ink);border-radius:8px;padding:6px 10px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.eqb button[aria-pressed=true]{background:var(--ac);color:var(--acf);border-color:var(--ac)}
+#eqApply{width:100%;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v40</small></h1>
+<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v41</small></h1>
 <p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded.</p>
 <p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or use it just to split the song and download each stem as a WAV.</p>
 
@@ -242,6 +249,13 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
   <button type="button" data-v="-11">-11 loud</button>
   <button type="button" data-v="-9">-9 very loud</button>
  </div>
+ <span class="lbl">Tone EQ <span style="font-weight:400;color:var(--mut)">(live while you listen)</span></span>
+ <div class="eq">
+  <b>Low</b><input type="range" id="eq-lo" min="-6" max="6" step="0.5" value="0" aria-label="Low shelf at 100 Hz, dB"><span id="eqv-lo">0 dB</span>
+  <b>Mid</b><input type="range" id="eq-mid" min="-6" max="6" step="0.5" value="0" aria-label="Mid at 1 kHz, dB"><span id="eqv-mid">0 dB</span>
+  <b>High</b><input type="range" id="eq-hi" min="-6" max="6" step="0.5" value="0" aria-label="High shelf at 8 kHz, dB"><span id="eqv-hi">0 dB</span>
+ </div>
+ <div class="eqb"><button type="button" id="eqByp" aria-pressed="false">Bypass</button><button type="button" id="eqReset">Reset</button><span class="hint" id="eqMsg" style="margin:0"></span></div>
  <span class="lbl">Output format</span>
  <div class="seg">
   <label><input type="radio" name="f" value="wav" checked>WAV<small>24-bit</small></label>
@@ -307,6 +321,7 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
   <button class="abb" id="monoBtn" aria-pressed="false" style="width:100%;margin-bottom:10px">Listen in mono</button>
   <div class="prow"><button class="ppb" id="pp">Play</button><input type="range" id="seek" min="0" max="1" step="0.1" value="0" aria-label="Seek"><span id="tm">0:00</span></div>
   <label class="chk" style="margin:10px 0 0"><input type="checkbox" id="lm" checked><span>Match loudness for a fair comparison</span></label>
+  <button class="go alt" id="eqApply" hidden>Apply EQ to the master</button>
  </div>
  <button class="save" id="save">Save file</button>
  <p class="hint" id="hint"></p>
@@ -635,7 +650,7 @@ $('chips').onclick=e=>{const v=e.target.dataset?.v;if(v)sync(v)};
 $('file').onchange=async e=>{
  const f=e.target.files[0];if(!f)return;
  name=(f.name.replace(/\.[^.]+$/,'').replace(/[^\w\- ]+/g,'_').trim())||'audio';
- $('fl').textContent=f.name;stopP();$('go').disabled=true;$('pv').disabled=true;$('res').hidden=true;say('Decoding…');await tick();
+ $('fl').textContent=f.name;stopP();lastFin=null;$('go').disabled=true;$('pv').disabled=true;$('res').hidden=true;say('Decoding…');await tick();
  try{
   const ab=await f.arrayBuffer();let ctx;
   try{ctx=new AudioContext({sampleRate:44100})}catch{ctx=new AudioContext()}
@@ -658,7 +673,7 @@ async function wpPlay(){
  if(!src||wpOn)return;
  stopP();spStop();
  pc=pc||new AudioContext();await pc.resume();
- wpSrc=pc.createBufferSource();wpSrc.buffer=src;wpSrc.connect(pc.destination);
+ wpSrc=pc.createBufferSource();wpSrc.buffer=src;wpEq=eqNodes(pc,eqNow());wpSrc.connect(wpEq[0]);wpEq[2].connect(pc.destination);
  wpT0=pc.currentTime-wpOff;wpOn=true;$('wpBtn').textContent='Pause';
  wpSrc.start(0,Math.max(0,Math.min(src.duration-.01,wpOff)));
  wpSrc.onended=()=>{if(wpOn){wpStop();wpOff=0;$('wpTime').textContent=wpTimeStr();drawWave()}};
@@ -666,7 +681,7 @@ async function wpPlay(){
 }
 function wpStop(){
  if(wpOn&&wpSrc){wpOff=Math.min(src?src.duration:0,pc.currentTime-wpT0);try{wpSrc.onended=null;wpSrc.stop()}catch(_){}}
- wpOn=false;wpSrc=null;cancelAnimationFrame(wpRaf);
+ wpOn=false;wpSrc=null;wpEq=null;cancelAnimationFrame(wpRaf);
  const b=$('wpBtn');if(b)b.textContent='Play';
  drawWave();
 }
@@ -1150,7 +1165,7 @@ const setRadio=(n,v)=>{const e=document.querySelector(`input[name=${n}][value="$
 function getCfg(){
  return{genre,amount,clar,widthSel,vocAmt,pumpDb,noiseDb,transDb,dblAmt,satMode,satChar,distMode,distType,sdist:{...sdist},useRef:$('useRef').checked,
   lufs:+$('lufs').value,fmt:radio('f'),mode:radio('p'),
-  useStems:$('useStems').checked,perStem:$('perStem').checked};
+  useStems:$('useStems').checked,perStem:$('perStem').checked,eq:{...eq}};
 }
 function applyCfg(c){
  if(!c||typeof c!=='object')return;
@@ -1178,6 +1193,7 @@ function applyCfg(c){
  [...$('gen').children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.g===genre));
  [...$('cl').children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.c===String(clar)));
  sel('amt',amount);sel('wd',String(widthSel));sel('vc',String(vocAmt));sel('pu',String(pumpDb));sel('nr',String(noiseDb));sel('tr',String(transDb));sel('db',String(dblAmt));sel('sa',String(satMode));sel('sc',satChar);sel('ds',String(distMode));sel('dt',distType);STEMS.forEach(k=>{$('sd-'+k).value=String(sdist[k])});nrHintUpdate();
+ if(c.eq&&typeof c.eq==='object'){const e={...EQ0};EQB.forEach(b=>{const v=c.eq[b.k];if(isNum(v)&&v>=-6&&v<=6)e[b.k]=v});eq=e;eqLive();eqUI()}
  if(stemData)analyzeStems();
 }
 function cfgSave(){try{localStorage.setItem(CFGKEY,JSON.stringify(getCfg()))}catch(e){}}
@@ -1398,7 +1414,7 @@ function spTick(){if(!sp.mode)return;const t=$('spSeek');if(t)t.value=spPos();sp
 function spSeekTo(v){const m=sp.mode;if(m)spStop();sp.off=Math.max(0,Math.min(spDur(),v));$('spSeek').value=sp.off;spLabels();if(m)spPlay(m)}
 function spStop(){
  if(sp.mode){sp.off=spPos();sp.srcs.forEach(x=>{x.onended=null;try{x.stop()}catch(_){}})}
- sp.mode=null;sp.srcs=[];sp.gn={};cancelAnimationFrame(sp.raf);spLabels();
+ sp.mode=null;sp.srcs=[];sp.gn={};spEq=null;cancelAnimationFrame(sp.raf);spLabels();
 }
 function spReset(){spStop();sp.off=0;const t=$('spSeek');if(t){t.max=spDur()||1;t.value=0}spLabels()}
 function spGainFor(s,mode){
@@ -1414,12 +1430,14 @@ async function spPlay(mode){
  pc=pc||new AudioContext();await pc.resume();
  const fs=src.sampleRate,L=stemLen,names=mode==='mix'?HAVE():[mode];
  sp.srcs=[];sp.gn={};
+ let out=pc.destination;
+ if(mode==='mix'){spEq=eqNodes(pc,eqNow());spEq[2].connect(pc.destination);out=spEq[0]}
  for(const s of names){
   if(!stemData[s])continue;
   const b=new AudioBuffer({length:L,numberOfChannels:2,sampleRate:fs});
   b.copyToChannel(stemData[s][0],0);b.copyToChannel(stemData[s][1],1);
   const x=pc.createBufferSource(),g=pc.createGain();
-  x.buffer=b;g.gain.value=spGainFor(s,mode);x.connect(g);g.connect(pc.destination);
+  x.buffer=b;g.gain.value=spGainFor(s,mode);x.connect(g);g.connect(out);
   sp.srcs.push(x);sp.gn[s]=g;
  }
  const off=Math.max(0,Math.min(spDur()-.05,sp.off));
@@ -1595,7 +1613,7 @@ $('wpBtn').onclick=()=>wpOn?wpStop():wpPlay();
 $('sepPv').onclick=()=>runSeparation('preview');
 $('sepAll').onclick=()=>runSeparation('full');
 
-const busy=b=>{$('go').disabled=b||!src;$('pv').disabled=b||!src;$('sepPv').disabled=b||!src;$('sepAll').disabled=b||!src;if(b){stopP();$('res').hidden=true}};
+const busy=b=>{$('go').disabled=b||!src;$('pv').disabled=b||!src;$('sepPv').disabled=b||!src;$('sepAll').disabled=b||!src;if(b){stopP();$('res').hidden=true;eqUI()}};
 const opts=()=>({T:+$('lufs').value,fmt:document.querySelector('input[name=f]:checked').value,pm:document.querySelector('input[name=p]:checked').value});
 async function pipeline(b,T,fmt,pm,off){
  const fs=b.sampleRate;let base,notes=[];
@@ -1631,6 +1649,13 @@ async function pipeline(b,T,fmt,pm,off){
   if(s.length)bits.push(s.length+' unprocessed');
   if(bits.length)notes=notes.concat([['Regions',bits.join('; ')]]);
  }
+ const pre=base,eqG={...eq};
+ if(!eqZero(eqG)){say('Applying tone EQ…');await tick();base=await eqRender(base,fs,eqG)}
+ return{...await finish(base,T,fmt,fs),notes,fs,pre,eq:eqG};
+}
+/* Loudness match, true-peak limit and peak check: the last stage of every
+   render, also re-run on its own when only the tone EQ changes. */
+async function finish(base,T,fmt,fs){
  say('Measuring loudness…');await tick();
  const L0=lufs(kseg(base,fs)),n=base[0].length,ceil=fmt==='wav'?-1:-1.5,o=[new Float32Array(n),new Float32Array(n)];
  say('Analyzing peaks…');await tick();const tp=tpEnv(base[0],base[1]);
@@ -1642,7 +1667,7 @@ async function pipeline(b,T,fmt,pm,off){
  }
  say('Checking peaks…');await tick();
  const te=tpEnv(o[0],o[1]);let pk=0;for(let i=0;i<n;i++)if(te[i]>pk)pk=te[i];
- return{o,L,pk:20*Math.log10(pk+1e-12),notes,fs,mono:monoCheck(o,fs)};
+ return{o,L,pk:20*Math.log10(pk+1e-12),mono:monoCheck(o,fs)};
 }
 $('go').onclick=async()=>{
  if(!src)return;busy(true);
@@ -1654,8 +1679,8 @@ $('go').onclick=async()=>{
   const li=useS?lufs(kseg(chans(sb),sb.sampleRate)):src.inL;
   const r=await pipeline(sb,T,fmt,pm,0);
   say('Encoding '+fmt.toUpperCase()+'…');await tick();
-  const blob=fmt==='wav'?wav24(r.o[0],r.o[1],r.fs):fmt==='mp3'?await mp3(r.o,r.fs):await m4a(r.o,r.fs);
-  res={fmt,blob};setPlayer(sb,li,r.o,r.L);
+  const blob=await encode(r.o,r.fs,fmt);
+  res={fmt,blob};setPlayer(sb,li,r.o,r.L);eqBaked=r.eq;lastFin={pre:r.pre,fs:r.fs,T,fmt,pv:false,li,ob:sb};
   show(li,T,r.L,r.pk,fmt,blob.size,r.mono,r.notes.concat(dblAmt>0&&!useS?[['Vocal doubler','skipped: needs the vocal stem (split the song first)']]:[]).concat(useS?[['Stem balance',HAVE().filter(s=>!smute[s]).map(s=>s+' '+(sgain[s]>0?'+':'')+sgain[s]).join(', ')+(STEMS.some(s=>smute[s])?'; muted: '+STEMS.filter(s=>smute[s]).join(', '):'')+' dB']].concat(stemNotes.map(t=>['Stem chain',t])):[]));say('');
  }catch(e){say(e.message||'Something went wrong while processing.',1)}
  busy(false);
@@ -1666,11 +1691,13 @@ $('pv').onclick=async()=>{
   const{T,fmt,pm}=opts(),fs=src.sampleRate,{start,len}=exRange();
   const{buf:ex,stems:useS}=sourceFor(start,len);
   const li=lufs(kseg(chans(ex),fs)),r=await pipeline(ex,T,fmt,pm,start);
-  res=null;setPlayer(ex,li,r.o,r.L);
+  res=null;setPlayer(ex,li,r.o,r.L);eqBaked=r.eq;lastFin={pre:r.pre,fs:r.fs,T,fmt,pv:true,li,ob:ex};
   show(li,T,r.L,r.pk,fmt,0,r.mono,r.notes.concat(dblAmt>0&&!useS?[['Vocal doubler','skipped: needs the vocal stem (split the song first)']]:[]).concat(useS?[['Stem balance',HAVE().filter(s=>!smute[s]).map(s=>s+' '+(sgain[s]>0?'+':'')+sgain[s]).join(', ')+' dB']].concat(stemNotes.map(t=>['Stem chain',t])):[]),true);say('');
  }catch(e){say(e.message||'Something went wrong while processing.',1)}
  busy(false);
 };
+
+const encode=async(o,fs,fmt)=>fmt==='wav'?wav24(o[0],o[1],fs):fmt==='mp3'?await mp3(o,fs):await m4a(o,fs);
 
 /* ---- mono compatibility ---- */
 function monoCheck(o,fs){
@@ -1742,6 +1769,66 @@ $('sp-s').onclick=()=>{spMode='s';$('sp-s').setAttribute('aria-pressed',true);$(
 $('sp-d').onclick=()=>{spMode='d';$('sp-d').setAttribute('aria-pressed',true);$('sp-s').setAttribute('aria-pressed',false);paintSpec()};
 $('sp-m').onchange=paintSpec;
 
+/* ---- tone EQ ----
+   Three Web Audio biquads. While you listen they run live: on the source in the
+   waveform and stem players, and on the master side of the A/B player. In a
+   render the same filters run in an OfflineAudioContext after the whole chain
+   but before loudness matching and the limiter, so the target and true-peak
+   ceiling still hold. The A/B master already has the last render's EQ baked
+   in, so its live filters play only the difference from that. */
+const EQB=[{k:'lo',t:'lowshelf',f:100},{k:'mid',t:'peaking',f:1000,q:.7},{k:'hi',t:'highshelf',f:8000}],EQ0={lo:0,mid:0,hi:0};
+let eq={...EQ0},eqByp=false,eqBaked={...EQ0},lastFin=null,lastShow=null,eqBusy=false,wpEq=null,spEq=null;
+const eqZero=g=>EQB.every(b=>!g[b.k]),eqSame=(a,b)=>EQB.every(x=>a[x.k]===b[x.k]);
+const eqNow=()=>eqByp?EQ0:eq,eqDelta=()=>{const g=eqNow(),d={};EQB.forEach(b=>d[b.k]=g[b.k]-eqBaked[b.k]);return d};
+const eqTxt=g=>EQB.map(b=>b.k+' '+(g[b.k]>0?'+':'')+g[b.k]).join(', ')+' dB';
+function eqNodes(ctx,g){
+ const n=EQB.map(b=>{const x=ctx.createBiquadFilter();x.type=b.t;x.frequency.value=b.f;if(b.q)x.Q.value=b.q;x.gain.value=g[b.k];return x});
+ n[0].connect(n[1]);n[1].connect(n[2]);return n;
+}
+const eqSet=(n,g)=>{if(n)n.forEach((x,i)=>x.gain.setTargetAtTime(g[EQB[i].k],pc.currentTime,.02))};
+async function eqRender(base,fs,g){
+ if(eqZero(g))return base;
+ const n=base[0].length,off=new OfflineAudioContext(2,n,fs),b=off.createBuffer(2,n,fs);
+ b.copyToChannel(base[0],0);b.copyToChannel(base[1],1);
+ const s=off.createBufferSource(),f=eqNodes(off,g);s.buffer=b;s.connect(f[0]);f[2].connect(off.destination);s.start();
+ const r=await off.startRendering();return[r.getChannelData(0),r.getChannelData(1)];
+}
+function eqLive(){if(!pc)return;eqSet(wpEq,eqNow());eqSet(spEq,eqNow());eqSet(pl.eqN,eqDelta())}
+function eqUI(){
+ EQB.forEach(b=>{$('eq-'+b.k).value=eq[b.k];$('eqv-'+b.k).textContent=(eq[b.k]>0?'+':'')+eq[b.k]+' dB'});
+ $('eqByp').setAttribute('aria-pressed',eqByp);
+ const shown=lastFin&&!$('res').hidden,dirty=shown&&!eqSame(eq,eqBaked);
+ $('eqApply').hidden=!dirty;$('eqApply').disabled=eqBusy;
+ $('eqApply').textContent=lastFin&&lastFin.pv?'Apply EQ to the preview':'Apply EQ to the master';
+ if(lastFin&&!lastFin.pv)$('save').disabled=!!dirty;
+ $('eqMsg').textContent=eqByp?'Bypassed while listening — renders still use it.'
+  :dirty?'Playing live on the master. Apply it to re-limit and update the file.'
+  :shown&&!eqZero(eq)?'Baked into the current result.':'';
+}
+async function eqApply(){
+ if(!lastFin||eqBusy)return;
+ const F=lastFin,was=pl.play;stopP();const at=pl.off;
+ eqBusy=true;eqUI();$('go').disabled=$('pv').disabled=true;
+ try{
+  const g={...eq};say('Applying tone EQ…');await tick();
+  const r=await finish(await eqRender(F.pre,F.fs,g),F.T,F.fmt,F.fs);
+  let size=0;
+  if(!F.pv){say('Encoding '+F.fmt.toUpperCase()+'…');await tick();res={fmt:F.fmt,blob:await encode(r.o,F.fs,F.fmt)};size=res.blob.size}
+  eqBaked=g;setPlayer(F.ob,F.li,r.o,r.L);pl.off=Math.min(at,pl.dur);$('seek').value=pl.off;
+  show(F.li,F.T,r.L,r.pk,F.fmt,size,r.mono,lastShow,F.pv,true);say('');
+  if(was)playP();
+ }catch(e){say(e.message||'Something went wrong while applying the EQ.',1)}
+ eqBusy=false;$('go').disabled=$('pv').disabled=!src;eqUI();
+}
+EQB.forEach(b=>{
+ $('eq-'+b.k).oninput=e=>{eq[b.k]=+e.target.value;eqLive();eqUI()};
+ $('eq-'+b.k).onchange=cfgSave;
+ $('eq-'+b.k).ondblclick=()=>{eq[b.k]=0;eqLive();eqUI();cfgSave()};
+});
+$('eqByp').onclick=()=>{eqByp=!eqByp;eqLive();eqUI()};
+$('eqReset').onclick=()=>{eq={...EQ0};eqLive();eqUI();cfgSave()};
+$('eqApply').onclick=eqApply;
+
 /* ---- A/B player ---- */
 let pc=null;const pl={mono:false,ab:'m',off:0,t0:0,play:false,s:[],gn:[],dur:1,li:0,lm:0};
 function setPlayer(ob,li,o,lm){
@@ -1774,7 +1861,8 @@ async function playP(){
  if(pl.play||!pl.m)return;wpStop();spStop();await pc.resume();
  buildBus();
  pl.s=[pl.o,pl.m].map(b=>{const s=pc.createBufferSource();s.buffer=b;return s});
- pl.gn=pl.s.map(s=>{const g=pc.createGain();g.gain.value=0;s.connect(g);g.connect(pl.bus);return g});
+ pl.eqN=eqNodes(pc,eqDelta());
+ pl.gn=pl.s.map((s,i)=>{const g=pc.createGain();g.gain.value=0;if(i){s.connect(pl.eqN[0]);pl.eqN[2].connect(g)}else s.connect(g);g.connect(pl.bus);return g});
  applyAB();pl.t0=pc.currentTime-pl.off;pl.play=true;$('pp').textContent='Pause';
  pl.s.forEach(s=>s.start(0,pl.off));
  pl.s[1].onended=()=>{if(pl.play){stopP();pl.off=0;$('seek').value=0;$('tm').textContent='0:00 / '+fmtT(pl.dur)}};
@@ -1782,7 +1870,7 @@ async function playP(){
 }
 function stopP(){
  if(pl.play){pl.off=Math.min(pl.dur,pc.currentTime-pl.t0);pl.s.forEach(s=>{s.onended=null;try{s.stop()}catch{}})}
- pl.play=false;pl.gn=[];pl.monoG=null;$('pp').textContent='Play';
+ pl.play=false;pl.gn=[];pl.monoG=null;pl.eqN=null;$('pp').textContent='Play';
 }
 function tickP(){if(!pl.play)return;const t=Math.min(pl.dur,pc.currentTime-pl.t0);$('seek').value=t;$('tm').textContent=fmtT(t)+' / '+fmtT(pl.dur);requestAnimationFrame(tickP)}
 $('pp').onclick=()=>pl.play?stopP():playP();
@@ -1802,7 +1890,8 @@ $('sc').onclick=e=>{const v=e.target.dataset&&e.target.dataset.v;if(!v)return;sa
 $('wd').onclick=e=>{const v=e.target.dataset&&e.target.dataset.v;if(v==null)return;widthSel=v==='auto'?'auto':+v;sel('wd',v)};
 $('gen').onclick=e=>{const g=e.target.dataset&&e.target.dataset.g;if(!g)return;genre=g;if(stemData)analyzeStems();[...$('gen').children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.g===g));if(PRESETS[g].lufs!=null)sync(PRESETS[g].lufs)};
 
-function show(i,t,o,pk,fmt,size,mono,notes,pv){
+function show(i,t,o,pk,fmt,size,mono,notes,pv,keep){
+ lastShow=notes;notes=(notes||[]).concat(eqZero(eqBaked)?[]:[['Tone EQ',eqTxt(eqBaked)]]);
  const lo=-24,hi=-6,x=v=>(Math.max(lo,Math.min(hi,v))-lo)/(hi-lo)*100+'%';
  let h='<div class="tr"></div>';
  for(let v=-24;v<=-6;v+=3)h+='<span class="tk" style="left:'+x(v)+'">'+v+'</span>';
@@ -1817,8 +1906,8 @@ function show(i,t,o,pk,fmt,size,mono,notes,pv){
  if(!pv&&hosted()&&fmt==='m4a')parts.push('M4A is saved as .mp4 — the same AAC audio. Rename it to .m4a if you prefer.');
  if(!pv&&hosted()&&fmt!=='m4a')parts.push('This view\u2019s save dialog only accepts certain file types, so the '+fmt.toUpperCase()+' is saved inside a .zip. Unzip it to get the audio file.');
  $('hint').textContent=parts.join(' ');
- $('save').hidden=!!pv;
- $('res').hidden=false;$('res').scrollIntoView({behavior:'smooth',block:'nearest'});
+ $('save').hidden=!!pv;$('save').disabled=false;
+ $('res').hidden=false;if(!keep)$('res').scrollIntoView({behavior:'smooth',block:'nearest'});eqUI();
 }
 
 /* On a normal web page a plain anchor download works and needs no zip. The
@@ -1905,6 +1994,9 @@ const HELP={
 <p>After raising width, check the Mono fold figure in the results and press "Listen in mono".</p>`,
 'Vocal enhancer':`<p>Centre-channel only, so it does not brighten what sits in the sides. Adds presence at 3 kHz (+1/+2/+3 dB), half that much air above 11 kHz, and levels the 1–4 kHz range when it lunges forward.</p>
 <p><b>Without separated stems it cannot tell a vocal from anything else centred</b> — it also lifts the snare crack, kick click and centred guitars. If it turns harsh, drop a level. For true vocal-only work, use Stem balance with per-stem mastering.</p>`,
+'Tone EQ':`<p>A simple three-band EQ you can hear <b>as you move it</b>: in the waveform player, in Play all stems, and on the B: Master side of the results player. Low is a shelf at 100 Hz, Mid a broad bell at 1 kHz, High a shelf at 8 kHz, each ±6 dB. Double-click a slider to zero it.</p>
+<p>It runs after the whole mastering chain but <b>before loudness matching and the limiter</b>, so the result still lands on your target and true-peak ceiling. Adding low end therefore makes the limiter work harder rather than making the song louder.</p>
+<p>After a render, moving it plays the change live on the master. <b>Apply EQ</b> then re-runs only the last stage (a few seconds, no re-analysis) so the saved file matches what you hear. Bypass is for listening only: renders always use the sliders.</p>`,
 'Pumper':`<p>Ducks the mid and high bands each time the kick hits, for the rhythmic pumping common in dance music. Bass and kick stay at full level.</p>
 <p>It triggers from the kick itself rather than a tempo grid, so it needs no BPM and does not drift on loose timing. Maximum duck 2, 4 or 6 dB; attack 3 ms, release 150 ms.</p>
 <p>A creative effect, not a corrective one. Start at Light.</p>`};
