@@ -68,8 +68,9 @@ original and a mastered preview, rendered with the real chain about five
 seconds at a time ahead of the playhead. "Apply to preview" buttons next to each setting
 apply a change from the current spot; Loop repeats the selected region.
 Undo / Redo (Ctrl or Cmd + Z) cover settings, EQ, regions and stem levels, and
-Reset settings returns to the defaults. A small player stays pinned to the
-bottom of the screen while you scroll through the settings.
+Reset settings returns to the defaults. On wide screens the page splits into two
+columns with the player kept in view on the left; on narrow screens a small
+player stays pinned to the bottom of the screen while you scroll the settings.
 
 **Saved setups** — name a combination of reference measurements plus every
 setting on the page, then reload it later. Export writes all setups to a JSON

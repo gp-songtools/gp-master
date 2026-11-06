@@ -13,6 +13,20 @@ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:en
 *,*::before,*::after{box-sizing:inherit}
 html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 "Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
 main{max-width:520px;margin:0 auto;padding:20px 16px 40px}
+/* One column on phones and tablets. Two on wide screens: the file and the
+   Listen player on the left, held in view, while the settings, the Master
+   buttons and the results scroll on the right. */
+.colL,.colR{display:contents}
+@media(min-width:1080px){
+ main{max-width:1200px;padding:20px 24px 40px}
+ .sub{max-width:760px}
+ #helpTop{max-width:560px}
+ .cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 28px;align-items:start}
+ .colL,.colR{display:block;min-width:0}
+ .colL{position:sticky;top:12px;max-height:calc(100vh - 12px);overflow-y:auto;overscroll-behavior:contain;padding:0 8px 24px 0;scrollbar-width:thin}
+ .colR{padding-bottom:24px}
+ .colR>.card:first-child{margin-top:0}
+}
 h1{font-size:28px;line-height:1.1;margin:8px 0 4px;letter-spacing:-.02em}
 .sub{color:var(--mut);margin:0 0 18px;font-size:14px}
 .card{background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:16px;margin-top:14px}
@@ -217,19 +231,20 @@ body.mini main{padding-bottom:84px}
 #eqApply{width:100%;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v42</small></h1>
+<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v43</small></h1>
 <p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded.</p>
 <p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or use it just to split the song and download each stem as a WAV.</p>
 
 <div id="helpTop"><a href="help.html">Full guide</a><a href="changelog.html">Changelog</a><button type="button" id="helpAll">Show all hints</button></div>
 
+<div class="cols"><div class="colL">
 <div class="drop"><span id="fl">Tap to choose an audio file</span><input type="file" id="file" accept="audio/*" aria-label="Choose an audio file"></div>
 <p class="hint" style="margin:10px 0 0">Nothing happens when you tap the box? Use this picker instead:<br><input type="file" id="file2" accept="audio/*" style="margin-top:6px;max-width:100%;font:inherit;color:var(--ink)"></p>
 <div id="inStats"></div>
 
 <section class="card" id="lisCard" hidden>
  <span class="lbl">Listen</span>
- <p class="hint" style="margin:0 0 10px">Plays the song with everything on this page applied: the settings below, your region levels, the stem balance and the Tone EQ. Switch to Mastered, or press Apply to preview next to any setting, to hear the master. Click the waveform to move the playhead.</p>
+ <p class="hint" style="margin:0 0 10px">Plays the song with everything on this page applied: your settings, region levels, the stem balance and the Tone EQ. Switch to Mastered, or press Apply to preview next to any setting, to hear the master. Click the waveform to move the playhead.</p>
  <canvas id="wav" height="104" aria-label="Waveform — drag to select a region"></canvas>
  <div class="zbar"><button type="button" id="zOut" aria-label="Zoom out" title="Zoom out">&minus;</button><button type="button" id="zIn" aria-label="Zoom in" title="Zoom in">+</button><button type="button" id="zFit" title="Show the whole song">Fit</button><button type="button" id="zSel" title="Zoom to the selected region">Zoom to region</button><span id="zInfo">Whole song</span></div>
  <input type="range" id="zPan" min="0" max="1000" value="0" hidden aria-label="Scroll the zoomed waveform">
@@ -249,6 +264,7 @@ body.mini main{padding-bottom:84px}
  <p class="hint" id="regHint" style="margin:10px 0 0">No regions yet. Drag across the waveform above to add one.</p>
 </section>
 
+</div><div class="colR">
 <section class="card" id="stems">
  <span class="lbl">Stem balance <span style="font-weight:400;color:var(--mut)">(optional)</span></span>
  <p class="hint" style="margin:0 0 10px">Splits the song into vocals, drums, bass and other, shows each stem's waveform, lets you listen to them, download them as WAV files, and rebalance them before mastering. Separating is slow and downloads 123 MB of models the first time, so start with the 30-second section.</p>
@@ -369,7 +385,6 @@ body.mini main{padding-bottom:84px}
  <div class="two"><button class="go alt" id="pv" disabled>Preview 30 s</button><button class="go" id="go" disabled>Master full song</button></div>
  <div id="st" role="status"></div>
 </section>
-
 <section class="card" id="res" hidden>
  <div class="meter" id="mt" aria-hidden="true"></div>
  <dl id="dl"></dl>
@@ -389,6 +404,7 @@ body.mini main{padding-bottom:84px}
  <button class="save" id="save">Save file</button>
  <p class="hint" id="hint"></p>
 </section>
+</div></div>
 </main>
 <div id="mini" hidden><div class="mi"><button type="button" class="ppb" id="mPlay">Play</button><div class="om" role="group" aria-label="What the player plays"><button type="button" id="mO" aria-pressed="true">Original</button><button type="button" id="mM" aria-pressed="false">Mastered</button></div><button type="button" class="ppb" id="mLoop" aria-pressed="false" aria-label="Loop" title="Loop">&#10227;</button><span id="mTime">0:00</span><button type="button" class="ppb" id="mUn" disabled aria-label="Undo" title="Undo">&#8630;</button><button type="button" class="ppb" id="mRe" disabled aria-label="Redo" title="Redo">&#8631;</button></div></div>
 <script src="eta.js"></script>
@@ -898,7 +914,7 @@ function lpMsg(){
  let t;
  if(lp.err)t='The preview could not be rendered: '+lp.err;
  else if(lp.starting)t='Mastering from '+tc(wpOff)+'…';
- else if(!lp.active)t='Playing the original. Press Mastered, or Apply to preview next to any setting below, to hear the master here.';
+ else if(!lp.active)t='Playing the original. Press Mastered, or Apply to preview next to any setting, to hear the master here.';
  else if(!wpOn&&lp.mode==='m')t='Mastered is on. Press Play to hear it from the playhead; the first few seconds take a moment to render.';
  else if(lp.mode==='o')t='Original, untouched (no EQ). Mastered switches back instantly.';
  else if(wpOn&&lp.miss==='raw')t='Catching up: this stretch is playing unprocessed.';
@@ -1901,6 +1917,7 @@ function miniCheck(){
  if($('mini').hidden===show){$('mini').hidden=!show;document.body.classList.toggle('mini',show);if(show)miniUI()}
 }
 ['scroll','resize'].forEach(ev=>window.addEventListener(ev,()=>{if(!miniRaf)miniRaf=requestAnimationFrame(miniCheck)},{passive:true}));
+document.querySelector('.colL').addEventListener('scroll',()=>{if(!miniRaf)miniRaf=requestAnimationFrame(miniCheck)},{passive:true});
 $('sepPv').onclick=()=>runSeparation('preview');
 $('sepAll').onclick=()=>runSeparation('full');
 
