@@ -48,9 +48,12 @@ with a 9 dB tilt error lands above 2.4 dB, and the warning threshold sits at
 
 **Volume automation** — play the song from the waveform to find the spot, then
 drag across the waveform to select part of the song and
-set a level change, extra dynamic taming, or no tone processing there. Level
-rides the fader before the chain; region edges get 20 ms fades. Preview follows
-the selected region.
+set a level change, EQ, extra dynamic taming, no tone processing, or an effect
+there: filter sweep, reverb or delay (with tails that ring on after the region,
+delays timed to the tempo) and pan / width, on the whole mix or one stem. The
+tempo and bar start are detected on load and drawn as a beat grid; new regions
+snap to beats. Level rides the fader before the chain; region edges get 20 ms
+fades. Preview follows the selected region.
 
 **Transients** — brings percussive hits forward relative to sustained sounds,
 or pushes them back, driven by the gap between a fast and a slow envelope

@@ -25,7 +25,9 @@
 - **Processing chain** (`pipeline()` in `index.html`)
   - Order: region gain → region EQ (`regEq`) → noise reduction → `fullMaster()` / `render()` (polish) / none → region skip/tame → Tone EQ (`eqRender`) → `finish()` (loudness match + true-peak `limit()`)
   - Tone EQ must stay before `finish()` so target LUFS and ceiling hold
-  - Stem edits (`isStemEdit`: gain/eq/tame region with `r.stem`) run per stem in `buildFromStems` via `stemRegions`; mix-level `regEnv`/`regEq` skip them; `stemWait()` explains why one is not applied
+  - Region effects (`FXM`/`FXP`, `fxFix`): filter/pan in place (`fxFilter`, `fxPan`); reverb/delay are sends rendered from the whole-song or whole-stem source from `r.s` and cached (`fxWet`, key includes source id and BPM) so any buffer offset gets its tail; `regFx` applies both at the mix stage and in `stemRegions`
+  - Beat grid `grid={bpm,t0,src}` (`detectGrid`, `snapT`); saved per song, part of `snap()` undo and `lpSig()`
+  - Stem edits (`isStemEdit`: region with `r.stem` and a `TARG` mode) run per stem in `buildFromStems` via `stemRegions`; mix-level `regEnv`/`regEq` skip them; `stemWait()` explains why one is not applied
   - `pipeline(...,{raw:true,G})` returns pre-EQ base for preview chunks; `G` = whole-song `analyze()`/RMS/`distSample` measured once
   - `say()`/`tick()` are muted/fast while `sayMute` is set (background renders)
 - **Listen player (rolling mastered preview)**
@@ -35,7 +37,7 @@
   - "Apply to preview" buttons are attached by label text in the IIFE at the end of the script; add new setting labels to its `keys` list
 - **Settings, undo, storage**
   - Persist via `getCfg()`/`applyCfg()` (validate every field in `applyCfg`); `DEFCFG` is captured before `cfgLoad()`
-  - localStorage keys: `gpmaster.cfg.v1`, `gpmaster.refs.v1`, `gpmaster.setups.v1`, `gpmaster.workers.v1`, `gpmaster.ai.v1`, `gpmaster.aikey.v1` (only when Remember is ticked); never change a key's format without migration
+  - localStorage keys: `gpmaster.cfg.v1`, `gpmaster.refs.v1`, `gpmaster.setups.v1`, `gpmaster.workers.v1`, `gpmaster.ai.v1`, `gpmaster.aikey.v1` (only when Remember is ticked), `gpmaster.ui.v1` (snap); never change a key's format without migration
   - Undo history (`H`) records on any document click/change/pointerup/keyup; non-user changes call `histAbsorb()`
   - IndexedDB `gpmaster` (stores `stems`, `songs`) keyed by SHA-256 of file bytes (`songFp`): 16-bit stems without `other`, plus regions/stem levels (`songSaveSoon`, `songRestore`); keep 5 songs' stems
 - **Tone EQ**
@@ -44,7 +46,7 @@
   - Old saved keys (`lo`,`lm`,`mid`,`hm`,`hi`) are migrated in `applyCfg`; keep that mapping
 - **AI suggestions (Gemini)**
   - Browser calls `generativelanguage.googleapis.com/v1beta` with header `x-goog-api-key`; never put the key in a URL, log or error text
-  - Model answers must match `AISCHEMA` (actions: level, eq, tame, bypass); `aiParse` validates and clamps; paste import uses the same parser
+  - Model answers must match `AISCHEMA` (actions: level, eq, tame, bypass, filter, reverb, delay, pan); `aiParse` validates and clamps; paste import uses the same parser
   - Escape all model text with `esc()` before inserting HTML
   - Accepted edits become regions with `note`; test with Playwright `page.route('https://generativelanguage.googleapis.com/**')` mocks
 - **Layout**
