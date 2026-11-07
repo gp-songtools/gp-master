@@ -26,6 +26,7 @@
   - Order: region gain → region EQ (`regEq`) → noise reduction → `fullMaster()` / `render()` (polish) / none → region skip/tame → Tone EQ (`eqRender`) → `finish()` (loudness match + true-peak `limit()`)
   - Tone EQ must stay before `finish()` so target LUFS and ceiling hold
   - Region effects (`FXM`/`FXP`, `fxFix`): filter/pan in place (`fxFilter`, `fxPan`); reverb/delay are sends rendered from the whole-song or whole-stem source from `r.s` and cached (`fxWet`, key includes source id and BPM) so any buffer offset gets its tail; `regFx` applies both at the mix stage and in `stemRegions`
+  - Pitch shifting: `pvShift(x,rat,frz)` = phase-locked vocoder stretch + resample on one time map (no bin moving); `pvRegion` pads by `PVPAD`; used by the `pitch` region effect (`fxPitch`, cached) and the pitch riser
   - Generated sounds (`GENM`: riser, down) rendered by `genRender`, cached in `fxCache`, added by `regGen` after noise reduction; level relative to `songRms()`; tape riser reads the mix or a stem (`genSrc`, `genWait`)
   - Beat grid `grid={bpm,t0,src}` (`detectGrid`, `snapT`); saved per song, part of `snap()` undo and `lpSig()`
   - Stem edits (`isStemEdit`: region with `r.stem` and a `TARG` mode) run per stem in `buildFromStems` via `stemRegions`; mix-level `regEnv`/`regEq` skip them; `stemWait()` explains why one is not applied
@@ -47,7 +48,7 @@
   - Old saved keys (`lo`,`lm`,`mid`,`hm`,`hi`) are migrated in `applyCfg`; keep that mapping
 - **AI suggestions (Gemini)**
   - Browser calls `generativelanguage.googleapis.com/v1beta` with header `x-goog-api-key`; never put the key in a URL, log or error text
-  - Model answers must match `AISCHEMA` (actions: level, eq, tame, bypass, filter, reverb, delay, pan, riser, downlifter); `aiParse` validates and clamps; paste import uses the same parser
+  - Model answers must match `AISCHEMA` (actions: level, eq, tame, bypass, filter, reverb, delay, pan, riser, downlifter, pitch_shift); `aiParse` validates and clamps; paste import uses the same parser
   - Escape all model text with `esc()` before inserting HTML
   - Accepted edits become regions with `note`; test with Playwright `page.route('https://generativelanguage.googleapis.com/**')` mocks
 - **Layout**
