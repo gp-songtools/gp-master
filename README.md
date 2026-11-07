@@ -50,7 +50,9 @@ with a 9 dB tilt error lands above 2.4 dB, and the warning threshold sits at
 drag across the waveform to select part of the song and
 set a level change, EQ, extra dynamic taming, no tone processing, or an effect
 there: filter sweep, reverb or delay (with tails that ring on after the region,
-delays timed to the tempo) and pan / width, on the whole mix or one stem. The
+delays timed to the tempo) and pan / width, on the whole mix or one stem; or
+add sound: noise, synth or tape risers (your own audio sped up) and noise or
+sub-drop downlifters with an optional impact. The
 tempo and bar start are detected on load and drawn as a beat grid; new regions
 snap to beats. Level rides the fader before the chain; region edges get 20 ms
 fades. Preview follows the selected region.
