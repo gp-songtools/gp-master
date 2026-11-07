@@ -52,4 +52,6 @@
   - Per-model `n_fft` is not inferable from the ONNX shape; wrong values fail silently. Change only with `docs/stem-separation.md`
   - Do not edit or re-commit `models/` or `ort/` files; they are large vendored binaries
 - **Git**
-  - Work on a branch, open a PR to `main`; never push to `main` directly
+  - Pushing directly to `main` is allowed (owner's instruction); fetch first and push only as a fast-forward
+  - Branch + PR to `main` is still fine when the owner asks for one
+  - Run the syntax checks and smoke test before every push
