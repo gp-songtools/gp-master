@@ -305,6 +305,7 @@ Built in the Claude app.
 
 ## Still on the list
 
-- Manual tone and compression sliders.
+- Manual compression sliders. (Manual tone is covered by the Tone EQ, since v41.)
+- Arrangement editing: repeat, cut and move bars, with everything else following the new timeline.
 - Running the mastering itself in a background worker.
 - FLAC and 48 kHz output.
