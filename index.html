@@ -95,6 +95,7 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .aic .ab button{border:1px solid var(--ln);background:transparent;color:var(--ink);border-radius:7px;padding:5px 10px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
 .aic .ab .ok{border-color:var(--ac);color:var(--ac)}
 .aic.done{opacity:.6;border-left-color:var(--ln)}
+.aiwarn{font-size:13.5px;border:1px solid var(--warn);border-radius:8px;padding:9px 11px;margin:0 0 10px}.aic .rw{color:var(--warn)}
 .aiadv{font-size:13.5px;margin:10px 0 0;padding-left:18px}.aiadv li{margin:0 0 6px}
 #aiAll{margin:0 0 10px}
 .hrow button{border:1px solid var(--ln);background:transparent;color:var(--ink);border-radius:8px;padding:7px 12px;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
@@ -151,10 +152,10 @@ body.mini main{padding-bottom:84px}
 #ioMsg.err{color:var(--warn)}
 #wav{width:100%;height:104px;display:block;border:1px solid var(--ln);border-radius:8px;background:var(--card);touch-action:none;cursor:crosshair}
 #regList{font-size:14px;margin-top:10px}
-.rr{display:grid;grid-template-columns:auto 1fr auto auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--ln)}
+.rr{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--ln)}
 .rr.sel{background:color-mix(in srgb,var(--ac) 10%,transparent)}
 .rr .tm{font-variant-numeric:tabular-nums;color:var(--mut);font-size:13px;white-space:nowrap;cursor:pointer}
-.rr select{font:inherit;font-size:13.5px;padding:4px;background:var(--card);color:var(--ink);border:1px solid var(--ln);border-radius:6px}
+.rr select{min-width:0;max-width:100%;font:inherit;font-size:13.5px;padding:4px;background:var(--card);color:var(--ink);border:1px solid var(--ln);border-radius:6px}
 .rr .amt{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--mut)}
 .rr input[type=range]{width:88px;margin:0}
 .rr .x{border:0;background:transparent;color:var(--warn);font:inherit;font-size:13px;cursor:pointer;padding:2px 4px}
@@ -172,6 +173,8 @@ body.mini main{padding-bottom:84px}
 @media(max-width:560px){.rr{grid-template-columns:1fr auto auto}.rr .tm{grid-column:1/-1}}
 .rr .val{min-width:46px;text-align:right;font-variant-numeric:tabular-nums}
 .rr .req{grid-column:1/-1;order:5;flex-wrap:wrap;padding-left:2px}.rr .req select{font-size:12.5px;padding:3px}.rr .req input[type=range]{flex:1;min-width:90px;max-width:200px}
+.rr .rst{grid-column:1/-1;order:6;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--mut)}
+.rr .rst select{font-size:12.5px;padding:3px}.rr .rst .rw{color:var(--warn)}.rr .rst .ok{color:var(--ac)}
 .rr.ai .tm::before{content:'AI';font-size:10px;font-weight:700;color:var(--ac);border:1px solid var(--ac);border-radius:4px;padding:0 3px;margin-right:2px}
 .lbl{display:flex;align-items:baseline;gap:6px}
 .q{border:1px solid var(--ln);background:transparent;color:var(--mut);border-radius:50%;width:17px;height:17px;min-width:17px;padding:0;font:inherit;font-size:11px;font-weight:700;line-height:15px;cursor:pointer;text-align:center}
@@ -249,7 +252,7 @@ body.mini main{padding-bottom:84px}
 #eqApply{width:100%;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>GP Mastering <small style="font-size:13px;color:var(--mut);font-weight:400">v44</small></h1>
+<h1>GP Mastering <small style="font-size:13px;color:var(--mut);font-weight:400">v45</small></h1>
 <p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded unless you use the optional Gemini suggestions.</p>
 <p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or use it just to split the song and download each stem as a WAV.</p>
 
@@ -803,7 +806,7 @@ function wpRange(){
    anywhere (Preview, undo, seeking) reuses chunks already rendered. */
 function wpNext(s){const[lo,hi]=wpRange(),gs=lo+Math.floor((s-lo)/SEG+1e-6)*SEG,e=Math.min(gs+SEG,hi);return{gs,e,n:e>=hi-1e-3?(lp.loop?lo:null):e}}
 const hsh=t=>{let h=0;for(let i=0;i<t.length;i++)h=(h*31+t.charCodeAt(i))|0;return h.toString(36)};
-function lpSig(){const c=getCfg();delete c.eq;delete c.fmt;return hsh(JSON.stringify([c,regions.map(r=>[r.s,r.e,r.mode,r.amt,r.f,r.sh]),sgain,smute,refOn()?refAvg:0,stemData?stemLen:0]))}
+function lpSig(){const c=getCfg();delete c.eq;delete c.fmt;return hsh(JSON.stringify([c,regions.map(r=>[r.s,r.e,r.mode,r.amt,r.f,r.sh,r.stem]),sgain,smute,refOn()?refAvg:0,stemData?stemLen:0]))}
 const pk=(s,e)=>Math.round(s*1000)+'-'+Math.round(e*1000),lpKey=(sig,s,e)=>sig+'|'+pk(s,e);
 function lpPut(sig,s,e,b){
  lp.cache.set(lpKey(sig,s,e),b);lp.last.delete(pk(s,e));lp.last.set(pk(s,e),b);
@@ -1092,6 +1095,8 @@ function drawWave(){
   const sp=vw.b-vw.a,x0=(r.s/n-vw.a)/sp*W,x1=(r.e/n-vw.a)/sp*W;
   if(x1<0||x0>W)return;
   g.fillStyle=RFILL[r.mode]||RFILL.gain;g.fillRect(x0,0,Math.max(1,x1-x0),H);
+  if(isStemEdit(r)){const w=stemWait(r);g.save();g.font='600 10px system-ui,sans-serif';g.fillStyle=cs0.getPropertyValue(w?'--warn':'--ink').trim()||'#333';g.fillText(r.stem+(w?' (waiting)':''),x0+3,11);
+   if(w){g.setLineDash([4,3]);g.strokeStyle=g.fillStyle;g.lineWidth=1;g.strokeRect(x0+.5,.5,Math.max(1,x1-x0-1),H-1)}g.restore()}
   if(k===regSel){
    g.strokeStyle=cs0.getPropertyValue('--ac').trim()||'#0a8';g.lineWidth=2;g.strokeRect(x0+1,1,Math.max(2,x1-x0-2),H-2)}
  });
@@ -1127,7 +1132,7 @@ function regRender(){
  const fs=src?src.sampleRate:44100;
  $('regList').innerHTML=regions.map((r,i)=>{
   const amt=r.mode==='gain'
-   ?`<span class="amt"><input type="range" data-g="${i}" min="-12" max="12" step="0.5" value="${r.amt}" aria-label="Level change"><span class="val">${r.amt>0?'+':''}${r.amt} dB</span></span>`
+   ?`<span class="amt"><input type="range" data-g="${i}" min="${isStemEdit(r)?-60:-12}" max="12" step="0.5" value="${r.amt}" aria-label="Level change"><span class="val">${r.amt<=-60?'muted':(r.amt>0?'+':'')+r.amt+' dB'}</span></span>`
    :r.mode==='tame'
    ?`<span class="amt"><input type="range" data-g="${i}" min="1" max="3" step="1" value="${r.amt}" aria-label="Taming strength"><span class="val">${['','Light','Medium','Strong'][r.amt]||'Light'}</span></span>`
    :r.mode==='eq'
@@ -1135,7 +1140,8 @@ function regRender(){
    :r.mode==='noise'?`<span class="amt val">learn</span>`:`<span class="amt val">—</span>`;
   return `<div class="rr${i===regSel?' sel':''}${r.note?' ai':''}"${r.note?` title="${esc(r.note)}"`:''}><span class="tm" data-sel="${i}"><input class="ti" data-ts="${i}" value="${tcf(r.s/fs)}" inputmode="decimal" aria-label="Region ${i+1} start"> &ndash; <input class="ti" data-te="${i}" value="${tcf(r.e/fs)}" inputmode="decimal" aria-label="Region ${i+1} end"><button type="button" class="rp" data-rp="${i}" aria-label="Play from the start of region ${i+1}" title="Play from the start of this region">&#9654;</button></span>`+
    `<select data-m="${i}">`+Object.entries(RMODE).map(([k,v])=>`<option value="${k}"${r.mode===k?' selected':''}>${v}</option>`).join('')+`</select>`+
-   amt+`<button class="x" data-x="${i}" aria-label="Remove region">Remove</button></div>`;
+   amt+`<button class="x" data-x="${i}" aria-label="Remove region">Remove</button>`
+   +(r.mode==='gain'||r.mode==='eq'||r.mode==='tame'?`<div class="rst"><label>Applies to <select data-st="${i}" aria-label="Region ${i+1} applies to"><option value="">Whole mix</option>${Object.entries(STEMN).map(([k,v])=>`<option value="${k}"${r.stem===k?' selected':''}>${v}</option>`).join('')}</select></label>${stemWait(r)?`<span class="rw">${esc(stemWait(r))}</span>`:isStemEdit(r)?`<span class="ok">Applied to the ${esc(r.stem)} stem.</span>`:''}</div>`:'')+`</div>`;
  }).join('');
  $('regList').querySelectorAll('[data-m]').forEach(s=>s.onchange=()=>{
   const i=+s.dataset.m;regions[i].mode=s.value;
@@ -1149,6 +1155,9 @@ function regRender(){
   const i=+t.dataset.f,v=parseFloat(t.value);if(isFinite(v))regions[i].f=Math.max(20,Math.min(20000,Math.round(v)));regSel=i;regRender();drawWave();
  });
  $('regList').querySelectorAll('[data-sh]').forEach(t=>t.onchange=()=>{const i=+t.dataset.sh;regions[i].sh=t.value;regSel=i;regRender();drawWave()});
+ $('regList').querySelectorAll('[data-st]').forEach(t=>t.onchange=()=>{
+  const i=+t.dataset.st,r=regions[i];r.stem=t.value||undefined;if(!r.stem&&r.mode==='gain'&&r.amt<-12)r.amt=-12;regSel=i;regRender();drawWave();
+ });
  $('regList').querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{
   const i=+b.dataset.x;if(regions[i].mode==='noise')noiseProf=null;regions.splice(i,1);if(regSel>=regions.length)regSel=regions.length-1;regRender();drawWave();
  });
@@ -1161,7 +1170,7 @@ function regRender(){
 }
 function regHintSet(){
  $('regHint').textContent=regions.length
-  ?(regSel>=0?'Preview uses the selected region. ':'')+'Level rides the fader before the mastering chain. EQ boosts or cuts one frequency inside the region only. Tame adds compression only inside the region. No tone processing keeps the original tone there, but still gets the final loudness and limiting so the level matches.'
+  ?(regSel>=0?'Preview uses the selected region. ':'')+'Level rides the fader before the mastering chain. EQ boosts or cuts one frequency inside the region only. Level, EQ and Tame can apply to one stem (vocals, drums, bass or other) instead of the whole mix, once the song is separated under Stem balance; a stem level of \u221260 dB mutes it there. Tame adds compression only inside the region. No tone processing keeps the original tone there, but still gets the final loudness and limiting so the level matches.'
   :'No regions yet. Drag across the waveform above, or type a start and end time, to add one.';
 }
 function nrHintUpdate(){
@@ -1203,10 +1212,41 @@ function regSetup(){
    early so the filter has settled, and blends in through the same 20 ms
    raised-cosine edges as level regions. Runs before the mastering chain. */
 const RSH={bell:['pk',1.41,'bell'],narrow:['pk',4,'narrow'],wide:['pk',.7,'wide'],low_shelf:['ls',.7071,'low shelf'],high_shelf:['hs',.7071,'high shelf']};
-const regEqOn=()=>regions.some(r=>r.mode==='eq'&&r.amt);
-function regEq(ch,off,fs){
+const regEqOn=()=>regions.some(r=>r.mode==='eq'&&r.amt&&!isStemEdit(r));
+/* Stem edits: a level, EQ or tame region with r.stem acts on that stem only,
+   inside buildFromStems, before the stem's own chain and the sum. Until the song
+   is separated over the region, with "Master the rebalanced mix" on, it waits. */
+const STEMN={vocals:'Vocals',drums:'Drums',bass:'Bass',other:'Other (pads, synths, guitars, keys)'};
+const isStemEdit=r=>!!r.stem&&!!STEMN[r.stem]&&(r.mode==='gain'||r.mode==='eq'||r.mode==='tame');
+const stemsWhole=()=>!!src&&!!stemData&&stemsCover(0,src.length)&&$('useStems').checked;
+function stemWait(r){
+ if(!isStemEdit(r))return'';
+ if(!stemData)return'Waiting for stems: separate the whole song under Stem balance to apply this.';
+ if(!stemData[r.stem])return'Waiting: the '+r.stem+' stem was not separated. Tick it under Stem balance and separate again.';
+ if(!stemsCover(r.s,r.e-r.s))return'Waiting for stems: the separated section does not cover this region. Separate the whole song.';
+ if(!$('useStems').checked)return'Not applied: turn on \u201cMaster the rebalanced mix\u201d under Stem balance.';
+ if(smute[r.stem])return'Not applied: the '+r.stem+' stem is muted.';
+ return'';
+}
+function stemRegions(s,ch,start,fs){
+ const n=ch[0].length,rl=regions.filter(r=>r.stem===s&&isStemEdit(r)&&r.e>start&&r.s<start+n);
+ if(!rl.length)return ch;
+ ch=ch.map(x=>Float32Array.from(x));
+ const R=regEnv(n,start,fs,rl);
+ if(R&&R.hasGain)for(const x of ch)for(let i=0;i<n;i++)x[i]*=R.g[i];
+ regEq(ch,start,fs,rl);
+ if(R&&R.hasTame)applyTame(ch,R,fs);
+ return ch;
+}
+function stemEditNote(useS){
+ const se=regions.filter(isStemEdit);if(!se.length)return[];
+ const ok=useS?se.filter(r=>!stemWait(r)).length:0;
+ return[['Stem edits',ok===se.length?ok+' applied ('+[...new Set(se.map(r=>r.stem))].join(', ')+')'
+  :(ok?ok+' applied, ':'')+(se.length-ok)+' waiting: separate the whole song under Stem balance and keep \u201cMaster the rebalanced mix\u201d on']];
+}
+function regEq(ch,off,fs,list){
  const n=ch[0].length,ramp=Math.max(64,Math.round(fs*.02)),pre=Math.round(fs*.1);
- for(const r of regions){
+ for(const r of list||regions.filter(r=>!isStemEdit(r))){
   if(r.mode!=='eq'||!r.amt)continue;
   const s=Math.max(0,r.s-off),e=Math.min(n,r.e-off);if(e<=s)continue;
   const[t,q]=RSH[r.sh]||RSH.bell,rp=Math.min(ramp,Math.floor((e-s)/2))||1,f=Math.max(20,Math.min(fs*.45,r.f||1000));
@@ -1220,12 +1260,13 @@ function regEq(ch,off,fs){
   }
  }
 }
-function regEnv(n,off,fs){
- if(!regions.length)return null;
+function regEnv(n,off,fs,list){
+ const L=list||regions.filter(r=>!isStemEdit(r));
+ if(!L.length)return null;
  const ramp=Math.max(64,Math.round(fs*.02));
  let hasGain=false,hasSkip=false,hasTame=false;
  const g=new Float32Array(n).fill(1),byp=new Float32Array(n),tame=new Float32Array(n);
- for(const r of regions){
+ for(const r of L){
   const s=Math.max(0,r.s-off),e=Math.min(n,r.e-off);
   if(e<=s)continue;
   const span=e-s,rp=Math.min(ramp,Math.floor(span/2))||1;
@@ -1802,6 +1843,7 @@ const HAVE=()=>stemData?STEMS.filter(s=>stemData[s]):STEMS;
 function msRefresh(){
  HAVE().forEach(s=>{const m=$('sm-'+s),o=$('ss2-'+s);if(m)m.setAttribute('aria-pressed',!!smute[s]);if(o)o.setAttribute('aria-pressed',!!ssolo[s]);swDraw(s)});
  spGains();
+ if(regions.some(isStemEdit)){regRender();drawWave()}
 }
 function mixRows(){
  const have=HAVE();
@@ -1862,6 +1904,7 @@ function buildFromStems(start,len){
  for(const s of STEMS){
   if(smute[s]||!stemData[s])continue;
   let ch=[stemData[s][0].subarray(off,off+len),stemData[s][1].subarray(off,off+len)];
+  ch=stemRegions(s,ch,start,fs);
   if(per){const r=stemFX(s,ch,fs);ch=r.ch;stemNotes.push(r.note)}
   if(sdist[s]>0){const r=distStem(s,ch,fs);ch=r.ch;stemNotes.push(r.note)}
   if(s==='vocals'&&dblAmt>0){ch=doubleVocal(ch,fs,dblAmt);stemNotes.push('vocal doubler: 2 copies at '+DBL[dblAmt]+' dB, 19 and 27 ms, drifting up to about 10 cents')}
@@ -1909,7 +1952,7 @@ function runSeparation(scope){
   eta.stop();stemData=d.result;stemStart=r.start;stemLen=r.len;stemScope=scope;
   $('sbar').style.width='100%';
   ssay(`Separated ${scope==='preview'?'the 30-second section':'the whole song'} in ${((performance.now()-t0)/60000).toFixed(1)} min using ${d.workers} worker${d.workers>1?'s':''}.`);
-  mixRows();free();
+  mixRows();free();regRender();drawWave();
  }).catch(err=>{eta.stop();ssay('Separation failed: '+(err&&err.message||err),1);free()});
  ssay('Starting…');
 }
@@ -2003,7 +2046,8 @@ function aiFacts(){
  for(let t=0;t+W<=src.duration+.01;t+=W){const a=Math.floor(t*fs),b=Math.min(src.length,Math.floor((t+W)*fs));st.push(+lufs(kseg([c[0].subarray(Math.max(0,b-3*fs),b),c[1].subarray(Math.max(0,b-3*fs),b)],fs)).toFixed(1))}
  const an=analyze(c[0],c[1],fs);
  return{dur:+src.duration.toFixed(2),lufs:+src.inL.toFixed(1),st,oct:OCT.map((f,i)=>f+' Hz: '+an.dB[i].toFixed(1)).join(', '),
-  regs:regions.filter(r=>r.mode!=='noise').map(r=>`${(r.s/fs).toFixed(1)}-${(r.e/fs).toFixed(1)} s ${r.mode}${r.amt?' '+r.amt:''}`)};
+  regs:regions.filter(r=>r.mode!=='noise').map(r=>`${(r.s/fs).toFixed(1)}-${(r.e/fs).toFixed(1)} s ${r.mode}${r.amt?' '+r.amt:''}${r.stem?' on '+r.stem:''}`),
+  stems:stemsWhole()?'yes, the whole song':stemData?'only a section; stem edits wait until the user separates the whole song':'not yet; stem edits wait until the user separates the song, which is fine'};
 }
 function aiPrompt(F,ask){
  return `You are a mix and mastering assistant inside a browser app. Listen to the attached song (a compressed mono copy; judge stereo-independent things only) and suggest specific edits for exact time ranges.
@@ -2017,10 +2061,11 @@ The app can apply only these edits, each to a time range of the full mix, before
 Rules:
 - start and end are seconds from the start of the song as plain numbers (for example 62.4). Each range is at least 0.5 s long and lies within 0 to ${F.dur}.
 - Prefer musical boundaries: bar lines and section starts. Name the section in "section".
-- Set "target" to the instrument the edit is really meant for (mix, vocals, drums, bass or other). The app currently applies every edit to the full mix, so prefer edits that still make sense on the whole mix.
+- "target": "mix" for the whole mix, or "vocals", "drums", "bass" or "other" (pads, synths, guitars, keys) to apply a level, eq or tame edit to that instrument only; the app separates the song into these four stems. Prefer a stem target when the problem belongs to one instrument (for example cut 1-2 kHz in "other" to clear room for the vocal). bypass always applies to the whole mix.
+- To mute or nearly mute one instrument for a range, use level on that stem with gain_db down to -60 (stem level edits go from -60 to +12; whole-mix level stays within -12 to +12).
 - Keep moves modest: level and EQ usually within plus or minus 4 dB unless the problem is severe.
 - Do not suggest whole-song loudness, limiting or whole-song EQ; the app's mastering settings handle those.
-- At most 12 edits, most important first. Anything the app cannot do (adding sounds or effects, risers, muting or removing single instruments, arrangement or performance changes) goes in "advice", with a time range when there is one.
+- At most 12 edits, most important first. Anything the app cannot do (adding sounds or effects, risers, splitting a stem further such as keeping only the kick and hi-hat, arrangement or performance changes) goes in "advice", with a time range when there is one.
 - "reason": one short sentence a musician understands. "summary": two or three sentences on the song and your main recommendations.
 
 Measured by the app:
@@ -2028,6 +2073,7 @@ Measured by the app:
 - Short-term loudness (LUFS, 3 s window) at every 2 s from 2 s on: ${F.st.join(', ')}.
 - Average tone by octave (dB, relative): ${F.oct}.
 - Regions the user already set: ${F.regs.length?F.regs.join('; '):'none'}.
+- Stems separated: ${F.stems}.
 
 The user's request: ${ask?JSON.stringify(ask):'none given; suggest what would most improve the song.'}`;
 }
@@ -2067,7 +2113,7 @@ function aiParse(txt){
   if(s==null||t==null||!AIACT[act]){skipped.push(e);continue}
   s=cl(s,0,D);t=cl(t,0,D);if(t-s<.25){skipped.push(e);continue}
   const x={s,e:t,act,section:String(e.section||'').slice(0,60),target:['vocals','drums','bass','other'].includes(e.target)?e.target:'mix',reason:String(e.reason||'').slice(0,400),st:'new'};
-  if(act==='level'||act==='eq')x.g=Math.round(cl(num(e.gain_db)??0,-12,12)*2)/2;
+  if(act==='level'||act==='eq')x.g=Math.round(cl(num(e.gain_db)??0,act==='level'&&x.target!=='mix'?-60:-12,12)*2)/2;
   if(act==='eq'){x.f=Math.round(cl(num(e.freq_hz)??1000,20,20000));x.sh=RSH[e.shape]?e.shape:'bell'}
   if(act==='tame')x.k={light:1,medium:2,strong:3}[e.strength]||2;
   if((act==='level'||act==='eq')&&!x.g){skipped.push(e);continue}
@@ -2079,15 +2125,17 @@ function aiParse(txt){
 const tcf2=v=>tcf(v);
 function aiDesc(x){
  const sg=v=>(v>0?'+':'')+v+' dB';
- return x.act==='level'?'Level '+sg(x.g):x.act==='eq'?'EQ '+sg(x.g)+' at '+fq(x.f)+' ('+RSH[x.sh][2]+')':x.act==='tame'?'Tame dynamics, '+['','light','medium','strong'][x.k]:'No tone processing';
+ return x.act==='level'?(x.g<=-60?'Mute':'Level '+sg(x.g)):x.act==='eq'?'EQ '+sg(x.g)+' at '+fq(x.f)+' ('+RSH[x.sh][2]+')':x.act==='tame'?'Tame dynamics, '+['','light','medium','strong'][x.k]:'No tone processing';
 }
 function aiShow(R){
  ai.res=R;const o=$('aiOut');
  const open=R.edits.filter(x=>x.st==='new').length;
- let h=(R.summary?`<p class="aisum">${esc(R.summary)}</p>`:'')+(open>1?`<button type="button" class="btn" id="aiAll">Accept all ${open} edits</button>`:'');
+ const nst=R.edits.filter(x=>x.st==='new'&&x.target!=='mix'&&x.act!=='bypass').length;
+ let h=(R.summary?`<p class="aisum">${esc(R.summary)}</p>`:'')
+  +(nst&&!stemsWhole()?`<p class="aiwarn"><b>${nst} of these edit${nst>1?'s target':' targets'} one instrument.</b> Stem edits are applied only after the song is separated into stems: under <b>Stem balance</b>, press <b>Separate whole song</b> and keep <b>Master the rebalanced mix</b> on. Until then they wait in the region list, marked as waiting; you can also switch one to <b>Whole mix</b> there.</p>`:'')+(open>1?`<button type="button" class="btn" id="aiAll">Accept all ${open} edits</button>`:'');
  h+=R.edits.map((x,i)=>`<div class="aic${x.st!=='new'?' done':''}"><div class="ah"><b>${esc(tcf2(x.s))}&ndash;${esc(tcf2(x.e))}</b>${x.section?`<span>${esc(x.section)}</span>`:''}<b style="margin-left:auto">${esc(aiDesc(x))}</b></div>`
   +`<div class="aw">${esc(x.reason)}</div>`
-  +(x.target!=='mix'?`<div class="aw">Meant for the ${esc(x.target)}; applied to the whole mix for now.</div>`:'')
+  +(x.target!=='mix'?`<div class="aw">${x.act==='bypass'?`Meant for the ${esc(x.target)}; no tone processing always applies to the whole mix.`:`Applies to the <b>${esc(x.target)}</b> stem only.`+(stemsWhole()?'':' <span class="rw">Needs the song separated into stems first.</span>')}</div>`:'')
   +`<div class="ab">${x.st==='new'?`<button type="button" data-ail="${i}">&#9654; Listen</button><button type="button" class="ok" data-aia="${i}">Accept</button><button type="button" data-air="${i}">Skip</button>`:`<span class="aw" style="margin:0">${x.st==='ok'?'Added as a region.':'Skipped.'}</span>`}</div></div>`).join('');
  if(R.adv.length)h+=`<span class="lbl" style="margin:12px 0 4px">Advice the app cannot apply</span><ul class="aiadv">`+R.adv.map(a=>`<li>${a.s!=null&&a.e!=null?`<b>${esc(tcf2(a.s))}&ndash;${esc(tcf2(a.e))}</b> `:''}${a.section?esc(a.section)+': ':''}${esc(a.text)}</li>`).join('')+'</ul>';
  if(R.skipped)h+=`<p class="hint">${R.skipped} suggestion${R.skipped>1?'s were':' was'} left out because the time range or action could not be used.</p>`;
@@ -2105,10 +2153,13 @@ function aiAccept(ix){
   const r={s:Math.round(x.s*fs),e:Math.round(x.e*fs),mode:{level:'gain',eq:'eq',tame:'tame',bypass:'skip'}[x.act],amt:x.act==='tame'?x.k:x.g||0,
    note:(x.section?x.section+': ':'')+x.reason+(x.target!=='mix'?' (meant for the '+x.target+')':'')};
   if(x.act==='eq'){r.f=x.f;r.sh=x.sh}
+  if(x.target!=='mix'&&x.act!=='bypass')r.stem=x.target;
   regions.push(r);x.st='ok';last=r;
  }
  if(!last)return;
  regions.sort((p,q)=>p.s-q.s);regSel=regions.indexOf(last);regRender();drawWave();aiShow(R);
+ const w=regions.filter(r=>isStemEdit(r)&&stemWait(r)).length;
+ if(w)aiSay(w+' stem edit'+(w>1?'s are':' is')+' waiting: separate the whole song under Stem balance (and keep \u201cMaster the rebalanced mix\u201d on) to apply '+(w>1?'them':'it')+'.');
  if(wpOn&&lp.active)wpRestart();
 }
 $('aiKey').oninput=()=>{ai.key=$('aiKey').value.trim();aiKeySave();aiUI()};
@@ -2223,7 +2274,7 @@ async function pipeline(b,T,fmt,pm,off,O={}){
   }
   if(R.hasTame){say('Taming selected regions…');await tick();const tr=applyTame(base,R,fs);
    if(tr)notes=notes.concat([['Region taming','avg '+tr.avg.toFixed(1)+' dB, max '+tr.max.toFixed(1)+' dB inside regions']])}
-  const g=regions.filter(r=>r.mode==='gain'&&r.amt!==0),s=regions.filter(r=>r.mode==='skip'),q=regions.filter(r=>r.mode==='eq'&&r.amt);
+  const g=regions.filter(r=>r.mode==='gain'&&r.amt!==0&&!isStemEdit(r)),s=regions.filter(r=>r.mode==='skip'),q=regions.filter(r=>r.mode==='eq'&&r.amt&&!isStemEdit(r));
   const bits=[];
   if(g.length)bits.push(g.length+' level ('+g.map(r=>(r.amt>0?'+':'')+r.amt).join(', ')+' dB)');
   if(q.length)bits.push(q.length+' EQ ('+q.map(r=>(r.amt>0?'+':'')+r.amt+' dB at '+fq(r.f||1000)).join(', ')+')');
@@ -2263,7 +2314,7 @@ $('go').onclick=async()=>{
   say('Encoding '+fmt.toUpperCase()+'…');await tick();
   const blob=await encode(r.o,r.fs,fmt);
   res={fmt,blob};setPlayer(sb,li,r.o,r.L);eqBaked=r.eq;lastFin={pre:r.pre,fs:r.fs,T,fmt,pv:false,li,ob:sb};
-  show(li,T,r.L,r.pk,fmt,blob.size,r.mono,r.notes.concat(dblAmt>0&&!useS?[['Vocal doubler','skipped: needs the vocal stem (split the song first)']]:[]).concat(useS?[['Stem balance',HAVE().filter(s=>!smute[s]).map(s=>s+' '+(sgain[s]>0?'+':'')+sgain[s]).join(', ')+(STEMS.some(s=>smute[s])?'; muted: '+STEMS.filter(s=>smute[s]).join(', '):'')+' dB']].concat(stemNotes.map(t=>['Stem chain',t])):[]));say('');
+  show(li,T,r.L,r.pk,fmt,blob.size,r.mono,r.notes.concat(stemEditNote(useS)).concat(dblAmt>0&&!useS?[['Vocal doubler','skipped: needs the vocal stem (split the song first)']]:[]).concat(useS?[['Stem balance',HAVE().filter(s=>!smute[s]).map(s=>s+' '+(sgain[s]>0?'+':'')+sgain[s]).join(', ')+(STEMS.some(s=>smute[s])?'; muted: '+STEMS.filter(s=>smute[s]).join(', '):'')+' dB']].concat(stemNotes.map(t=>['Stem chain',t])):[]));say('');
  }catch(e){say(e.message||'Something went wrong while processing.',1)}
  busy(false);
 };
@@ -2274,7 +2325,7 @@ $('pv').onclick=async()=>{
   const{buf:ex,stems:useS}=sourceFor(start,len);
   const li=lufs(kseg(chans(ex),fs)),r=await pipeline(ex,T,fmt,pm,start);
   res=null;setPlayer(ex,li,r.o,r.L);eqBaked=r.eq;lastFin={pre:r.pre,fs:r.fs,T,fmt,pv:true,li,ob:ex};
-  show(li,T,r.L,r.pk,fmt,0,r.mono,r.notes.concat(dblAmt>0&&!useS?[['Vocal doubler','skipped: needs the vocal stem (split the song first)']]:[]).concat(useS?[['Stem balance',HAVE().filter(s=>!smute[s]).map(s=>s+' '+(sgain[s]>0?'+':'')+sgain[s]).join(', ')+' dB']].concat(stemNotes.map(t=>['Stem chain',t])):[]),true);say('');
+  show(li,T,r.L,r.pk,fmt,0,r.mono,r.notes.concat(stemEditNote(useS)).concat(dblAmt>0&&!useS?[['Vocal doubler','skipped: needs the vocal stem (split the song first)']]:[]).concat(useS?[['Stem balance',HAVE().filter(s=>!smute[s]).map(s=>s+' '+(sgain[s]>0?'+':'')+sgain[s]).join(', ')+' dB']].concat(stemNotes.map(t=>['Stem chain',t])):[]),true);say('');
  }catch(e){say(e.message||'Something went wrong while processing.',1)}
  busy(false);
 };
@@ -2541,6 +2592,7 @@ $('useRef').onchange=()=>{refSave();cfgSave()};
 ['gen','cl','amt','wd','vc','pu','nr','tr','db','sa','sc','ds','dt'].forEach(id=>$(id).addEventListener('click',()=>setTimeout(cfgSave,0)));
 $('lufs').addEventListener('change',cfgSave);
 document.querySelectorAll('input[name=f],input[name=p],#useStems,#perStem').forEach(e=>e.addEventListener('change',cfgSave));
+$('useStems').addEventListener('change',()=>{if(regions.some(isStemEdit)){regRender();drawWave()}});
 try{DEFCFG=getCfg();setupsLoad();setupsRender();cfgLoad();refLoad()}catch(e){}
 try{aiLoad()}catch(e){}
 histReset();
@@ -2606,7 +2658,7 @@ const HELP={
 <p>After a render, moving it plays the change live on the master. <b>Apply EQ</b> then re-runs only the last stage (a few seconds, no re-analysis) so the saved file matches what you hear. Bypass is for listening only: renders always use the sliders.</p>`,
 'AI suggestions':`<p>Gemini listens to a compressed mono copy of the song together with the app&rsquo;s own measurements, and suggests edits for exact time ranges: level, EQ, taming, or no tone processing. Each comes with a reason. Press <b>Listen</b> to hear that spot, then <b>Accept</b> to turn it into a region, or <b>Skip</b>. Accepted edits can be adjusted in the region list and undone like any other change. Things the app cannot do, such as adding a riser or muting one instrument, are listed as advice.</p>
 <p><b>Privacy:</b> pressing Analyze uploads that copy of the song to Google. Nothing is sent otherwise. The key goes only to Google. With <b>Remember</b> on it is saved in this browser&rsquo;s storage, so use a key made just for this app and restricted to the Gemini API. On Google&rsquo;s free tier, submitted content may be used to improve their products.</p>
-<p>Edits aimed at one instrument currently apply to the whole mix. <b>Paste suggestions from another tool</b> imports the same JSON format without a key.</p>`,
+<p><b>Edits aimed at one instrument</b> (vocals, drums, bass or other) apply to that stem only, and <b>need the song separated into stems first</b>: under Stem balance press Separate whole song and keep Master the rebalanced mix on. Until then they wait in the region list. <b>Paste suggestions from another tool</b> imports the same JSON format without a key.</p>`,
 'Pumper':`<p>Ducks the mid and high bands each time the kick hits, for the rhythmic pumping common in dance music. Bass and kick stay at full level.</p>
 <p>It triggers from the kick itself rather than a tempo grid, so it needs no BPM and does not drift on loose timing. Maximum duck 2, 4 or 6 dB; attack 3 ms, release 150 ms.</p>
 <p>A creative effect, not a corrective one. Start at Light.</p>`};

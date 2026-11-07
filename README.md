@@ -64,7 +64,9 @@ band. Runs before EQ and compression so noise is never amplified.
 on this device), say what you want, and Gemini suggests level, EQ, taming or
 no-processing edits for exact time ranges, each with a reason. Every edit is
 reviewed before it becomes a region; things the app cannot do come back as
-advice. Suggestions from other tools can be pasted in the same JSON format
+advice. Level, EQ and taming edits can target one stem (vocals, drums, bass,
+other) instead of the whole mix; stem edits need the song separated into stems
+under Stem balance first, and wait until then. Suggestions from other tools can be pasted in the same JSON format
 (documented in `help.html`).
 
 **Tone EQ** — a nine-band graphic EQ, one slider per octave from 63 Hz to

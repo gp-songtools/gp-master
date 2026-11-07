@@ -227,6 +227,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 <tr><td>Level</td><td>Changes the level by up to &plusmn;12 dB <b>before</b> the mastering chain, so the compressors respond to the corrected balance instead of fighting it. This is what fader riding means.</td></tr>
 <tr><td>EQ</td><td>Boosts or cuts one frequency by up to &plusmn;12 dB inside the region only, with a bell (about one octave), narrow, wide, low-shelf or high-shelf shape. Like Level, it works <b>before</b> the mastering chain. Use it for a local problem, such as pads masking the vocal in one chorus; for the whole song, use the Tone EQ instead.</td></tr>
 <tr><td>Tame dynamics</td><td>Adds compression inside the region only &mdash; Light, Medium or Strong, up to 6 dB of reduction measured against the region&rsquo;s own running level. Use it on a section that is dynamically wilder than the rest.</td></tr>
+<tr><td>Applies to</td><td>Level, EQ and Tame dynamics can work on the <b>whole mix</b> or on one stem: vocals, drums, bass or other. A stem edit changes only that instrument in the region, before the stems are mixed back together and mastered; a stem level of &minus;60 dB mutes it there. <b>It needs the song separated into stems first</b> (Stem balance &rsaquo; Separate whole song, with Master the rebalanced mix on); until then the row says it is waiting and nothing changes.</td></tr>
 <tr><td>No tone processing</td><td>Keeps the original tone there &mdash; no EQ, no compression, no saturation &mdash; but still applies the final loudness match and limiting, so the level matches the rest of the song and there is no jump at the boundary.</td></tr>
 </table>
 
@@ -250,7 +251,8 @@ td:first-child{white-space:nowrap;font-weight:600}
 <li>Optionally say what you want, such as &ldquo;the chorus should hit harder&rdquo;, then press <b>Analyze with Gemini</b>. It usually answers in 20 to 60 seconds.</li>
 <li>For each edit: <b>Listen</b> plays from that spot, <b>Accept</b> adds it as a region, <b>Skip</b> dismisses it. <b>Accept all</b> takes every remaining one.</li>
 </ol>
-<p><b>What it can apply:</b> level, EQ, tame dynamics and no tone processing, each over a time range of the whole mix. Gemini is told to stay within those. Things the app cannot do, such as adding a riser, muting one instrument or rearranging a section, come back as <b>advice</b> under the edits. When Gemini aims an edit at one instrument (for example the drums), the card says so; for now it is applied to the whole mix.</p>
+<p><b>What it can apply:</b> level, EQ, tame dynamics and no tone processing over a time range, either to the whole mix or, for level, EQ and taming, to one instrument: vocals, drums, bass or other (pads, synths, guitars, keys). A stem level can go down to &minus;60 dB, which mutes that instrument there, so &ldquo;drop the drums for four bars&rdquo; is something it can do. Gemini is told to stay within those. Things the app cannot do, such as adding a riser, keeping only the kick and hi-hat out of the drums, or rearranging a section, come back as <b>advice</b> under the edits.</p>
+<div class="note w"><p><b>Stem edits need the song separated into stems first.</b> An edit aimed at one instrument is applied only once the whole song has been separated under <b>Stem balance</b> (press <b>Separate whole song</b>) and <b>Master the rebalanced mix</b> is on. Until then it waits: the card and the region list say so, the waveform marks it &ldquo;(waiting)&rdquo;, and the master&rsquo;s notes count it as waiting. You can accept stem edits before separating; they start working as soon as the stems are there. To apply one to the whole mix instead, change <b>Applies to</b> in the region list.</p></div>
 <p><b>What is sent:</b> a mono copy of the song (MP3 at 64 kbps, or 16 kHz WAV if the MP3 encoder could not load), the app&rsquo;s measurements (duration, loudness every 2 seconds, average tone by octave), your existing regions and your request. The key is sent only to Google, in a request header. Without <b>Remember</b> it lives only in the open page.</p>
 <div class="note w"><p><b>Privacy and cost.</b> Pressing Analyze uploads the song to Google. On Google&rsquo;s free tier, submitted content may be used to improve their products; check the current terms if that matters for unreleased music. Use a key created just for this app and restricted to the Gemini API, since a remembered key can be read by anything that can read this site&rsquo;s browser storage. A typical four-minute song costs a few thousand audio tokens per request.</p></div>
 <p><b>Timing:</b> Gemini&rsquo;s times can be a second or two off. Press Listen before accepting, and adjust the start and end in the region list afterwards.</p>
@@ -260,10 +262,10 @@ td:first-child{white-space:nowrap;font-weight:600}
 <table>
 <tr><th>Field</th><th>Values</th></tr>
 <tr><td>action</td><td><code>level</code>, <code>eq</code>, <code>tame</code>, <code>bypass</code> (no tone processing)</td></tr>
-<tr><td>gain_db</td><td>&minus;12 to +12, for level and eq</td></tr>
+<tr><td>gain_db</td><td>&minus;12 to +12 for level and eq; a level on a stem goes down to &minus;60 (muted)</td></tr>
 <tr><td>freq_hz, shape</td><td>20 to 20000; <code>bell</code>, <code>narrow</code>, <code>wide</code>, <code>low_shelf</code>, <code>high_shelf</code> (eq only)</td></tr>
 <tr><td>strength</td><td><code>light</code>, <code>medium</code>, <code>strong</code> (tame only)</td></tr>
-<tr><td>target</td><td><code>mix</code>, <code>vocals</code>, <code>drums</code>, <code>bass</code>, <code>other</code> (shown, not yet applied per stem)</td></tr>
+<tr><td>target</td><td><code>mix</code>, <code>vocals</code>, <code>drums</code>, <code>bass</code>, <code>other</code>. A stem applies level, eq and tame to that instrument only, once the song is separated into stems; <code>bypass</code> always applies to the whole mix</td></tr>
 </table>
 <a class="top" href="#">↑ top</a>
 

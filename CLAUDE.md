@@ -25,6 +25,7 @@
 - **Processing chain** (`pipeline()` in `index.html`)
   - Order: region gain → region EQ (`regEq`) → noise reduction → `fullMaster()` / `render()` (polish) / none → region skip/tame → Tone EQ (`eqRender`) → `finish()` (loudness match + true-peak `limit()`)
   - Tone EQ must stay before `finish()` so target LUFS and ceiling hold
+  - Stem edits (`isStemEdit`: gain/eq/tame region with `r.stem`) run per stem in `buildFromStems` via `stemRegions`; mix-level `regEnv`/`regEq` skip them; `stemWait()` explains why one is not applied
   - `pipeline(...,{raw:true,G})` returns pre-EQ base for preview chunks; `G` = whole-song `analyze()`/RMS/`distSample` measured once
   - `say()`/`tick()` are muted/fast while `sayMute` is set (background renders)
 - **Listen player (rolling mastered preview)**
