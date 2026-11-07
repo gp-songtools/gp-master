@@ -3,6 +3,17 @@
 All notable changes to GP Mastering, newest first. The version number is the small tag beside the app's title.
 This file mirrors `changelog.html`, which is the version shown in the app; keep the two in step.
 
+## v50 — Nov 8
+
+### Added
+
+- **Arrangement**: repeat, cut and move bars, and go back to the original. The file is never changed; the app plays an edit list of the original with 20 ms crossfades at each join, and regions, the beat grid, stems, the preview and the master all follow the new timeline. Every change is one undo step and is saved with the song.
+- AI suggestions can repeat or cut bars. Waiting suggestions move to their new times when the arrangement changes, and suggestions pasted from Earprint are mapped from the original song onto the arrangement.
+
+### Fixed
+
+- Choosing the same file again did nothing; it now reloads it.
+
 ## v49 — Nov 8
 
 ### Added
@@ -306,6 +317,5 @@ Built in the Claude app.
 ## Still on the list
 
 - Manual compression sliders. (Manual tone is covered by the Tone EQ, since v41.)
-- Arrangement editing: repeat, cut and move bars, with everything else following the new timeline.
 - Running the mastering itself in a background worker.
 - FLAC and 48 kHz output.

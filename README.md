@@ -46,6 +46,10 @@ two different but sanely mastered songs land near 0.9 dB apart, a reference
 with a 9 dB tilt error lands above 2.4 dB, and the warning threshold sits at
 1.5 dB.
 
+**Arrangement** — repeat, cut or move bars on the beat grid. The file is never
+changed: the app plays an edit list of the original with short crossfades, and
+regions, stems, the preview and the master follow the new timeline.
+
 **Volume automation** — play the song from the waveform to find the spot, then
 drag across the waveform to select part of the song and
 set a level change, EQ, extra dynamic taming, no tone processing, or an effect

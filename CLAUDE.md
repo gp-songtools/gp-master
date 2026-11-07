@@ -29,6 +29,7 @@
   - Region effects (`FXM`/`FXP`, `fxFix`): filter/pan in place (`fxFilter`, `fxPan`); reverb/delay are sends rendered from the whole-song or whole-stem source from `r.s` and cached (`fxWet`, key includes source id and BPM) so any buffer offset gets its tail; `regFx` applies both at the mix stage and in `stemRegions`
   - Pitch shifting: `pvShift(x,rat,frz)` = phase-locked vocoder stretch + resample on one time map (no bin moving); `pvRegion` pads by `PVPAD`; used by the `pitch` region effect (`fxPitch`, cached) and the pitch riser
   - Generated sounds (`GENM`: riser, down) rendered by `genRender`, cached in `fxCache`, added by `regGen` after noise reduction; level relative to `songRms()`; tape riser reads the mix or a stem (`genSrc`, `genWait`)
+  - Arrangement: `orig` = decoded file + stems in file coords; `arr` = null or `[[a,b],...]` source sample ranges; `arrRebuild` makes working `src`/`stemData` (`arrCat`, 20 ms crossfades); `arrApply` carries regions, grid phase and pending AI edits through a change (`outToSrc`/`srcToOut`); separation and saved stems always use `orig`; caches keyed with `arrGen`
   - Beat grid `grid={bpm,t0,src}` (`detectGrid`, `snapT`); saved per song, part of `snap()` undo and `lpSig()`
   - Stem edits (`isStemEdit`: region with `r.stem` and a `TARG` mode) run per stem in `buildFromStems` via `stemRegions`; mix-level `regEnv`/`regEq` skip them; `stemWait()` explains why one is not applied
   - `pipeline(...,{raw:true,G})` returns pre-EQ base for preview chunks; `G` = whole-song `analyze()`/RMS/`distSample` measured once
@@ -49,11 +50,11 @@
   - Old saved keys (`lo`,`lm`,`mid`,`hm`,`hi`) are migrated in `applyCfg`; keep that mapping
 - **AI suggestions (Gemini)**
   - Browser calls `generativelanguage.googleapis.com/v1beta` with header `x-goog-api-key`; never put the key in a URL, log or error text
-  - Model answers must match `AISCHEMA` (actions: level, eq, tame, bypass, filter, reverb, delay, pan, riser, downlifter, pitch_shift); `aiParse` validates and clamps; paste import uses the same parser
+  - Model answers must match `AISCHEMA` (actions: level, eq, tame, bypass, filter, reverb, delay, pan, riser, downlifter, pitch_shift, repeat, cut); `aiParse` validates and clamps; paste import uses the same parser
   - Escape all model text with `esc()` before inserting HTML
   - Accepted edits become regions with `note`; test with Playwright `page.route('https://generativelanguage.googleapis.com/**')` mocks
 - **Layout**
-  - `.cols` > `.colL` (sticky: file, Listen, Volume automation, AI suggestions) + `.colR` (stems, settings, results); two columns at ≥1080 px, `display:contents` below
+  - `.cols` > `.colL` (sticky: file, Listen, Arrangement, Volume automation, AI suggestions) + `.colR` (stems, settings, results); two columns at ≥1080 px, `display:contents` below
   - Mini player `#mini` shows when `.wprow` scrolls above the viewport (`miniCheck`)
 - **Stem separation**
   - Per-model `n_fft` is not inferable from the ONNX shape; wrong values fail silently. Change only with `docs/stem-separation.md`
