@@ -1,0 +1,50 @@
+- **Directory map**
+  - `index.html` — the whole app: CSS, markup and one inline `<script>` (DSP, players, UI)
+  - `help.html`, `changelog.html`, `README.md` — user docs; keep in step with every user-facing change
+  - `sep-pool.js`, `sep-worker.js`, `eta.js` — stem separation worker pool, ONNX inference worker, progress/ETA
+  - `models/*.onnx` (~123 MB), `ort/` — MDX-Net models and vendored onnxruntime-web 1.20.1 (unmodified)
+  - `docs/stem-separation.md` — verified per-model separation parameters
+- **Commands** (no build step, no package manager, no test suite)
+  - Serve (separation fails on `file://`): `python3 -m http.server 8765 >/dev/null 2>&1 &`
+  - Syntax-check workers: `node --check sep-pool.js && node --check sep-worker.js && node --check eta.js`
+  - Syntax-check inline script: `node -e "const s=require('fs').readFileSync('index.html','utf8');new Function(s.match(/<script>([\s\S]*?)<\/script>/)[1])"`
+  - Smoke test (needs server; silent unless page errors): `node -e "require('playwright').chromium.launch().then(async b=>{const p=await b.newPage(),e=[];p.on('pageerror',x=>e.push(x.message));await p.goto('http://localhost:8765/index.html');await b.close();if(e.length){console.error(e.join('\n'));process.exit(1)}})"`
+  - Test WAV (40 s, stereo): `python3 -c "import numpy as n,wave;f=44100;t=n.arange(f*40)/f;x=.2*n.sin(2*n.pi*80*t)+.1*n.sin(2*n.pi*1e3*t)+.05*n.random.randn(t.size);y=(n.clip(n.stack([x,.9*x],1),-1,1)*32767).astype('<i2');w=wave.open('/tmp/gpm-test.wav','wb');w.setnchannels(2);w.setsampwidth(2);w.setframerate(f);w.writeframes(y.tobytes())"`
+  - Load a file in Playwright: `page.setInputFiles('#file', path)`, then wait for `#pv` to be enabled
+  - MP3/M4A encoders load from CDNs; if blocked, test with WAV output
+- **Release checklist for user-facing changes**
+  - Bump `<small>vNN</small>` in the `index.html` `<h1>`
+  - `changelog.html`: new `<h2 id="vNN">` entry at top, move `<span class=cur>Latest</span>` to it, update the `#vNN` jump link
+  - Update the matching `help.html` section and the `HELP` object in `index.html` (keys match `.lbl` text prefixes)
+  - Update `README.md` if a feature is added or renamed
+  - Check layout at 375 px and 1440 px wide; `document.documentElement.scrollWidth` must equal viewport width
+- **Code style**
+  - Match the existing dense style: short names, one-line functions, `$=id=>document.getElementById(id)`
+  - No frameworks, no build tooling, no new CDN dependencies; pin exact versions if unavoidable
+  - Colors only via CSS vars on `:root` with the dark-mode overrides already defined
+- **Processing chain** (`pipeline()` in `index.html`)
+  - Order: region gain → noise reduction → `fullMaster()` / `render()` (polish) / none → region skip/tame → Tone EQ (`eqRender`) → `finish()` (loudness match + true-peak `limit()`)
+  - Tone EQ must stay before `finish()` so target LUFS and ceiling hold
+  - `pipeline(...,{raw:true,G})` returns pre-EQ base for preview chunks; `G` = whole-song `analyze()`/RMS/`distSample` measured once
+  - `say()`/`tick()` are muted/fast while `sayMute` is set (background renders)
+- **Listen player (rolling mastered preview)**
+  - State in `lp` (cache, per-settings gain `lp.g`, mode) and `wp` (scheduled segments, two buses `og`/`mg`)
+  - Chunks: `SEG`=5 s on a fixed grid from the play-range start, `PRE`=2 s pre-roll, `XF` crossfade; cache key = `lpSig()` hash + grid span
+  - Any new setting that changes the sound must be in `getCfg()`; `lpSig()` and undo `snap()` read it
+  - "Apply to preview" buttons are attached by label text in the IIFE at the end of the script; add new setting labels to its `keys` list
+- **Settings, undo, storage**
+  - Persist via `getCfg()`/`applyCfg()` (validate every field in `applyCfg`); `DEFCFG` is captured before `cfgLoad()`
+  - localStorage keys: `gpmaster.cfg.v1`, `gpmaster.refs.v1`, `gpmaster.setups.v1`, `gpmaster.workers.v1`; never change a key's format without migration
+  - Undo history (`H`) records on any document click/change/pointerup/keyup; non-user changes call `histAbsorb()`
+- **Tone EQ**
+  - Bands defined once in `EQB` (9 octave bands, ±`EQR` dB); markup ids `eq-<k>`, `eqv-<k>`, `eqt-<k>`
+  - Same Web Audio biquads run live (`eqNodes`) and offline (`eqRender`); A/B master plays only `eqDelta()` over the baked EQ
+  - Old saved keys (`lo`,`lm`,`mid`,`hm`,`hi`) are migrated in `applyCfg`; keep that mapping
+- **Layout**
+  - `.cols` > `.colL` (sticky: file, Listen, Volume automation) + `.colR` (stems, settings, results); two columns at ≥1080 px, `display:contents` below
+  - Mini player `#mini` shows when `.wprow` scrolls above the viewport (`miniCheck`)
+- **Stem separation**
+  - Per-model `n_fft` is not inferable from the ONNX shape; wrong values fail silently. Change only with `docs/stem-separation.md`
+  - Do not edit or re-commit `models/` or `ort/` files; they are large vendored binaries
+- **Git**
+  - Work on a branch, open a PR to `main`; never push to `main` directly
