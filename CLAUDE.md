@@ -15,6 +15,7 @@
 - **Release checklist for user-facing changes**
   - Bump `<small>vNN</small>` in the `index.html` `<h1>`
   - `changelog.html`: new `<h2 id="vNN">` entry at top, move `<span class=cur>Latest</span>` to it, update the `#vNN` jump link
+  - `CHANGELOG.md` mirrors `changelog.html` (same versions and items, Added/Changed/Fixed); update both
   - Update the matching `help.html` section and the `HELP` object in `index.html` (keys match `.lbl` text prefixes)
   - Update `README.md` if a feature is added or renamed
   - Check layout at 375 px and 1440 px wide; `document.documentElement.scrollWidth` must equal viewport width
