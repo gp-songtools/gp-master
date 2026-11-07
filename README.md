@@ -1,4 +1,4 @@
-# Loudness Master
+# GP Mastering
 
 A browser-based audio mastering tool. Everything runs locally in your browser —
 no audio is uploaded, and there is no server or account. The one exception is
