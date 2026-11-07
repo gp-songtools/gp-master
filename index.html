@@ -2058,6 +2058,7 @@ async function aiAnalyze(){
 const AIACT={level:'Level',eq:'EQ',tame:'Tame dynamics',bypass:'No tone processing'};
 function aiParse(txt){
  let d;try{d=typeof txt==='string'?JSON.parse(txt.replace(/^\s*```(json)?|```\s*$/g,'')):txt}catch(_){throw new Error('That is not valid JSON.')}
+ if(d&&typeof d==='object'&&!Array.isArray(d.edits)&&d.mastering&&typeof d.mastering==='object')d=d.mastering;   // a whole Earprint review
  if(!d||typeof d!=='object'||!Array.isArray(d.edits))throw new Error('No "edits" list found in the answer.');
  const D=src.duration,num=v=>typeof v==='number'&&isFinite(v)?v:typeof v==='string'&&isFinite(parseFloat(v))?parseFloat(v):null,cl=(v,a,b)=>Math.max(a,Math.min(b,v));
  const edits=[],skipped=[];
