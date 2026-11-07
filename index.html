@@ -81,6 +81,22 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .om button+button{border-left:1px solid var(--ln)}
 .om button[aria-pressed=true],.ppb[aria-pressed=true]{background:var(--ac);color:var(--acf);border-color:var(--ac)}
 .hrow{display:flex;gap:8px;margin-top:12px}
+.airow{display:flex;gap:8px;align-items:center}
+.airow input,.airow select,#aiCard textarea{flex:1;min-width:0;font:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--ln);border-radius:8px;background:var(--card);color:var(--ink)}
+#aiCard textarea{width:100%;box-sizing:border-box;margin:10px 0;resize:vertical;font-size:13.5px}
+#aiCard .btn,#aiCard details .btn{border:1px solid var(--ln);background:transparent;color:var(--ink);border-radius:8px;padding:8px 12px;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+#aiCard details{margin-top:12px;font-size:14px}#aiCard summary{cursor:pointer;color:var(--mut)}
+.aisum{font-size:14px;margin:12px 0 8px}
+.aic{border:1px solid var(--ln);border-left:3px solid var(--ac);border-radius:8px;padding:9px 11px;margin:0 0 8px;font-size:13.5px}
+.aic .ah{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+.aic .ah b{font-size:14px}.aic .ah span{color:var(--mut)}
+.aic .aw{color:var(--mut);margin:4px 0 0}
+.aic .ab{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.aic .ab button{border:1px solid var(--ln);background:transparent;color:var(--ink);border-radius:7px;padding:5px 10px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.aic .ab .ok{border-color:var(--ac);color:var(--ac)}
+.aic.done{opacity:.6;border-left-color:var(--ln)}
+.aiadv{font-size:13.5px;margin:10px 0 0;padding-left:18px}.aiadv li{margin:0 0 6px}
+#aiAll{margin:0 0 10px}
 .hrow button{border:1px solid var(--ln);background:transparent;color:var(--ink);border-radius:8px;padding:7px 12px;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
 .hrow button:disabled{opacity:.4;cursor:default}
 .hrow #rsBtn{margin-left:auto}
@@ -155,6 +171,8 @@ body.mini main{padding-bottom:84px}
 .rr .rp{border:1px solid var(--ln);background:transparent;color:var(--ink);border-radius:50%;width:24px;height:24px;padding:0;font-size:10px;cursor:pointer}
 @media(max-width:560px){.rr{grid-template-columns:1fr auto auto}.rr .tm{grid-column:1/-1}}
 .rr .val{min-width:46px;text-align:right;font-variant-numeric:tabular-nums}
+.rr .req{grid-column:1/-1;order:5;flex-wrap:wrap;padding-left:2px}.rr .req select{font-size:12.5px;padding:3px}.rr .req input[type=range]{flex:1;min-width:90px;max-width:200px}
+.rr.ai .tm::before{content:'AI';font-size:10px;font-weight:700;color:var(--ac);border:1px solid var(--ac);border-radius:4px;padding:0 3px;margin-right:2px}
 .lbl{display:flex;align-items:baseline;gap:6px}
 .q{border:1px solid var(--ln);background:transparent;color:var(--mut);border-radius:50%;width:17px;height:17px;min-width:17px;padding:0;font:inherit;font-size:11px;font-weight:700;line-height:15px;cursor:pointer;text-align:center}
 .q:hover{border-color:var(--ac);color:var(--ac)}
@@ -231,8 +249,8 @@ body.mini main{padding-bottom:84px}
 #eqApply{width:100%;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v43</small></h1>
-<p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded.</p>
+<h1>Loudness Master <small style="font-size:13px;color:var(--mut);font-weight:400">v44</small></h1>
+<p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded unless you use the optional Gemini suggestions.</p>
 <p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or use it just to split the song and download each stem as a WAV.</p>
 
 <div id="helpTop"><a href="help.html">Full guide</a><a href="changelog.html">Changelog</a><button type="button" id="helpAll">Show all hints</button></div>
@@ -262,6 +280,22 @@ body.mini main{padding-bottom:84px}
  <p class="hint" id="regMsg" role="status" style="margin:6px 0 0"></p>
  <div id="regList"></div>
  <p class="hint" id="regHint" style="margin:10px 0 0">No regions yet. Drag across the waveform above to add one.</p>
+</section>
+
+<section class="card" id="aiCard">
+ <span class="lbl">AI suggestions <span style="font-weight:400;color:var(--mut)">(optional, Gemini)</span></span>
+ <p class="hint" style="margin:0 0 10px">Gemini listens to the song and suggests edits for exact time ranges. You review each one; accepted edits become regions you can hear, adjust and undo. <b>This uploads a compressed copy of the song to Google</b> using your own API key, and only when you press Analyze.</p>
+ <div class="airow"><input type="password" id="aiKey" placeholder="Gemini API key" autocomplete="off" spellcheck="false" aria-label="Gemini API key"><button type="button" class="btn" id="aiForget">Forget</button></div>
+ <label class="chk" style="margin:8px 0 10px"><input type="checkbox" id="aiRemember"><span>Remember the key on this device<small>Saved in this browser&rsquo;s storage, readable by anything that can read this site&rsquo;s data. Unchecked, the key is kept only until you close the page.</small></span></label>
+ <div class="airow"><label for="aiModel" style="font-size:14px;color:var(--mut)">Model</label><select id="aiModel" aria-label="Gemini model"></select><button type="button" class="btn" id="aiModels">Refresh list</button></div>
+ <textarea id="aiAsk" rows="3" placeholder="Optional: what you want, e.g. &ldquo;make the chorus hit harder, the verses feel crowded&rdquo;" aria-label="Instructions for Gemini"></textarea>
+ <button class="go alt" id="aiGo" disabled>Analyze with Gemini</button>
+ <p class="hint" id="aiMsg" role="status"></p>
+ <div id="aiOut"></div>
+ <details id="aiPaste"><summary>Paste suggestions from another tool</summary>
+  <textarea id="aiJson" rows="4" placeholder='{"summary":"…","edits":[{"start":62.4,"end":70.1,"action":"eq","freq_hz":1500,"gain_db":-3,"reason":"…"}],"advice":[]}' aria-label="Suggestions as JSON"></textarea>
+  <button type="button" class="btn" id="aiImport">Import</button><span class="hint" style="margin-left:8px">Same format Gemini returns here; see the guide.</span>
+ </details>
 </section>
 
 </div><div class="colR">
@@ -411,6 +445,7 @@ body.mini main{padding-bottom:84px}
 <script src="sep-pool.js"></script>
 <script>
 let sayMute=false;
+const esc=t=>String(t??'').replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
 const $=id=>document.getElementById(id), tick=()=>new Promise(r=>setTimeout(r,sayMute?0:15));
 let src=null,name='audio',res=null,url=null;
 const say=(t,e)=>{if(sayMute)return;$('st').textContent=t;$('st').className=e?'err':''};
@@ -519,6 +554,7 @@ function bqc(t,f,g,q,fs){
  else if(t==='hp'){b0=(1+c)/2;b1=-(1+c);b2=b0;a0=1+al;a1=-2*c;a2=1-al}
  else if(t==='bp'){b0=al;b1=0;b2=-al;a0=1+al;a1=-2*c;a2=1-al}
  else if(t==='pk'){b0=1+al*A;b1=-2*c;b2=1-al*A;a0=1+al/A;a1=-2*c;a2=1-al/A}
+ else if(t==='ls'){const r=2*Math.sqrt(A)*al;b0=A*((A+1)-(A-1)*c+r);b1=2*A*((A-1)-(A+1)*c);b2=A*((A+1)-(A-1)*c-r);a0=(A+1)+(A-1)*c+r;a1=-2*((A-1)+(A+1)*c);a2=(A+1)+(A-1)*c-r}
  else{const r=2*Math.sqrt(A)*al;b0=A*((A+1)+(A-1)*c+r);b1=-2*A*((A-1)+(A+1)*c);b2=A*((A+1)+(A-1)*c-r);a0=(A+1)-(A-1)*c+r;a1=2*((A-1)-(A+1)*c);a2=(A+1)-(A-1)*c-r}
  return{b0:b0/a0,b1:b1/a0,b2:b2/a0,a1:a1/a0,a2:a2/a0,z1:0,z2:0};
 }
@@ -739,7 +775,7 @@ $('file').onchange=async e=>{
   await tick();
   const L=lufs(kseg(chans(src),src.sampleRate));
   $('inStats').textContent=fmtT(src.duration)+', '+(src.sampleRate/1000)+' kHz, '+(src.numberOfChannels>1?'stereo':'mono')+', currently '+L.toFixed(1)+' LUFS';
-  src.inL=L;clearStems();wpStop();wpOff=0;lpReset();regions=[];regSel=-1;noiseProf=null;histReset();buildPeaks();$('regCard').hidden=false;$('lisCard').hidden=false;regSetup();zoomSetup();vwUI();regRender();drawWave();$('wpTime').textContent=wpTimeStr();$('go').disabled=false;$('pv').disabled=false;$('sepPv').disabled=false;$('sepAll').disabled=false;say('');
+  src.inL=L;clearStems();wpStop();wpOff=0;lpReset();regions=[];regSel=-1;noiseProf=null;histReset();ai.res=null;$('aiOut').innerHTML='';aiSay('');aiUI();buildPeaks();$('regCard').hidden=false;$('lisCard').hidden=false;regSetup();zoomSetup();vwUI();regRender();drawWave();$('wpTime').textContent=wpTimeStr();$('go').disabled=false;$('pv').disabled=false;$('sepPv').disabled=false;$('sepAll').disabled=false;say('');
  }catch{src=null;$('inStats').textContent='';say('That file couldn’t be decoded. Try an MP3, WAV, M4A or FLAC.',1)}
 };
 
@@ -767,7 +803,7 @@ function wpRange(){
    anywhere (Preview, undo, seeking) reuses chunks already rendered. */
 function wpNext(s){const[lo,hi]=wpRange(),gs=lo+Math.floor((s-lo)/SEG+1e-6)*SEG,e=Math.min(gs+SEG,hi);return{gs,e,n:e>=hi-1e-3?(lp.loop?lo:null):e}}
 const hsh=t=>{let h=0;for(let i=0;i<t.length;i++)h=(h*31+t.charCodeAt(i))|0;return h.toString(36)};
-function lpSig(){const c=getCfg();delete c.eq;delete c.fmt;return hsh(JSON.stringify([c,regions.map(r=>[r.s,r.e,r.mode,r.amt]),sgain,smute,refOn()?refAvg:0,stemData?stemLen:0]))}
+function lpSig(){const c=getCfg();delete c.eq;delete c.fmt;return hsh(JSON.stringify([c,regions.map(r=>[r.s,r.e,r.mode,r.amt,r.f,r.sh]),sgain,smute,refOn()?refAvg:0,stemData?stemLen:0]))}
 const pk=(s,e)=>Math.round(s*1000)+'-'+Math.round(e*1000),lpKey=(sig,s,e)=>sig+'|'+pk(s,e);
 function lpPut(sig,s,e,b){
  lp.cache.set(lpKey(sig,s,e),b);lp.last.delete(pk(s,e));lp.last.set(pk(s,e),b);
@@ -931,7 +967,7 @@ function wpSeek(sec){
  $('wpTime').textContent=wpTimeStr();
  if(was)wpPlay();else drawWave();
 }
-const RMODE={gain:'Level',tame:'Tame dynamics',skip:'No tone processing',noise:'Noise profile'};
+const RMODE={gain:'Level',eq:'EQ',tame:'Tame dynamics',skip:'No tone processing',noise:'Noise profile'};
 const tc=s=>Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');
 
 const BLK=32;let wavCache=null;
@@ -1043,7 +1079,7 @@ function regPick(i){
  $('regList').querySelectorAll('.rr').forEach((e,k)=>e.classList.toggle('sel',k===i));
  regHintSet();vwUI();drawWave();
 }
-const RFILL={gain:'rgba(0,150,136,.22)',tame:'rgba(230,145,30,.22)',skip:'rgba(130,140,150,.26)',noise:'rgba(150,60,200,.22)'};
+const RFILL={gain:'rgba(0,150,136,.22)',eq:'rgba(40,110,220,.22)',tame:'rgba(230,145,30,.22)',skip:'rgba(130,140,150,.26)',noise:'rgba(150,60,200,.22)'};
 function drawWave(){
  const c=$('wav');if(!c)return;
  const W=c.clientWidth||520,H=104,RH=16,HW=H-RH,dpr=window.devicePixelRatio||1;
@@ -1094,19 +1130,25 @@ function regRender(){
    ?`<span class="amt"><input type="range" data-g="${i}" min="-12" max="12" step="0.5" value="${r.amt}" aria-label="Level change"><span class="val">${r.amt>0?'+':''}${r.amt} dB</span></span>`
    :r.mode==='tame'
    ?`<span class="amt"><input type="range" data-g="${i}" min="1" max="3" step="1" value="${r.amt}" aria-label="Taming strength"><span class="val">${['','Light','Medium','Strong'][r.amt]||'Light'}</span></span>`
+   :r.mode==='eq'
+   ?`<span class="amt req"><input class="ti" data-f="${i}" value="${Math.round(r.f||1000)}" inputmode="numeric" aria-label="EQ frequency in Hz" style="width:58px">Hz<select data-sh="${i}" aria-label="EQ shape">${Object.entries(RSH).map(([k,v])=>`<option value="${k}"${(r.sh||'bell')===k?' selected':''}>${v[2]}</option>`).join('')}</select><input type="range" data-g="${i}" min="-12" max="12" step="0.5" value="${r.amt}" aria-label="EQ boost or cut"><span class="val">${r.amt>0?'+':''}${r.amt} dB</span></span>`
    :r.mode==='noise'?`<span class="amt val">learn</span>`:`<span class="amt val">—</span>`;
-  return `<div class="rr${i===regSel?' sel':''}"><span class="tm" data-sel="${i}"><input class="ti" data-ts="${i}" value="${tcf(r.s/fs)}" inputmode="decimal" aria-label="Region ${i+1} start"> &ndash; <input class="ti" data-te="${i}" value="${tcf(r.e/fs)}" inputmode="decimal" aria-label="Region ${i+1} end"><button type="button" class="rp" data-rp="${i}" aria-label="Play from the start of region ${i+1}" title="Play from the start of this region">&#9654;</button></span>`+
+  return `<div class="rr${i===regSel?' sel':''}${r.note?' ai':''}"${r.note?` title="${esc(r.note)}"`:''}><span class="tm" data-sel="${i}"><input class="ti" data-ts="${i}" value="${tcf(r.s/fs)}" inputmode="decimal" aria-label="Region ${i+1} start"> &ndash; <input class="ti" data-te="${i}" value="${tcf(r.e/fs)}" inputmode="decimal" aria-label="Region ${i+1} end"><button type="button" class="rp" data-rp="${i}" aria-label="Play from the start of region ${i+1}" title="Play from the start of this region">&#9654;</button></span>`+
    `<select data-m="${i}">`+Object.entries(RMODE).map(([k,v])=>`<option value="${k}"${r.mode===k?' selected':''}>${v}</option>`).join('')+`</select>`+
    amt+`<button class="x" data-x="${i}" aria-label="Remove region">Remove</button></div>`;
  }).join('');
  $('regList').querySelectorAll('[data-m]').forEach(s=>s.onchange=()=>{
   const i=+s.dataset.m;regions[i].mode=s.value;
-  regions[i].amt=s.value==='tame'?2:0;noiseProf=null;
+  regions[i].amt=s.value==='tame'?2:0;if(s.value==='eq'){regions[i].f=regions[i].f||1000;regions[i].sh=regions[i].sh||'bell'}noiseProf=null;
   regSel=i;regRender();drawWave();
  });
  $('regList').querySelectorAll('[data-g]').forEach(s=>s.oninput=()=>{
   const i=+s.dataset.g;regions[i].amt=+s.value;regSel=i;regRender();drawWave();
  });
+ $('regList').querySelectorAll('[data-f]').forEach(t=>t.onchange=()=>{
+  const i=+t.dataset.f,v=parseFloat(t.value);if(isFinite(v))regions[i].f=Math.max(20,Math.min(20000,Math.round(v)));regSel=i;regRender();drawWave();
+ });
+ $('regList').querySelectorAll('[data-sh]').forEach(t=>t.onchange=()=>{const i=+t.dataset.sh;regions[i].sh=t.value;regSel=i;regRender();drawWave()});
  $('regList').querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{
   const i=+b.dataset.x;if(regions[i].mode==='noise')noiseProf=null;regions.splice(i,1);if(regSel>=regions.length)regSel=regions.length-1;regRender();drawWave();
  });
@@ -1119,7 +1161,7 @@ function regRender(){
 }
 function regHintSet(){
  $('regHint').textContent=regions.length
-  ?(regSel>=0?'Preview uses the selected region. ':'')+'Level rides the fader before the mastering chain. Tame adds compression only inside the region. No tone processing keeps the original tone there, but still gets the final loudness and limiting so the level matches.'
+  ?(regSel>=0?'Preview uses the selected region. ':'')+'Level rides the fader before the mastering chain. EQ boosts or cuts one frequency inside the region only. Tame adds compression only inside the region. No tone processing keeps the original tone there, but still gets the final loudness and limiting so the level matches.'
   :'No regions yet. Drag across the waveform above, or type a start and end time, to add one.';
 }
 function nrHintUpdate(){
@@ -1157,6 +1199,27 @@ function regSetup(){
 /* Per-sample envelopes. Raised-cosine ramps at the edges stop region
    boundaries from clicking. Coordinates are song samples; off is where the
    buffer being processed starts within the song. */
+/* Time-ranged EQ. Each EQ region filters its own stretch, starting 100 ms
+   early so the filter has settled, and blends in through the same 20 ms
+   raised-cosine edges as level regions. Runs before the mastering chain. */
+const RSH={bell:['pk',1.41,'bell'],narrow:['pk',4,'narrow'],wide:['pk',.7,'wide'],low_shelf:['ls',.7071,'low shelf'],high_shelf:['hs',.7071,'high shelf']};
+const regEqOn=()=>regions.some(r=>r.mode==='eq'&&r.amt);
+function regEq(ch,off,fs){
+ const n=ch[0].length,ramp=Math.max(64,Math.round(fs*.02)),pre=Math.round(fs*.1);
+ for(const r of regions){
+  if(r.mode!=='eq'||!r.amt)continue;
+  const s=Math.max(0,r.s-off),e=Math.min(n,r.e-off);if(e<=s)continue;
+  const[t,q]=RSH[r.sh]||RSH.bell,rp=Math.min(ramp,Math.floor((e-s)/2))||1,f=Math.max(20,Math.min(fs*.45,r.f||1000));
+  for(const x of ch){
+   const c=bqc(t,f,r.amt,q,fs);
+   for(let i=Math.max(0,s-pre);i<e;i++){
+    const y=bq(c,x[i]);if(i<s)continue;
+    const d=Math.min(i-s,e-1-i),w=d>=rp?1:.5-.5*Math.cos(Math.PI*d/rp);
+    x[i]+=w*(y-x[i]);
+   }
+  }
+ }
+}
 function regEnv(n,off,fs){
  if(!regions.length)return null;
  const ramp=Math.max(64,Math.round(fs*.02));
@@ -1856,6 +1919,210 @@ $('wpM').onclick=()=>{lp.mode='m';if(!lp.active){lp.active=true;lpUI();if(wpOn)w
 $('wpLoop').onclick=()=>{lp.loop=!lp.loop;lpUI();if(wpOn)wpRestart()};
 $('wpMatch').onchange=wpLevels;
 
+/* ---- AI suggestions (Gemini) ----
+   The request goes straight from the browser to Google with the user's own key.
+   Gemini may only answer with edits the app can apply (level, eq, tame, bypass
+   over a time range); anything else comes back as advice. Every edit is shown
+   for review and becomes an ordinary region only when accepted. All text from
+   the model is escaped before display. */
+const AIKEY='gpmaster.aikey.v1',AICFG='gpmaster.ai.v1',AIAPI='https://generativelanguage.googleapis.com/v1beta/';
+const ai={key:'',model:'gemini-flash-latest',busy:null,res:null};
+const aiStr=(e,x)=>({type:'string',format:'enum',enum:e,...x});
+const AISCHEMA={type:'object',properties:{
+ summary:{type:'string'},
+ edits:{type:'array',items:{type:'object',properties:{
+  start:{type:'number'},end:{type:'number'},section:{type:'string'},
+  target:aiStr(['mix','vocals','drums','bass','other']),action:aiStr(['level','eq','tame','bypass']),
+  gain_db:{type:'number'},freq_hz:{type:'number'},shape:aiStr(['bell','narrow','wide','low_shelf','high_shelf']),
+  strength:aiStr(['light','medium','strong']),reason:{type:'string'}},required:['start','end','action','reason']}},
+ advice:{type:'array',items:{type:'object',properties:{start:{type:'number'},end:{type:'number'},section:{type:'string'},text:{type:'string'}},required:['text']}}
+},required:['summary','edits','advice']};
+const aiSay=(t,e)=>{$('aiMsg').textContent=t;$('aiMsg').className='hint'+(e?' err':'')};
+function aiLoad(){
+ try{const k=localStorage.getItem(AIKEY);if(k){ai.key=k;$('aiKey').value=k;$('aiRemember').checked=true}}catch(_){}
+ try{const c=JSON.parse(localStorage.getItem(AICFG)||'{}');if(typeof c.model==='string'&&/^[\w.\-]+$/.test(c.model))ai.model=c.model;if(typeof c.ask==='string')$('aiAsk').value=c.ask.slice(0,2000)}catch(_){}
+ aiModelsFill([ai.model]);aiUI();
+}
+const aiCfgSave=()=>{try{localStorage.setItem(AICFG,JSON.stringify({model:ai.model,ask:$('aiAsk').value.slice(0,2000)}))}catch(_){}};
+function aiKeySave(){try{if($('aiRemember').checked&&ai.key)localStorage.setItem(AIKEY,ai.key);else localStorage.removeItem(AIKEY)}catch(_){}}
+function aiUI(){$('aiGo').disabled=!src||!ai.key&&!ai.busy;$('aiGo').textContent=ai.busy?'Cancel':'Analyze with Gemini';$('aiForget').disabled=!ai.key}
+function aiModelsFill(list){
+ const sel=$('aiModel'),all=[...new Set([ai.model,...list])];
+ sel.innerHTML=all.map(m=>`<option value="${esc(m)}"${m===ai.model?' selected':''}>${esc(m)}</option>`).join('');
+}
+/* Ask Google which models this key can use for generateContent. Newest Flash
+   (not Lite) first: fast and cheap, and good at listening to whole songs. */
+async function aiModels(){
+ if(!ai.key){aiSay('Enter your Gemini API key first.',1);return}
+ aiSay('Fetching the models this key can use…');
+ try{
+  const r=await fetch(AIAPI+'models?pageSize=200',{headers:{'x-goog-api-key':ai.key}}),d=await r.json().catch(()=>({}));
+  if(!r.ok)throw aiErr(r.status,d);
+  const v=m=>parseFloat((m.match(/(\d+(\.\d+)?)/)||[0,0])[1]),rank=m=>(/flash/.test(m)&&!/lite/.test(m)?2:/pro/.test(m)?1:0);
+  const ms=(d.models||[]).filter(m=>(m.supportedGenerationMethods||[]).includes('generateContent')).map(m=>String(m.name||'').replace(/^models\//,''))
+   .filter(m=>/^gemini/.test(m)&&!/(embed|tts|image|live|native-audio|aqa|vision|computer|robotics)/.test(m))
+   .sort((a,b)=>/latest/.test(b)-/latest/.test(a)||rank(b)-rank(a)||v(b)-v(a)||a.localeCompare(b));
+  if(!ms.length)throw new Error('This key has no Gemini models that can analyze audio.');
+  if(!ms.includes(ai.model))ai.model=ms[0];
+  aiModelsFill(ms);aiCfgSave();aiSay(ms.length+' models available. Using '+ai.model+'.');
+ }catch(e){aiSay(e.message||String(e),1)}
+}
+function aiErr(st,d){
+ const m=(d&&d.error&&d.error.message)||'';
+ if(st===400&&/api key/i.test(m))return new Error('Google rejected the API key. Check it was copied completely.');
+ if(st===403)return new Error('This key is not allowed to use the Gemini API'+(m?' ('+m+')':'')+'.');
+ if(st===404)return new Error('Model not found: '+ai.model+'. Press Refresh list to pick one this key can use.');
+ if(st===429)return new Error('Gemini quota or rate limit reached. Wait a minute and try again, or check your plan.');
+ if(st>=500)return new Error('Gemini had a server error ('+st+'). Try again shortly.');
+ return new Error('Gemini request failed ('+st+')'+(m?': '+m:'')+'.');
+}
+/* A small mono copy of the song: MP3 at 22.05 kHz / 64 kbps when the encoder
+   is available, otherwise 16 kHz 16-bit WAV. Gemini hears 16 kHz anyway. */
+async function aiAudio(){
+ const mp3ok=typeof lamejs!=='undefined',fs=mp3ok?22050:16000,n=Math.ceil(src.duration*fs);
+ const off=new OfflineAudioContext(1,n,fs),x=off.createBufferSource();x.buffer=src;x.connect(off.destination);x.start();
+ const m=(await off.startRendering()).getChannelData(0);
+ let blob,mime;
+ if(mp3ok){
+  const enc=new lamejs.Mp3Encoder(1,fs,64),parts=[],N=1152*16,q=new Int16Array(N);
+  for(let i=0;i<m.length;i+=N){const k=Math.min(N,m.length-i);for(let j=0;j<k;j++)q[j]=Math.max(-32768,Math.min(32767,Math.round(m[i+j]*32767)));const d=enc.encodeBuffer(q.subarray(0,k));if(d.length)parts.push(d);if(i%(N*40)===0)await tick()}
+  parts.push(enc.flush());blob=new Blob(parts,{type:'audio/mp3'});mime='audio/mp3';
+ }else{
+  const L=m.length,b=new ArrayBuffer(44+L*2),v=new DataView(b),t=(o,w)=>{for(let i=0;i<4;i++)v.setUint8(o+i,w.charCodeAt(i))};
+  t(0,'RIFF');v.setUint32(4,36+L*2,true);t(8,'WAVE');t(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,fs,true);v.setUint32(28,fs*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);t(36,'data');v.setUint32(40,L*2,true);
+  for(let i=0;i<L;i++)v.setInt16(44+i*2,Math.max(-32768,Math.min(32767,Math.round(m[i]*32767))),true);
+  blob=new Blob([b],{type:'audio/wav'});mime='audio/wav';
+ }
+ if(blob.size>14e6)throw new Error('The song is too long to send in one request ('+(blob.size/1e6).toFixed(0)+' MB). Try a shorter file.');
+ const data=await new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(',')[1]);r.onerror=()=>no(r.error);r.readAsDataURL(blob)});
+ return{mime,data,size:blob.size};
+}
+/* What the app measured, so Gemini's timing and judgement have numbers to lean on. */
+function aiFacts(){
+ const fs=src.sampleRate,c=chans(src),W=2,st=[];
+ for(let t=0;t+W<=src.duration+.01;t+=W){const a=Math.floor(t*fs),b=Math.min(src.length,Math.floor((t+W)*fs));st.push(+lufs(kseg([c[0].subarray(Math.max(0,b-3*fs),b),c[1].subarray(Math.max(0,b-3*fs),b)],fs)).toFixed(1))}
+ const an=analyze(c[0],c[1],fs);
+ return{dur:+src.duration.toFixed(2),lufs:+src.inL.toFixed(1),st,oct:OCT.map((f,i)=>f+' Hz: '+an.dB[i].toFixed(1)).join(', '),
+  regs:regions.filter(r=>r.mode!=='noise').map(r=>`${(r.s/fs).toFixed(1)}-${(r.e/fs).toFixed(1)} s ${r.mode}${r.amt?' '+r.amt:''}`)};
+}
+function aiPrompt(F,ask){
+ return `You are a mix and mastering assistant inside a browser app. Listen to the attached song (a compressed mono copy; judge stereo-independent things only) and suggest specific edits for exact time ranges.
+
+The app can apply only these edits, each to a time range of the full mix, before its mastering chain (which afterwards sets overall loudness, compression and limiting):
+- level: raise or lower the level by gain_db (-12 to +12).
+- eq: boost or cut gain_db (-12 to +12) at freq_hz with shape bell (about one octave wide), narrow, wide, low_shelf or high_shelf.
+- tame: extra compression inside the range, strength light, medium or strong.
+- bypass: no tone processing in the range (keeps the original sound there).
+
+Rules:
+- start and end are seconds from the start of the song as plain numbers (for example 62.4). Each range is at least 0.5 s long and lies within 0 to ${F.dur}.
+- Prefer musical boundaries: bar lines and section starts. Name the section in "section".
+- Set "target" to the instrument the edit is really meant for (mix, vocals, drums, bass or other). The app currently applies every edit to the full mix, so prefer edits that still make sense on the whole mix.
+- Keep moves modest: level and EQ usually within plus or minus 4 dB unless the problem is severe.
+- Do not suggest whole-song loudness, limiting or whole-song EQ; the app's mastering settings handle those.
+- At most 12 edits, most important first. Anything the app cannot do (adding sounds or effects, risers, muting or removing single instruments, arrangement or performance changes) goes in "advice", with a time range when there is one.
+- "reason": one short sentence a musician understands. "summary": two or three sentences on the song and your main recommendations.
+
+Measured by the app:
+- Duration ${F.dur} s; integrated loudness ${F.lufs} LUFS.
+- Short-term loudness (LUFS, 3 s window) at every 2 s from 2 s on: ${F.st.join(', ')}.
+- Average tone by octave (dB, relative): ${F.oct}.
+- Regions the user already set: ${F.regs.length?F.regs.join('; '):'none'}.
+
+The user's request: ${ask?JSON.stringify(ask):'none given; suggest what would most improve the song.'}`;
+}
+async function aiAnalyze(){
+ if(ai.busy){ai.busy.abort();return}
+ if(!src||!ai.key)return;
+ const ac=new AbortController();ai.busy=ac;aiUI();
+ const t0=performance.now(),to=setTimeout(()=>ac.abort(),180000);
+ try{
+  aiSay('Preparing a compressed copy of the song…');await tick();
+  const A=await aiAudio(),ask=$('aiAsk').value.trim().slice(0,2000);
+  aiSay('Sending '+(A.size/1e6).toFixed(1)+' MB to Gemini ('+ai.model+'). This usually takes 20 to 60 seconds…');
+  const body={contents:[{role:'user',parts:[{inline_data:{mime_type:A.mime,data:A.data}},{text:aiPrompt(aiFacts(),ask)}]}],
+   generationConfig:{temperature:.4,responseMimeType:'application/json',responseSchema:AISCHEMA}};
+  const r=await fetch(AIAPI+'models/'+encodeURIComponent(ai.model)+':generateContent',{method:'POST',signal:ac.signal,headers:{'Content-Type':'application/json','x-goog-api-key':ai.key},body:JSON.stringify(body)});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok)throw aiErr(r.status,d);
+  const cand=(d.candidates||[])[0];
+  if(!cand)throw new Error('Gemini returned no answer'+(d.promptFeedback&&d.promptFeedback.blockReason?' (blocked: '+d.promptFeedback.blockReason+')':'')+'.');
+  const txt=((cand.content||{}).parts||[]).map(p=>p.text||'').join('');
+  if(!txt)throw new Error('Gemini returned an empty answer'+(cand.finishReason?' ('+cand.finishReason+')':'')+'.');
+  aiShow(aiParse(txt));
+  aiSay('Answer in '+Math.round((performance.now()-t0)/1000)+' s from '+ai.model+'. Review each edit below; nothing changes until you accept it.');
+ }catch(e){aiSay(e.name==='AbortError'?'Cancelled.':(e.message||String(e)),e.name!=='AbortError')}
+ clearTimeout(to);ai.busy=null;aiUI();
+}
+/* Validate and clamp everything; drop what cannot be applied. */
+const AIACT={level:'Level',eq:'EQ',tame:'Tame dynamics',bypass:'No tone processing'};
+function aiParse(txt){
+ let d;try{d=typeof txt==='string'?JSON.parse(txt.replace(/^\s*```(json)?|```\s*$/g,'')):txt}catch(_){throw new Error('That is not valid JSON.')}
+ if(!d||typeof d!=='object'||!Array.isArray(d.edits))throw new Error('No "edits" list found in the answer.');
+ const D=src.duration,num=v=>typeof v==='number'&&isFinite(v)?v:typeof v==='string'&&isFinite(parseFloat(v))?parseFloat(v):null,cl=(v,a,b)=>Math.max(a,Math.min(b,v));
+ const edits=[],skipped=[];
+ for(const e of d.edits.slice(0,30)){
+  let s=num(e.start),t=num(e.end);const act=String(e.action||'').toLowerCase();
+  if(s==null||t==null||!AIACT[act]){skipped.push(e);continue}
+  s=cl(s,0,D);t=cl(t,0,D);if(t-s<.25){skipped.push(e);continue}
+  const x={s,e:t,act,section:String(e.section||'').slice(0,60),target:['vocals','drums','bass','other'].includes(e.target)?e.target:'mix',reason:String(e.reason||'').slice(0,400),st:'new'};
+  if(act==='level'||act==='eq')x.g=Math.round(cl(num(e.gain_db)??0,-12,12)*2)/2;
+  if(act==='eq'){x.f=Math.round(cl(num(e.freq_hz)??1000,20,20000));x.sh=RSH[e.shape]?e.shape:'bell'}
+  if(act==='tame')x.k={light:1,medium:2,strong:3}[e.strength]||2;
+  if((act==='level'||act==='eq')&&!x.g){skipped.push(e);continue}
+  edits.push(x);
+ }
+ const adv=(Array.isArray(d.advice)?d.advice:[]).slice(0,20).map(a=>({s:num(a.start),e:num(a.end),section:String(a.section||'').slice(0,60),text:String(a.text||'').slice(0,500)})).filter(a=>a.text);
+ return{summary:String(d.summary||'').slice(0,1200),edits,adv,skipped:skipped.length};
+}
+const tcf2=v=>tcf(v);
+function aiDesc(x){
+ const sg=v=>(v>0?'+':'')+v+' dB';
+ return x.act==='level'?'Level '+sg(x.g):x.act==='eq'?'EQ '+sg(x.g)+' at '+fq(x.f)+' ('+RSH[x.sh][2]+')':x.act==='tame'?'Tame dynamics, '+['','light','medium','strong'][x.k]:'No tone processing';
+}
+function aiShow(R){
+ ai.res=R;const o=$('aiOut');
+ const open=R.edits.filter(x=>x.st==='new').length;
+ let h=(R.summary?`<p class="aisum">${esc(R.summary)}</p>`:'')+(open>1?`<button type="button" class="btn" id="aiAll">Accept all ${open} edits</button>`:'');
+ h+=R.edits.map((x,i)=>`<div class="aic${x.st!=='new'?' done':''}"><div class="ah"><b>${esc(tcf2(x.s))}&ndash;${esc(tcf2(x.e))}</b>${x.section?`<span>${esc(x.section)}</span>`:''}<b style="margin-left:auto">${esc(aiDesc(x))}</b></div>`
+  +`<div class="aw">${esc(x.reason)}</div>`
+  +(x.target!=='mix'?`<div class="aw">Meant for the ${esc(x.target)}; applied to the whole mix for now.</div>`:'')
+  +`<div class="ab">${x.st==='new'?`<button type="button" data-ail="${i}">&#9654; Listen</button><button type="button" class="ok" data-aia="${i}">Accept</button><button type="button" data-air="${i}">Skip</button>`:`<span class="aw" style="margin:0">${x.st==='ok'?'Added as a region.':'Skipped.'}</span>`}</div></div>`).join('');
+ if(R.adv.length)h+=`<span class="lbl" style="margin:12px 0 4px">Advice the app cannot apply</span><ul class="aiadv">`+R.adv.map(a=>`<li>${a.s!=null&&a.e!=null?`<b>${esc(tcf2(a.s))}&ndash;${esc(tcf2(a.e))}</b> `:''}${a.section?esc(a.section)+': ':''}${esc(a.text)}</li>`).join('')+'</ul>';
+ if(R.skipped)h+=`<p class="hint">${R.skipped} suggestion${R.skipped>1?'s were':' was'} left out because the time range or action could not be used.</p>`;
+ if(!R.edits.length&&!R.adv.length)h+='<p class="hint">No edits suggested.</p>';
+ o.innerHTML=h;
+ o.querySelectorAll('[data-ail]').forEach(b=>b.onclick=()=>{const x=R.edits[+b.dataset.ail];vwShow(x.s/src.duration);wpSeek(x.s);if(!wpOn)wpPlay()});
+ o.querySelectorAll('[data-aia]').forEach(b=>b.onclick=()=>{aiAccept([+b.dataset.aia]);});
+ o.querySelectorAll('[data-air]').forEach(b=>b.onclick=()=>{R.edits[+b.dataset.air].st='no';aiShow(R)});
+ const all=$('aiAll');if(all)all.onclick=()=>aiAccept(R.edits.map((x,i)=>x.st==='new'?i:-1).filter(i=>i>=0));
+}
+function aiAccept(ix){
+ const R=ai.res,fs=src.sampleRate;let last=null;
+ for(const i of ix){
+  const x=R.edits[i];if(!x||x.st!=='new')continue;
+  const r={s:Math.round(x.s*fs),e:Math.round(x.e*fs),mode:{level:'gain',eq:'eq',tame:'tame',bypass:'skip'}[x.act],amt:x.act==='tame'?x.k:x.g||0,
+   note:(x.section?x.section+': ':'')+x.reason+(x.target!=='mix'?' (meant for the '+x.target+')':'')};
+  if(x.act==='eq'){r.f=x.f;r.sh=x.sh}
+  regions.push(r);x.st='ok';last=r;
+ }
+ if(!last)return;
+ regions.sort((p,q)=>p.s-q.s);regSel=regions.indexOf(last);regRender();drawWave();aiShow(R);
+ if(wpOn&&lp.active)wpRestart();
+}
+$('aiKey').oninput=()=>{ai.key=$('aiKey').value.trim();aiKeySave();aiUI()};
+$('aiKey').onchange=()=>{if(ai.key&&!$('aiModel').dataset.fetched){$('aiModel').dataset.fetched=1;aiModels()}};
+$('aiRemember').onchange=aiKeySave;
+$('aiForget').onclick=()=>{ai.key='';$('aiKey').value='';$('aiRemember').checked=false;aiKeySave();aiUI();aiSay('Key removed from this page and from this browser\u2019s storage.')};
+$('aiModel').onchange=()=>{ai.model=$('aiModel').value;aiCfgSave()};
+$('aiModels').onclick=aiModels;
+$('aiAsk').onchange=aiCfgSave;
+$('aiGo').onclick=aiAnalyze;
+$('aiImport').onclick=()=>{
+ if(!src){aiSay('Load the song first.',1);return}
+ try{const R=aiParse($('aiJson').value);aiShow(R);aiSay('Imported '+R.edits.length+' edit'+(R.edits.length===1?'':'s')+'. Review them below.')}catch(e){aiSay(e.message,1)}
+};
+
 /* ---- undo / redo / reset ----
    A step is everything that changes the sound: every setting, the Tone EQ,
    regions, and stem levels and mutes. Changes are noticed after any click,
@@ -1932,6 +2199,10 @@ async function pipeline(b,T,fmt,pm,off,O={}){
   const o0=chans(b);inBuf=new AudioBuffer({length:b.length,numberOfChannels:2,sampleRate:fs});
   for(let c=0;c<2;c++){const v=new Float32Array(b.length);for(let i=0;i<b.length;i++)v[i]=o0[c][i]*R.g[i];inBuf.copyToChannel(v,c)}
  }
+ if(regEqOn()){
+  const c=chans(inBuf).map(x=>Float32Array.from(x));regEq(c,off||0,fs);
+  inBuf=new AudioBuffer({length:b.length,numberOfChannels:2,sampleRate:fs});inBuf.copyToChannel(c[0],0);inBuf.copyToChannel(c[1],1);
+ }
  if(noiseDb>0){
   say('Measuring the noise floor…');await tick();
   const np=await nrProfile();
@@ -1951,9 +2222,10 @@ async function pipeline(b,T,fmt,pm,off,O={}){
   }
   if(R.hasTame){say('Taming selected regions…');await tick();const tr=applyTame(base,R,fs);
    if(tr)notes=notes.concat([['Region taming','avg '+tr.avg.toFixed(1)+' dB, max '+tr.max.toFixed(1)+' dB inside regions']])}
-  const g=regions.filter(r=>r.mode==='gain'&&r.amt!==0),s=regions.filter(r=>r.mode==='skip');
+  const g=regions.filter(r=>r.mode==='gain'&&r.amt!==0),s=regions.filter(r=>r.mode==='skip'),q=regions.filter(r=>r.mode==='eq'&&r.amt);
   const bits=[];
   if(g.length)bits.push(g.length+' level ('+g.map(r=>(r.amt>0?'+':'')+r.amt).join(', ')+' dB)');
+  if(q.length)bits.push(q.length+' EQ ('+q.map(r=>(r.amt>0?'+':'')+r.amt+' dB at '+fq(r.f||1000)).join(', ')+')');
   if(s.length)bits.push(s.length+' unprocessed');
   if(bits.length)notes=notes.concat([['Regions',bits.join('; ')]]);
  }
@@ -2269,6 +2541,7 @@ $('useRef').onchange=()=>{refSave();cfgSave()};
 $('lufs').addEventListener('change',cfgSave);
 document.querySelectorAll('input[name=f],input[name=p],#useStems,#perStem').forEach(e=>e.addEventListener('change',cfgSave));
 try{DEFCFG=getCfg();setupsLoad();setupsRender();cfgLoad();refLoad()}catch(e){}
+try{aiLoad()}catch(e){}
 histReset();
 /* ---- inline hints ---- */
 const HELP={
@@ -2330,6 +2603,9 @@ const HELP={
 'Tone EQ':`<p>A nine-band graphic EQ, one slider per octave from 63 Hz to 16 kHz, ±15 dB each. You hear it <b>as you move it</b>: in the Listen player, in Play all stems, and on the B: Master side of the results player. 63 Hz and 16 kHz are shelves; the rest are one-octave bells. The curve behind the sliders is the combined shape you will hear. Hover over (or tap) the <b>i</b> under a slider for what that band does, and double-click a slider to zero it.</p>
 <p>It runs after the whole mastering chain but <b>before loudness matching and the limiter</b>, so the result still lands on your target and true-peak ceiling. Adding low end therefore makes the limiter work harder rather than making the song louder.</p>
 <p>After a render, moving it plays the change live on the master. <b>Apply EQ</b> then re-runs only the last stage (a few seconds, no re-analysis) so the saved file matches what you hear. Bypass is for listening only: renders always use the sliders.</p>`,
+'AI suggestions':`<p>Gemini listens to a compressed mono copy of the song together with the app&rsquo;s own measurements, and suggests edits for exact time ranges: level, EQ, taming, or no tone processing. Each comes with a reason. Press <b>Listen</b> to hear that spot, then <b>Accept</b> to turn it into a region, or <b>Skip</b>. Accepted edits can be adjusted in the region list and undone like any other change. Things the app cannot do, such as adding a riser or muting one instrument, are listed as advice.</p>
+<p><b>Privacy:</b> pressing Analyze uploads that copy of the song to Google. Nothing is sent otherwise. The key goes only to Google. With <b>Remember</b> on it is saved in this browser&rsquo;s storage, so use a key made just for this app and restricted to the Gemini API. On Google&rsquo;s free tier, submitted content may be used to improve their products.</p>
+<p>Edits aimed at one instrument currently apply to the whole mix. <b>Paste suggestions from another tool</b> imports the same JSON format without a key.</p>`,
 'Pumper':`<p>Ducks the mid and high bands each time the kick hits, for the rhythmic pumping common in dance music. Bass and kick stay at full level.</p>
 <p>It triggers from the kick itself rather than a tempo grid, so it needs no BPM and does not drift on loose timing. Maximum duck 2, 4 or 6 dB; attack 3 ms, release 150 ms.</p>
 <p>A creative effect, not a corrective one. Start at Light.</p>`};

@@ -49,6 +49,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 <li><a href="#loud">Target loudness</a></li>
 <li><a href="#fmt">Output format</a></li>
 <li><a href="#regions">Volume automation</a></li>
+<li><a href="#ai">AI suggestions (Gemini)</a></li>
 <li><a href="#noise">Noise reduction</a></li>
 <li><a href="#trans">Transients</a></li>
 <li><a href="#stems">Stem balance</a></li>
@@ -66,7 +67,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 </ol></nav>
 
 <h2 id="flow">1. What the app does, in order</h2>
-<p>Everything runs in your browser on your own machine. No audio is uploaded, and there is no account, server or API key involved.</p>
+<p>Everything runs in your browser on your own machine. No audio is uploaded, and there is no account or server involved. The one exception is the optional <a href="#ai">AI suggestions</a>, which send a compressed copy of the song to Google using your own Gemini API key, and only when you press Analyze.</p>
 <p>In <b>Full master</b> mode the signal passes through these stages, in this order:</p>
 <div class="chain">
 <b>1</b> Analysis — measures the song's tone across eight octave bands, its stereo width, and how much low-mid energy sits in the sides<br>
@@ -224,6 +225,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 <table>
 <tr><th>Mode</th><th>What it does</th></tr>
 <tr><td>Level</td><td>Changes the level by up to &plusmn;12 dB <b>before</b> the mastering chain, so the compressors respond to the corrected balance instead of fighting it. This is what fader riding means.</td></tr>
+<tr><td>EQ</td><td>Boosts or cuts one frequency by up to &plusmn;12 dB inside the region only, with a bell (about one octave), narrow, wide, low-shelf or high-shelf shape. Like Level, it works <b>before</b> the mastering chain. Use it for a local problem, such as pads masking the vocal in one chorus; for the whole song, use the Tone EQ instead.</td></tr>
 <tr><td>Tame dynamics</td><td>Adds compression inside the region only &mdash; Light, Medium or Strong, up to 6 dB of reduction measured against the region&rsquo;s own running level. Use it on a section that is dynamically wilder than the rest.</td></tr>
 <tr><td>No tone processing</td><td>Keeps the original tone there &mdash; no EQ, no compression, no saturation &mdash; but still applies the final loudness match and limiting, so the level matches the rest of the song and there is no jump at the boundary.</td></tr>
 </table>
@@ -239,6 +241,31 @@ td:first-child{white-space:nowrap;font-weight:600}
 </ul>
 <div class="note"><p>Regions are also the natural way to point at part of a song for other purposes. Selecting a quiet passage is how a future noise-reduction stage would learn the noise profile.</p></div>
 <a class="top" href="#">&uarr; top</a>
+
+<h3 id="ai">AI suggestions (Gemini)</h3>
+<p>The <b>AI suggestions</b> card sends the song to Google&rsquo;s Gemini and gets back edits for exact time ranges, each with a reason. Nothing changes until you accept an edit; accepted edits become ordinary regions (marked <b>AI</b> in the list, with the reason on hover) that you can adjust, hear with Mastered, and undo.</p>
+<ol>
+<li>Get an API key from Google AI Studio, paste it into the key field, and tick <b>Remember the key on this device</b> if you want it kept.</li>
+<li>Pick a model. <b>Refresh list</b> asks Google which models your key can use; the newest Flash model is chosen by default.</li>
+<li>Optionally say what you want, such as &ldquo;the chorus should hit harder&rdquo;, then press <b>Analyze with Gemini</b>. It usually answers in 20 to 60 seconds.</li>
+<li>For each edit: <b>Listen</b> plays from that spot, <b>Accept</b> adds it as a region, <b>Skip</b> dismisses it. <b>Accept all</b> takes every remaining one.</li>
+</ol>
+<p><b>What it can apply:</b> level, EQ, tame dynamics and no tone processing, each over a time range of the whole mix. Gemini is told to stay within those. Things the app cannot do, such as adding a riser, muting one instrument or rearranging a section, come back as <b>advice</b> under the edits. When Gemini aims an edit at one instrument (for example the drums), the card says so; for now it is applied to the whole mix.</p>
+<p><b>What is sent:</b> a mono copy of the song (MP3 at 64 kbps, or 16 kHz WAV if the MP3 encoder could not load), the app&rsquo;s measurements (duration, loudness every 2 seconds, average tone by octave), your existing regions and your request. The key is sent only to Google, in a request header. Without <b>Remember</b> it lives only in the open page.</p>
+<div class="note w"><p><b>Privacy and cost.</b> Pressing Analyze uploads the song to Google. On Google&rsquo;s free tier, submitted content may be used to improve their products; check the current terms if that matters for unreleased music. Use a key created just for this app and restricted to the Gemini API, since a remembered key can be read by anything that can read this site&rsquo;s browser storage. A typical four-minute song costs a few thousand audio tokens per request.</p></div>
+<p><b>Timing:</b> Gemini&rsquo;s times can be a second or two off. Press Listen before accepting, and adjust the start and end in the region list afterwards.</p>
+<h4>Pasting suggestions from another tool</h4>
+<p><b>Paste suggestions from another tool</b> imports the same format without a key, so another analyzer can feed this app. Times are seconds from the start of the song. Only <code>start</code>, <code>end</code>, <code>action</code> and <code>reason</code> are required; anything outside the song, too short, or with an unknown action is left out and counted.</p>
+<div class="chain">{<br>&nbsp;"summary": "Two or three sentences.",<br>&nbsp;"edits": [<br>&nbsp;&nbsp;{"start": 62.4, "end": 70.1, "section": "Chorus 1", "target": "other",<br>&nbsp;&nbsp;&nbsp;"action": "eq", "freq_hz": 1500, "gain_db": -3, "shape": "wide",<br>&nbsp;&nbsp;&nbsp;"reason": "Pads mask the vocal."},<br>&nbsp;&nbsp;{"start": 80, "end": 88, "action": "level", "gain_db": -2, "reason": "&hellip;"},<br>&nbsp;&nbsp;{"start": 96, "end": 99, "action": "tame", "strength": "medium", "reason": "&hellip;"},<br>&nbsp;&nbsp;{"start": 0, "end": 8, "action": "bypass", "reason": "&hellip;"}<br>&nbsp;],<br>&nbsp;"advice": [{"start": 120, "end": 122, "section": "Pre-chorus", "text": "Add a riser."}]<br>}</div>
+<table>
+<tr><th>Field</th><th>Values</th></tr>
+<tr><td>action</td><td><code>level</code>, <code>eq</code>, <code>tame</code>, <code>bypass</code> (no tone processing)</td></tr>
+<tr><td>gain_db</td><td>&minus;12 to +12, for level and eq</td></tr>
+<tr><td>freq_hz, shape</td><td>20 to 20000; <code>bell</code>, <code>narrow</code>, <code>wide</code>, <code>low_shelf</code>, <code>high_shelf</code> (eq only)</td></tr>
+<tr><td>strength</td><td><code>light</code>, <code>medium</code>, <code>strong</code> (tame only)</td></tr>
+<tr><td>target</td><td><code>mix</code>, <code>vocals</code>, <code>drums</code>, <code>bass</code>, <code>other</code> (shown, not yet applied per stem)</td></tr>
+</table>
+<a class="top" href="#">↑ top</a>
 
 <h2 id="noise">9. Noise reduction</h2>
 <p>Removes steady background noise: hiss, hum, room tone, and the warble AI generators sometimes leave behind. It measures the noise floor in each frequency band, then attenuates each band as it drops toward that floor.</p>

@@ -23,7 +23,7 @@
   - No frameworks, no build tooling, no new CDN dependencies; pin exact versions if unavoidable
   - Colors only via CSS vars on `:root` with the dark-mode overrides already defined
 - **Processing chain** (`pipeline()` in `index.html`)
-  - Order: region gain → noise reduction → `fullMaster()` / `render()` (polish) / none → region skip/tame → Tone EQ (`eqRender`) → `finish()` (loudness match + true-peak `limit()`)
+  - Order: region gain → region EQ (`regEq`) → noise reduction → `fullMaster()` / `render()` (polish) / none → region skip/tame → Tone EQ (`eqRender`) → `finish()` (loudness match + true-peak `limit()`)
   - Tone EQ must stay before `finish()` so target LUFS and ceiling hold
   - `pipeline(...,{raw:true,G})` returns pre-EQ base for preview chunks; `G` = whole-song `analyze()`/RMS/`distSample` measured once
   - `say()`/`tick()` are muted/fast while `sayMute` is set (background renders)
@@ -34,14 +34,19 @@
   - "Apply to preview" buttons are attached by label text in the IIFE at the end of the script; add new setting labels to its `keys` list
 - **Settings, undo, storage**
   - Persist via `getCfg()`/`applyCfg()` (validate every field in `applyCfg`); `DEFCFG` is captured before `cfgLoad()`
-  - localStorage keys: `gpmaster.cfg.v1`, `gpmaster.refs.v1`, `gpmaster.setups.v1`, `gpmaster.workers.v1`; never change a key's format without migration
+  - localStorage keys: `gpmaster.cfg.v1`, `gpmaster.refs.v1`, `gpmaster.setups.v1`, `gpmaster.workers.v1`, `gpmaster.ai.v1`, `gpmaster.aikey.v1` (only when Remember is ticked); never change a key's format without migration
   - Undo history (`H`) records on any document click/change/pointerup/keyup; non-user changes call `histAbsorb()`
 - **Tone EQ**
   - Bands defined once in `EQB` (9 octave bands, ±`EQR` dB); markup ids `eq-<k>`, `eqv-<k>`, `eqt-<k>`
   - Same Web Audio biquads run live (`eqNodes`) and offline (`eqRender`); A/B master plays only `eqDelta()` over the baked EQ
   - Old saved keys (`lo`,`lm`,`mid`,`hm`,`hi`) are migrated in `applyCfg`; keep that mapping
+- **AI suggestions (Gemini)**
+  - Browser calls `generativelanguage.googleapis.com/v1beta` with header `x-goog-api-key`; never put the key in a URL, log or error text
+  - Model answers must match `AISCHEMA` (actions: level, eq, tame, bypass); `aiParse` validates and clamps; paste import uses the same parser
+  - Escape all model text with `esc()` before inserting HTML
+  - Accepted edits become regions with `note`; test with Playwright `page.route('https://generativelanguage.googleapis.com/**')` mocks
 - **Layout**
-  - `.cols` > `.colL` (sticky: file, Listen, Volume automation) + `.colR` (stems, settings, results); two columns at ≥1080 px, `display:contents` below
+  - `.cols` > `.colL` (sticky: file, Listen, Volume automation, AI suggestions) + `.colR` (stems, settings, results); two columns at ≥1080 px, `display:contents` below
   - Mini player `#mini` shows when `.wprow` scrolls above the viewport (`miniCheck`)
 - **Stem separation**
   - Per-model `n_fft` is not inferable from the ONNX shape; wrong values fail silently. Change only with `docs/stem-separation.md`

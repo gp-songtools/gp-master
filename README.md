@@ -1,7 +1,9 @@
 # Loudness Master
 
 A browser-based audio mastering tool. Everything runs locally in your browser —
-no audio is uploaded anywhere, and there is no server, API key, or account.
+no audio is uploaded, and there is no server or account. The one exception is
+the optional AI suggestions, which send a compressed copy of the song to
+Google's Gemini with your own API key, only when you press Analyze.
 
 ## Use it
 
@@ -57,6 +59,13 @@ follower measured against its own running average.
 **Noise reduction** — spectral subtraction against a measured noise floor,
 learned from a marked quiet region or estimated from the quietest 5% of each
 band. Runs before EQ and compression so noise is never amplified.
+
+**AI suggestions (optional)** — paste a Gemini API key (optionally remembered
+on this device), say what you want, and Gemini suggests level, EQ, taming or
+no-processing edits for exact time ranges, each with a reason. Every edit is
+reviewed before it becomes a region; things the app cannot do come back as
+advice. Suggestions from other tools can be pasted in the same JSON format
+(documented in `help.html`).
 
 **Tone EQ** — a nine-band graphic EQ, one slider per octave from 63 Hz to
 16 kHz, ±15 dB each, with the combined curve drawn behind the sliders, heard live as you move them in every player. In a render it runs after the
