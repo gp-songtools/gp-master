@@ -37,6 +37,7 @@
   - Persist via `getCfg()`/`applyCfg()` (validate every field in `applyCfg`); `DEFCFG` is captured before `cfgLoad()`
   - localStorage keys: `gpmaster.cfg.v1`, `gpmaster.refs.v1`, `gpmaster.setups.v1`, `gpmaster.workers.v1`, `gpmaster.ai.v1`, `gpmaster.aikey.v1` (only when Remember is ticked); never change a key's format without migration
   - Undo history (`H`) records on any document click/change/pointerup/keyup; non-user changes call `histAbsorb()`
+  - IndexedDB `gpmaster` (stores `stems`, `songs`) keyed by SHA-256 of file bytes (`songFp`): 16-bit stems without `other`, plus regions/stem levels (`songSaveSoon`, `songRestore`); keep 5 songs' stems
 - **Tone EQ**
   - Bands defined once in `EQB` (9 octave bands, ±`EQR` dB); markup ids `eq-<k>`, `eqv-<k>`, `eqt-<k>`
   - Same Web Audio biquads run live (`eqNodes`) and offline (`eqRender`); A/B master plays only `eqDelta()` over the baked EQ

@@ -89,7 +89,9 @@ file you can keep or move to another machine; import merges a file back,
 renaming on collision rather than overwriting. The last-used settings are also
 restored automatically on reload.
 
-**Stem balance** — optionally split the song into vocals, drums, bass and other,
+**Stem balance** — optionally split the song into vocals, drums, bass and other
+(separate once: the stems, regions and stem levels are saved on this device and
+restored when the same file is loaded again),
 rebalance them, master each stem with its own EQ, compression and (for vocals)
 de-essing, then recombine. The app measures each stem against the full mix and
 suggests level moves for the chosen genre (rules of thumb, not reference-matched). The limiter always runs last on the summed mix, so

@@ -252,7 +252,7 @@ body.mini main{padding-bottom:84px}
 #eqApply{width:100%;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>GP Mastering <small style="font-size:13px;color:var(--mut);font-weight:400">v45</small></h1>
+<h1>GP Mastering <small style="font-size:13px;color:var(--mut);font-weight:400">v46</small></h1>
 <p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded unless you use the optional Gemini suggestions.</p>
 <p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or use it just to split the song and download each stem as a WAV.</p>
 
@@ -313,6 +313,7 @@ body.mini main{padding-bottom:84px}
  </div>
  <div class="bar"><i id="sbar"></i></div>
  <div id="sst" role="status"></div>
+ <p class="hint" id="sSaved" style="margin:6px 0 0"></p>
  <div id="mix" hidden>
   <div id="mixRows"></div>
   <div class="sp"><button type="button" class="go alt" id="spMix" aria-pressed="false">▶ Play all stems</button><span id="spTime">0:00 / 0:00</span></div>
@@ -772,13 +773,14 @@ $('file').onchange=async e=>{
  name=(f.name.replace(/\.[^.]+$/,'').replace(/[^\w\- ]+/g,'_').trim())||'audio';
  $('fl').textContent=f.name;stopP();lastFin=null;$('go').disabled=true;$('pv').disabled=true;$('res').hidden=true;say('Decoding…');await tick();
  try{
-  const ab=await f.arrayBuffer();let ctx;
+  const ab=await f.arrayBuffer(),gen=++fileGen,fp=await fpOf(ab);let ctx;
   try{ctx=new AudioContext({sampleRate:44100})}catch{ctx=new AudioContext()}
   src=await ctx.decodeAudioData(ab);ctx.close();
   await tick();
   const L=lufs(kseg(chans(src),src.sampleRate));
   $('inStats').textContent=fmtT(src.duration)+', '+(src.sampleRate/1000)+' kHz, '+(src.numberOfChannels>1?'stereo':'mono')+', currently '+L.toFixed(1)+' LUFS';
-  src.inL=L;clearStems();wpStop();wpOff=0;lpReset();regions=[];regSel=-1;noiseProf=null;histReset();ai.res=null;$('aiOut').innerHTML='';aiSay('');aiUI();buildPeaks();$('regCard').hidden=false;$('lisCard').hidden=false;regSetup();zoomSetup();vwUI();regRender();drawWave();$('wpTime').textContent=wpTimeStr();$('go').disabled=false;$('pv').disabled=false;$('sepPv').disabled=false;$('sepAll').disabled=false;say('');
+  src.inL=L;songFp=fp;clearStems();wpStop();wpOff=0;lpReset();regions=[];regSel=-1;noiseProf=null;histReset();ai.res=null;$('aiOut').innerHTML='';aiSay('');aiUI();buildPeaks();$('regCard').hidden=false;$('lisCard').hidden=false;regSetup();zoomSetup();vwUI();regRender();drawWave();$('wpTime').textContent=wpTimeStr();$('go').disabled=false;$('pv').disabled=false;$('sepPv').disabled=false;$('sepAll').disabled=false;say('');
+  songRestore(fp,gen);
  }catch{src=null;$('inStats').textContent='';say('That file couldn’t be decoded. Try an MP3, WAV, M4A or FLAC.',1)}
 };
 
@@ -1952,10 +1954,80 @@ function runSeparation(scope){
   eta.stop();stemData=d.result;stemStart=r.start;stemLen=r.len;stemScope=scope;
   $('sbar').style.width='100%';
   ssay(`Separated ${scope==='preview'?'the 30-second section':'the whole song'} in ${((performance.now()-t0)/60000).toFixed(1)} min using ${d.workers} worker${d.workers>1?'s':''}.`);
-  mixRows();free();regRender();drawWave();
+  mixRows();free();regRender();drawWave();stemsSave();
  }).catch(err=>{eta.stop();ssay('Separation failed: '+(err&&err.message||err),1);free()});
  ssay('Starting…');
 }
+/* ---- saved songs: stems, regions and stem levels kept on this device ----
+   IndexedDB, keyed by a SHA-256 of the file's bytes, so the same file finds its
+   data again after a refresh and a different file never does. Stems are stored
+   as 16-bit PCM without "other", which is rebuilt as the song minus the stored
+   stems, the same way separation makes it. Stems of the 5 most recently used
+   songs are kept; regions and stem levels are tiny and kept for 50 songs. */
+const SKEEP=5;let songFp=null,fileGen=0,songT=0;
+function sdb(){return new Promise((ok,no)=>{if(!window.indexedDB)return no(new Error('This browser has no on-device storage.'));const r=indexedDB.open('gpmaster',1);
+ r.onupgradeneeded=()=>{const d=r.result;for(const n of['stems','songs'])if(!d.objectStoreNames.contains(n))d.createObjectStore(n,{keyPath:'fp'})};r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
+async function sdo(st,mode,fn){const d=await sdb();return new Promise((ok,no)=>{const t=d.transaction(st,mode);let q=fn(t.objectStore(st)),out;if(q)q.onsuccess=()=>out=q.result;t.oncomplete=()=>{d.close();ok(out)};t.onerror=t.onabort=()=>{d.close();no(t.error||new Error('storage failed'))}})}
+const sget=(st,k)=>sdo(st,'readonly',x=>x.get(k)),sput=(st,v)=>sdo(st,'readwrite',x=>x.put(v)),sdel=(st,k)=>sdo(st,'readwrite',x=>x.delete(k)),sall=st=>sdo(st,'readonly',x=>x.getAll());
+async function fpOf(ab){try{if(!crypto.subtle)return null;const h=new Uint8Array(await crypto.subtle.digest('SHA-256',ab));return[...h].map(b=>b.toString(16).padStart(2,'0')).join('')}catch(_){return null}}
+async function songMeta(fp,patch){const m=(await sget('songs',fp).catch(()=>null))||{fp};Object.assign(m,patch,{used:Date.now()});await sput('songs',m);return m}
+function songSaveSoon(){
+ if(!songFp||!src)return;clearTimeout(songT);const fp=songFp;
+ songT=setTimeout(()=>songMeta(fp,{name,regions:regions.map(r=>({...r})),sgain:{...sgain},smute:{...smute}}).then(savedUI).catch(()=>{}),600);
+}
+async function stemsSave(){
+ if(!songFp||!stemData||!src)return;
+ const fp=songFp,names=Object.keys(stemData).filter(k=>k!=='other'&&stemData[k]),data={};let bytes=0;
+ for(const k of names)data[k]=stemData[k].map(x=>{const q=new Int16Array(x.length);for(let i=0;i<x.length;i++){const v=Math.round(x[i]*32767);q[i]=v>32767?32767:v<-32768?-32768:v}bytes+=q.byteLength;return q.buffer});
+ const S={saved:Date.now(),bytes,scope:stemScope,start:stemStart,len:stemLen,names,fs:src.sampleRate,srcLen:src.length};
+ $('sSaved').textContent='Saving the stems on this device so you will not need to separate this song again…';
+ try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{})}catch(_){}
+ for(let a=0;a<2;a++){
+  try{await stemsEvict(fp,a?SKEEP-2:SKEEP-1);await sput('stems',{fp,data});await songMeta(fp,{name,stems:S});await savedUI(true);return}
+  catch(e){if(a)$('sSaved').textContent='The stems could not be saved on this device ('+(e&&e.name==='QuotaExceededError'?'not enough storage space':'storage blocked')+'). They still work until you close or reload the page.'}
+ }
+}
+async function stemsEvict(keep,max){
+ const all=((await sall('songs'))||[]).filter(m=>m.stems&&m.fp!==keep).sort((a,b)=>(b.used||0)-(a.used||0));
+ for(const m of all.slice(Math.max(0,max))){await sdel('stems',m.fp);delete m.stems;await sput('songs',m)}
+ const small=((await sall('songs'))||[]).sort((a,b)=>(b.used||0)-(a.used||0));for(const m of small.slice(50))await sdel('songs',m.fp);
+}
+async function savedUI(justSaved){
+ const el=$('sSaved');if(!el)return;
+ let all=[];try{all=(await sall('songs'))||[]}catch(_){el.textContent='';return}
+ const st=all.filter(m=>m.stems),mb=st.reduce((a,m)=>a+m.stems.bytes,0)/1048576,cur=st.find(m=>m.fp===songFp);
+ el.innerHTML=st.length?`${justSaved?'Saved. ':''}${cur?'This song&rsquo;s stems are saved on this device and come back automatically when you load the same file. ':''}Stems for ${st.length} song${st.length>1?'s':''} on this device (${mb.toFixed(0)} MB). <button type="button" class="btn" id="sForget" style="padding:3px 8px;font-size:12.5px">Forget saved stems</button>`
+  :'';
+ const b=$('sForget');if(b)b.onclick=async()=>{for(const m of all){await sdel('stems',m.fp).catch(()=>{});if(m.stems){delete m.stems;await sput('songs',m).catch(()=>{})}}savedUI();ssay('Saved stems removed from this device. The stems in this session still work until you reload.')};
+}
+const regOk=r=>r&&isNum(r.s)&&isNum(r.e)&&r.e>r.s&&r.s>=0&&r.e<=src.length&&RMODE[r.mode]&&isNum(r.amt);
+async function songRestore(fp,gen){
+ if(!fp){$('sSaved').textContent='Saving stems on this device needs the page to be opened over https.';return}
+ let m=null;try{m=await sget('songs',fp)}catch(_){}
+ if(gen!==fileGen)return;
+ savedUI();if(!m)return;
+ const got=[];
+ if(Array.isArray(m.regions)){const rs=m.regions.filter(regOk).map(r=>{const o={s:Math.round(r.s),e:Math.round(r.e),mode:r.mode,amt:r.amt};if(isNum(r.f))o.f=r.f;if(RSH[r.sh])o.sh=r.sh;if(STEMN[r.stem])o.stem=r.stem;if(typeof r.note==='string')o.note=r.note.slice(0,500);return o});
+  if(rs.length){regions=rs;regSel=-1;regRender();drawWave();got.push(rs.length+' region'+(rs.length>1?'s':''))}}
+ const S=m.stems;
+ if(S&&S.fs===src.sampleRate&&S.srcLen===src.length){
+  ssay('Loading this song&rsquo;s saved stems…'.replace('&rsquo;','\u2019'));
+  let rec=null;try{rec=await sget('stems',fp)}catch(_){}
+  if(gen!==fileGen)return;
+  if(rec&&rec.data){
+   const d={},n=S.len,ch=chans(src);
+   for(const k of S.names)if(rec.data[k])d[k]=rec.data[k].map(b=>{const q=new Int16Array(b),x=new Float32Array(q.length);for(let i=0;i<q.length;i++)x[i]=q[i]/32767;return x});
+   const o=[0,1].map(c=>{const x=Float32Array.from(ch[c].subarray(S.start,S.start+n));for(const k in d){const y=d[k][c];for(let i=0;i<n;i++)x[i]-=y[i]}return x});d.other=o;
+   STEMS.forEach(k=>{if(m.sgain&&isNum(m.sgain[k]))sgain[k]=Math.max(-24,Math.min(12,m.sgain[k]));if(m.smute&&typeof m.smute[k]==='boolean')smute[k]=m.smute[k]});
+   stemData=d;stemStart=S.start;stemLen=n;stemScope=S.scope==='preview'?'preview':'full';mixRows();regRender();drawWave();
+   ssay('Stems restored from '+new Date(S.saved).toLocaleDateString()+' ('+(S.scope==='preview'?'the 30-second section':'the whole song')+'). No need to separate again.');
+   got.push('stems');
+  }else ssay('');
+ }
+ histReset();songMeta(fp,{}).catch(()=>{});
+ if(got.length)say('Restored this song\u2019s '+got.join(' and ')+' from last time.');
+}
+
 $('wpBtn').onclick=()=>wpOn||lp.starting?wpStop():wpPlay();
 $('wpO').onclick=()=>{lp.mode='o';lpUI();wpLevels()};
 $('wpM').onclick=()=>{lp.mode='m';if(!lp.active){lp.active=true;lpUI();if(wpOn)wpRestart()}else{lpUI();wpLevels()}};
@@ -2182,7 +2254,7 @@ $('aiImport').onclick=()=>{
 let DEFCFG=null;
 const H={past:[],future:[],cur:null,t:0,on:false};
 const snap=()=>JSON.stringify({c:getCfg(),r:regions.map(r=>({...r})),g:{...sgain},m:{...smute}});
-function histCommit(){if(H.on||H.cur===null)return;const v=snap();if(v===H.cur)return;H.past.push(H.cur);if(H.past.length>100)H.past.shift();H.cur=v;H.future=[];histUI()}
+function histCommit(){if(H.on||H.cur===null)return;const v=snap();if(v===H.cur)return;H.past.push(H.cur);if(H.past.length>100)H.past.shift();H.cur=v;H.future=[];histUI();songSaveSoon()}
 function histCheck(){clearTimeout(H.t);H.t=setTimeout(histCommit,250)}
 function histReset(){clearTimeout(H.t);H.past=[];H.future=[];H.cur=snap();histUI()}
 const histAbsorb=()=>{if(H.cur!==null)H.cur=snap()};   // changes that are not the user's (new stems)
@@ -2195,7 +2267,7 @@ function histApply(v,note){
   STEMS.forEach(k=>{if(k in d.g)sgain[k]=d.g[k];if(k in d.m)smute[k]=d.m[k]});
   if(stemData){HAVE().forEach(k=>{const e=$('sg-'+k);if(e){e.value=sgain[k];$('sv-'+k).textContent=(sgain[k]>0?'+':'')+sgain[k]+' dB'}});msRefresh()}
  }finally{H.cur=v;H.on=false}
- histUI();$('hMsg').textContent=note;
+ histUI();$('hMsg').textContent=note;songSaveSoon();
  if(wpOn&&lp.active)wpRestart();
 }
 function undo(){clearTimeout(H.t);histCommit();if(!H.past.length)return;H.future.push(H.cur);histApply(H.past.pop(),'Undone.'+(H.past.length?'':' Nothing earlier to undo.'))}
@@ -2638,6 +2710,7 @@ const HELP={
 <p>Use WAV for anything you will distribute or process further. Peaks are measured as true peak with 4× oversampling, so the reported number includes inter-sample peaks.</p>`,
 'Stem balance':`<p>Splits the song into vocals, drums, bass and other, lets you rebalance them, then masters the result. Optionally each stem gets its own EQ and compression first; the limiter always stays on the summed mix so your balance survives.</p>
 <p>Separation downloads about 123 MB of models the first time and is slow — several times the length of the audio. <b>Use the 30-second option first</b>, and use a desktop browser: a full song needs more memory than most phones have.</p>
+<p><b>Separate once:</b> the stems are saved on this device with the song&rsquo;s regions and stem levels, and come back automatically when you load the same file again, even after a refresh. <b>Forget saved stems</b> removes them.</p>
 <p>Stems only apply to the section you separated. Separated audio carries artifacts; real stems from your session are always better if you have them.</p>`,
 'Processing mode':`<p><b>Full master</b> analyzes the song and adapts every stage to it. <b>Light polish</b> applies one fixed EQ and compressor, identical for every song. <b>Loudness only</b> changes no tone at all.</p>
 <p>Loudness only is the honest choice when you trust your mix. It is also the best way to hear what the other modes are doing: master once each way and compare.</p>
