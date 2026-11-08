@@ -238,6 +238,14 @@ td:first-child{white-space:nowrap;font-weight:600}
 <li><b>Bar 1 on the wrong beat</b> &mdash; when beats 1 and 3 sound alike. Press <b>Beat +1</b> until the numbered bar lines sit on the downbeats, or play to a downbeat and press <b>Now</b>.</li>
 </ul>
 <p><b>Checking the grid.</b> Two reliable ways: press <b>Click</b> in the Listen player for a metronome on the grid (a higher click on beat 1) and listen whether it stays locked to the drums through to the end of the song; or drag a region over exactly one bar near the end, turn on <b>Loop</b>, and listen for a seamless loop. If the click drifts ahead or behind later in the song, the BPM is slightly off; if it is off by the same amount everywhere, move the bar start with <b>Now</b> on a downbeat.</p>
+<h4 id="markers">Songs whose timing changes: tempo markers</h4>
+<p>Many songs do not keep one steady grid: a band playing without a click drifts, a bridge can be slower, and AI-generated songs (Suno, Udio, Mozart AI and similar) often slip at the joins between sections, adding or losing a beat or two, or changing tempo slightly. With <b>Click</b> on, you hear the click lock to the drums and then, at some point, go off: suddenly but steadily (an odd bar), or more and more (a tempo change).</p>
+<ul>
+<li><b>Find tempo changes</b> scans the song and adds a marker wherever the beat or the bar shifts. Each marker starts a new section of the grid with a bar at exactly that point and its own tempo. Check each one with Click.</li>
+<li><b>Marker here</b> adds one by hand: play or click to a downbeat after the slip and press it (it snaps to the nearest drum hit within 60 ms).</li>
+<li>Each marker row shows its bar number, time and BPM, all editable, with <b>&#9664; bar</b> / <b>bar &#9654;</b> to move it a whole bar (found markers at an odd bar can land one bar late when beats 1 and 3 sound alike), <b>Play</b> to hear it and <b>Remove</b>.</li>
+</ul>
+<p>Bar numbers run on across markers (a bar cut short by a marker keeps its number), and everything that uses the grid follows the sections: Click, the bar lines (a marker shows as a dashed red line with its tempo), snapping, Arrangement bar numbers, delays and tape-riser snippets (using the tempo where they start), and the bar times given to Gemini. Markers are saved with the song, follow arrangement changes and are part of undo. &divide;2 and &times;2 scale every section; Beat +1, Now and the Bar 1 box move only the first section.</p>
 <p>You can also type the BPM and the time of any bar start. The grid is saved with the song and is part of undo. Songs with tempo changes or loose timing only line up approximately.</p>
 <h3>Regions</h3>
 <p>Mastering normally applies one setting to the whole song, but problems are usually local: one chorus that jumps forward, a verse sitting too low, an intro you want left alone. This is where you ride the fader instead.</p>

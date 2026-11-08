@@ -178,6 +178,8 @@ body.mini main{padding-bottom:84px}
 .rr .tm{display:flex;align-items:center;gap:4px}
 .rr .rp{border:1px solid var(--ln);background:transparent;color:var(--ink);border-radius:50%;width:24px;height:24px;padding:0;font-size:10px;cursor:pointer}
 @media(max-width:560px){.rr{grid-template-columns:1fr auto auto}.rr .tm{grid-column:1/-1}}
+.gmk{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px;color:var(--mut);margin-top:6px}
+.gmk button{border:1px solid var(--ln);background:transparent;color:var(--ink);border-radius:6px;padding:3px 8px;font:inherit;font-size:12.5px;cursor:pointer}.gmk .x{border:0;color:var(--warn)}
 .rr .val{min-width:46px;text-align:right;font-variant-numeric:tabular-nums}
 .rr .req{grid-column:1/-1;order:5;flex-wrap:wrap;padding-left:2px}.rr .req select{font-size:12.5px;padding:3px}.rr .req input[type=range]{flex:1;min-width:90px;max-width:200px}
 .rr .rst{grid-column:1/-1;order:6;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--mut)}
@@ -259,7 +261,7 @@ body.mini main{padding-bottom:84px}
 #eqApply{width:100%;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>GP Mastering <small style="font-size:13px;color:var(--mut);font-weight:400">v51</small></h1>
+<h1>GP Mastering <small style="font-size:13px;color:var(--mut);font-weight:400">v52</small></h1>
 <p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded unless you use the optional Gemini suggestions.</p>
 <p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or use it just to split the song and download each stem as a WAV.</p>
 
@@ -296,6 +298,8 @@ body.mini main{padding-bottom:84px}
  <span class="lbl">Volume automation</span>
  <p class="hint" style="margin:0 0 10px">Drag across the waveform above to select a part of the song (zoom in for precision, or type exact times below), then choose what happens there: a level change, extra dynamic taming, or no tone processing at all. Everything outside your regions is mastered normally.</p>
  <div class="rform" id="gridRow"><span>Tempo:</span><label><input class="ti" id="gBpm" inputmode="decimal" aria-label="Tempo in beats per minute" style="width:62px">BPM</label><label>Bar 1 at <input class="ti" id="gT0" inputmode="decimal" aria-label="Time of a bar start"></label><button type="button" id="gNow" title="Put a bar start at the playhead">Now</button><button type="button" id="gHalf" title="Half the tempo">&divide;2</button><button type="button" id="gDbl" title="Double the tempo">&times;2</button><button type="button" id="gBeat" title="Move bar 1 one beat later">Beat +1</button><button type="button" id="gDet" title="Detect the tempo again">Detect</button><label><input type="checkbox" id="gSnap" checked>Snap new regions to beats</label></div>
+ <div class="rform"><button type="button" id="gFind" title="Look for places where the beat shifts and add markers there">Find tempo changes</button><button type="button" id="gMk" title="Start a new grid section at the downbeat under the playhead">Marker here</button></div>
+ <div id="gMarks"></div>
  <p class="hint" id="gMsg" style="margin:4px 0 0"></p>
  <div class="rform"><span>Add by time:</span><label>Start <input class="ti" id="rtS" inputmode="decimal" placeholder="0:00.0" aria-label="Region start time"></label><button type="button" id="rtSn" title="Use the playhead position">Now</button><label>End <input class="ti" id="rtE" inputmode="decimal" placeholder="0:10.0" aria-label="Region end time"></label><button type="button" id="rtEn" title="Use the playhead position">Now</button><button type="button" id="rtAdd">Add region</button></div>
  <p class="hint" id="regMsg" role="status" style="margin:6px 0 0"></p>
@@ -877,12 +881,12 @@ async function lpAhead(){
    louder. All clicks go through wp.ck, so Click switches them on and off at once. */
 let clickOn=false;
 function wpClicks(w,s,d,xs){
- if(!grid||!wp.ck)return;const b=60/grid.bpm;let k=Math.ceil((s-grid.t0)/b-1e-4);
- for(let t=grid.t0+k*b;t<s+d-1e-4;t=grid.t0+(++k)*b){
-  if(t<0)continue;const at=w+(t-s),acc=((k%4)+4)%4===0,o=pc.createOscillator(),g=pc.createGain();
+ if(!grid||!wp.ck)return;
+ gridBeats(s,s+d,(t,acc)=>{
+  if(t<0)return;const at=w+(t-s),o=pc.createOscillator(),g=pc.createGain();
   o.frequency.value=acc?1760:1175;g.gain.setValueAtTime(0,at);g.gain.linearRampToValueAtTime(acc?.5:.3,at+.002);g.gain.exponentialRampToValueAtTime(.001,at+.05);
   o.connect(g);g.connect(wp.ck);o.start(at);o.stop(at+.06);xs.push(o);
- }
+ });
 }
 function wpSched(s,e,m,gs){
  const w=wp.nextW,d=e-s,xs=[];
@@ -1146,17 +1150,15 @@ function drawWave(){
   g.fillStyle='rgba(120,120,120,.25)';g.fillRect(a,0,Math.max(1,b-a),H);
  }
  if(grid){
-  const dur=src.duration,sp=(vw.b-vw.a)*dur,b=60/grid.bpm,bpx=b/sp*W;
-  if(bpx>=2){
-   const t1=vw.b*dur;let k=Math.ceil((vw.a*dur-grid.t0)/b);
-   g.save();g.font='9px system-ui,sans-serif';
-   for(let t=grid.t0+k*b;t<=t1;t=grid.t0+(++k)*b){
-    const bar=((k%4)+4)%4===0,x=(t/dur-vw.a)/(vw.b-vw.a)*W;if(!bar&&bpx<7)continue;
-    g.strokeStyle=cs0.getPropertyValue(bar?'--ac':'--ln').trim()||'#999';g.globalAlpha=bar?.45:.7;g.lineWidth=1;g.beginPath();g.moveTo(x+.5,0);g.lineTo(x+.5,HW);g.stroke();
-    if(bar&&bpx*4>=26){g.globalAlpha=.8;g.fillStyle=g.strokeStyle;g.fillText(String(Math.floor(k/4)+1),x+2,9)}
-   }
-   g.restore();
-  }
+  const dur=src.duration,sp=(vw.b-vw.a)*dur,X=t=>(t/dur-vw.a)/(vw.b-vw.a)*W;
+  g.save();g.font='9px system-ui,sans-serif';
+  gridBeats(vw.a*dur,vw.b*dur,(t,bar,n,mk)=>{
+   const bpx=60/bpmAt(t)/sp*W;if(bpx<2||(!bar&&bpx<7))return;const x=X(t);
+   g.strokeStyle=cs0.getPropertyValue(bar?'--ac':'--ln').trim()||'#999';g.globalAlpha=bar?.45:.7;g.lineWidth=1;g.beginPath();g.moveTo(x+.5,0);g.lineTo(x+.5,HW);g.stroke();
+   if(bar&&bpx*4>=26){g.globalAlpha=.8;g.fillStyle=g.strokeStyle;g.fillText(String(n),x+2,9)}
+  });
+  for(const q of gSecs().slice(1)){const x=X(q.t);if(x<0||x>W)continue;g.globalAlpha=.9;g.strokeStyle=cs0.getPropertyValue('--warn').trim()||'#c33';g.lineWidth=2;g.setLineDash([3,3]);g.beginPath();g.moveTo(x+.5,0);g.lineTo(x+.5,HW);g.stroke();g.setLineDash([]);g.fillStyle=g.strokeStyle;g.fillText('\u2192'+q.bpm,x+3,HW-4)}
+  g.restore();
  }
  const cs=cs0,cy=HW/2,cols=wavCols(Math.max(1,Math.round(W)));
  g.strokeStyle=cs.getPropertyValue('--mut').trim()||'#777';g.lineWidth=1;g.beginPath();
@@ -1273,7 +1275,7 @@ function regSetup(){
    regSel=hit;
    wpSeek(a*src.duration);
   }else{
-   let ta=snapT(a*src.duration),tb=snapT(b*src.duration);if(tb-ta<.05)tb=Math.min(src.duration,ta+beatS());
+   let ta=snapT(a*src.duration),tb=snapT(b*src.duration);if(tb-ta<.05)tb=Math.min(src.duration,ta+beatS(ta));
    const r0={s:Math.round(ta*src.sampleRate),e:Math.round(tb*src.sampleRate),mode:'gain',amt:0};regions.push(r0);noiseProf=null;
    regions.sort((p,q)=>p.s-q.s);
    regSel=regions.indexOf(r0);
@@ -1469,14 +1471,14 @@ function fxPitch(ch,off,fs,r,dry,dOff,id){
 }
 const DNOTE={'1/2':2,'1/4':1,'1/4d':1.5,'1/8':.5,'1/8d':.75,'1/16':.25};
 function fxWet(r,dry,dOff,fs,id){
- const key=id+'|'+JSON.stringify([r.s,r.e,r.mode,r.amt,r.sz,r.dt,r.fb,r.pp,r.mode==='delay'&&grid?grid.bpm:0]);
+ const key=id+'|'+JSON.stringify([r.s,r.e,r.mode,r.amt,r.sz,r.dt,r.fb,r.pp,r.mode==='delay'?bpmAt(r.s/fs):0]);
  let W=fxCache.get(key);if(W)return W;
  const inp=fxIn(r,dry,dOff,fs),g=r.amt/100;
  if(r.mode==='reverb'){
   const len=inp[0].length+Math.round((RVSZ[r.sz]||RVSZ.medium)[2]*fs),o=rvCore(inp,len,r.sz,fs),k=g*rvGain(r.sz,fs);
   for(const x of o)for(let i=0;i<len;i++)x[i]*=k;W={a:r.s,ch:o};
  }else{
-  const dt=Math.max(.02,DNOTE[r.dt]*60/(grid?grid.bpm:120)),D=Math.round(dt*fs),fb=r.fb/100,reps=fb>.001?Math.ceil(Math.log(.001)/Math.log(fb)):1;
+  const dt=Math.max(.02,DNOTE[r.dt]*60/bpmAt(r.s/fs)),D=Math.round(dt*fs),fb=r.fb/100,reps=fb>.001?Math.ceil(Math.log(.001)/Math.log(fb)):1;
   const len=inp[0].length+Math.min(Math.round(12*fs),D*(reps+1)),o=[new Float32Array(len),new Float32Array(len)],bL=new Float32Array(D),bR=new Float32Array(D),cl=1-Math.exp(-2*Math.PI*4500/fs);
   let p=0,lL=0,lR=0;
   for(let k=0;k<len;k++){
@@ -1547,7 +1549,7 @@ function genRender(r,fs){
    for(let c=0;c<2;c++){const x=o[c],v=y[c];for(let i=0;i<n;i++){const u=i/n;x[i]=v[i]*Math.pow(10,(-14+14*u)/20)*Math.min(1,i/(.05*fs))}}
   }else{
    const S=genSrc(r);if(!S.ok||!S.d)return null;
-   const b=60/(grid?grid.bpm:120),Ls=Math.max(64,Math.round(r.sn*b*fs)),st=r.st>=0?r.st:Math.max(0,r.s/fs-r.sn*b),S0=Math.round(st*fs)-S.o,xf=Math.min(Math.round(.004*fs),Ls>>3);
+   const b=60/bpmAt(r.s/fs),Ls=Math.max(64,Math.round(r.sn*b*fs)),st=r.st>=0?r.st:Math.max(0,r.s/fs-r.sn*b),S0=Math.round(st*fs)-S.o,xf=Math.min(Math.round(.004*fs),Ls>>3);
    for(let c=0;c<2;c++){const d=S.d[c],x=o[c];let p=0;
     for(let i=0;i<n;i++){const u=i/n,q=p%Ls,j=S0+Math.floor(q),fr=q-Math.floor(q),a=j>=0&&j<d.length?d[j]:0,bb=j+1>=0&&j+1<d.length?d[j+1]:0;
      const w=q<xf?q/xf:q>Ls-xf?(Ls-q)/xf:1;x[i]=(a+(bb-a)*fr)*w*Math.pow(10,(-14+14*u)/20);p+=Math.pow(2,r.oct*u)}}
@@ -1571,7 +1573,7 @@ function regGen(ch,off,fs){
  for(const r of regions){
   if(!GENM[r.mode]||!r.amt||r.e<=off||r.s>=off+n)continue;
   const S=genSrc(r);if(!S.ok)continue;
-  const key='gen|'+(S.id||'')+'|'+fileGen+'.'+arrGen+'|'+JSON.stringify([r.s,r.e,r.mode,r.kind,r.amt,r.oct,r.key,r.src,r.st,r.sn,r.imp,r.frz,r.kind==='tape'&&grid?grid.bpm:0]);
+  const key='gen|'+(S.id||'')+'|'+fileGen+'.'+arrGen+'|'+JSON.stringify([r.s,r.e,r.mode,r.kind,r.amt,r.oct,r.key,r.src,r.st,r.sn,r.imp,r.frz,r.kind==='tape'?bpmAt(r.s/44100):0]);
   let W=fxCache.get(key);if(!W){const o=genRender(r,fs);if(!o)continue;W={a:r.s,ch:o};fxCache.set(key,W);if(fxCache.size>40)fxCache.delete(fxCache.keys().next().value)}
   const a=Math.max(off,W.a),b=Math.min(off+n,W.a+W.ch[0].length);
   for(let c=0;c<2;c++){const x=ch[c],w=W.ch[c];for(let i=a;i<b;i++)x[i-off]+=w[i-W.a]}
@@ -2334,12 +2336,11 @@ function arrApply(next,msg){
  }
  if(ai.res)for(const x of ai.res.edits){if(x.st!=='new')continue;const a=arrMapT(old,next,x.s,0),b=arrMapT(old,next,x.e,1);if(a===null||b===null||b-a<.25)x.st='gone';else{x.s=a;x.e=b}}
  arr=next;regions=nr.sort((p,q)=>p.s-q.s);regSel=-1;
- if(grid){const a0=segsOf(arr)[0].a/fs;let t=((srcPhase-a0)%bar+bar)%bar;if(t>bar-.001)t=0;grid={...grid,t0:+t.toFixed(3)};gridUI()}
+ if(grid){const a0=segsOf(arr)[0].a/fs;let t=((srcPhase-a0)%bar+bar)%bar;if(t>bar-.001)t=0;const ms=(grid.secs||[]).map(m=>({t:arrMapT(old,next,m.t,0),bpm:m.bpm})).filter(m=>m.t!==null&&m.t>0);grid={...grid,t0:+t.toFixed(3),secs:secsOk(ms)};gridUI()}
  arrRebuild();if(ai.res)aiShow(ai.res);
  const now=snap();if(before!==null&&now!==before){H.past.push(before);if(H.past.length>100)H.past.shift();H.cur=now;H.future=[];histUI()}songSaveSoon();
  $('aMsg').textContent=msg||'';
 }
-const barAt=k=>grid?grid.t0+(k-1)*240/grid.bpm:0;
 function barRange(f,t){
  if(!grid)throw new Error('Set the tempo first (Tempo, under Volume automation), so bars are known.');
  if(!(f>=0&&t>=f))throw new Error('Type a first and last bar, for example 9 to 16.');
@@ -2371,17 +2372,18 @@ function arrUI(){
  const el=$('arrList');if(!el||!orig)return;
  $('aRst').disabled=!arr;
  if(!arr){el.innerHTML='<span>The original order</span>';return}
+ const tm=grid&&grid.secs&&grid.secs.length;
  const fs=orig.buf.sampleRate,b=grid?240/grid.bpm:0,ph=grid?(((grid.t0+segsOf(arr)[0].a/fs)%b+b)%b):0,bar=x=>Math.round((x-ph)/b)+1,seen=[];
  el.innerHTML=segsOf(arr).map(g=>{
   const a=g.a/fs,e=g.b/fs,again=seen.some(([p,q])=>g.a<q&&g.b>p);seen.push([g.a,g.b]);
   let t;
-  if(!grid)t=tcf(a)+'–'+tcf(e);
+  if(!grid||tm)t=tcf(a)+'–'+tcf(e);
   else{const f=a<ph-.01?0:bar(a),l=bar(e)-1;t=f===0&&l<1?'intro':(f===0?'intro + bars 1':'bar'+(l>f?'s ':' ')+f)+(l>f?'–'+l:'')}
   return`<span class="${again?'rp':''}">${esc(t)}${again?' (again)':''}</span>`}).join('<b>→</b>');
 }
 $('aRep').onclick=()=>arrOp('rep');$('aCut').onclick=()=>arrOp('cut');$('aMov').onclick=()=>arrOp('mov');
 $('aRst').onclick=()=>{if(arr)arrApply(null,'Back to the original order.')};
-$('aSel').onclick=()=>{const r=regions[regSel];if(!r||!grid){$('aMsg').textContent='Select a region first, and set the tempo.';return}const b=240/grid.bpm,fs=src.sampleRate;$('aF').value=Math.max(1,Math.round((r.s/fs-grid.t0)/b)+1);$('aT').value=Math.max(1,Math.round((r.e/fs-grid.t0)/b));$('aMsg').textContent=''};
+$('aSel').onclick=()=>{const r=regions[regSel];if(!r||!grid){$('aMsg').textContent='Select a region first, and set the tempo.';return}const fs=src.sampleRate,f=Math.max(1,barNoAt(r.s/fs+.05));$('aF').value=f;$('aT').value=Math.max(f,barNoAt(r.e/fs-.05));$('aMsg').textContent=''};
 
 /* ---- beat grid ----
    One tempo for the song. Tempo from the autocorrelation of a spectral-flux onset
@@ -2390,8 +2392,12 @@ $('aSel').onclick=()=>{const r=regions[regSel];if(!r||!grid){$('aMsg').textConte
    energy. The user can correct the BPM and the bar start; both are saved with the
    song and are part of undo. */
 let grid=null,snapOn=true,gridBusy=0;
-const UIKEY='gpmaster.ui.v1',beatS=()=>grid?60/grid.bpm:.5;
-async function detectGrid(){
+const UIKEY='gpmaster.ui.v1',beatS=t=>grid?60/(t==null?grid.bpm:bpmAt(t)):.5;
+/* Onset envelopes (hop 512): full band, below 150 Hz (kick) and below 2.5 kHz
+   (kick and snare), each minus its 0.4 s running mean. Cached per song buffer. */
+let gOn=null;
+async function gOnsets(){
+ if(gOn&&gOn.src===src)return gOn;
  const fs=src.sampleRate,c=chans(src),H=512,N=1024,n=Math.floor((src.length-N)/H),me=src;
  if(n<200)return null;
  const re=new Float64Array(N),im=new Float64Array(N),wn=new Float64Array(N);for(let i=0;i<N;i++)wn[i]=.5-.5*Math.cos(2*Math.PI*i/N);
@@ -2402,7 +2408,11 @@ async function detectGrid(){
   on[f]=a;lo[f]=b;md[f]=q;if((f&2047)===0){await tick();if(src!==me)return null}
  }
  const fps=fs/H,hp=x=>{const L=Math.max(1,Math.round(.4*fps)),y=new Float32Array(n);let s=0;for(let i=0;i<n;i++){s+=x[i];if(i>=L)s-=x[i-L];y[i]=Math.max(0,x[i]-s/Math.min(i+1,L))}return y};
- const o=hp(on),ol=hp(lo),om=hp(md);
+ return gOn={src:me,o:hp(on),ol:hp(lo),om:hp(md),fps,n,H,N,fs,off:N/2/fs};
+}
+async function detectGrid(){
+ const me=src,E=await gOnsets();if(!E||src!==me)return null;
+ const{o,ol,om,fps,n,H,N,fs}=E;
  let best=null;
  for(let bpm=60;bpm<=200;bpm+=.5){const L=fps*60/bpm,l0=Math.floor(L),fr=L-l0;let s=0;for(let i=0;i+l0+1<n;i++)s+=om[i]*(om[i+l0]*(1-fr)+om[i+l0+1]*fr);
   s*=Math.exp(-.5*Math.pow(Math.log2(bpm/120)/.9,2));if(!best||s>best.s)best={bpm,s}}
@@ -2414,26 +2424,133 @@ async function detectGrid(){
  return{bpm,t0:+(t-Math.floor(t/bar)*bar).toFixed(3),src:'auto'};
 }
 function gridUI(){
+ marksUI();
  const b=$('gBpm');if(!b)return;
  if(document.activeElement!==b)b.value=grid?grid.bpm:'';
  if(document.activeElement!==$('gT0'))$('gT0').value=grid?tcf(grid.t0).replace(/(\.\d)$/,'$1'):'';
  $('gSnap').checked=snapOn;
  $('gMsg').textContent=gridBusy?'Finding the tempo…':!grid?'No tempo yet. Type the BPM, or press Detect.':
-  (grid.src==='auto'?'Detected ':'')+grid.bpm+' BPM, bars of '+(240/grid.bpm).toFixed(2)+' s. Bar lines show on the waveform; if they miss the beat, try \u00f72 or \u00d72 (detected tempos are sometimes half or double), Beat +1 if bar 1 sits on the wrong beat, or type the BPM and put a bar start at the playhead with Now. Delays follow this tempo.';
+  (grid.src==='auto'?'Detected ':'')+grid.bpm+' BPM, bars of '+(240/grid.bpm).toFixed(2)+' s'+(grid.secs&&grid.secs.length?', with '+grid.secs.length+' tempo marker'+(grid.secs.length>1?'s':''):'')+'. Bar lines show on the waveform; if they miss the beat, try \u00f72 or \u00d72 (detected tempos are sometimes half or double), Beat +1 if bar 1 sits on the wrong beat, or type the BPM and put a bar start at the playhead with Now. Delays follow this tempo.';
 }
 function gridSet(g){clearTimeout(H.t);histCommit();grid=g;gridUI();drawWave();arrUI();histCommit();songSaveSoon()}
 async function gridDetect(){
  if(!src)return;const me=src;gridBusy++;gridUI();
  let g=null;try{g=await detectGrid()}catch(_){}
  gridBusy--;if(src!==me)return;
- if(g){grid=g;histAbsorb();gridUI();drawWave();songSaveSoon()}else gridUI();
+ if(g){if(grid&&grid.secs)g.secs=grid.secs;grid=g;histAbsorb();gridUI();drawWave();songSaveSoon()}else gridUI();
 }
-const snapT=t=>{if(!grid||!snapOn)return t;const b=beatS();return Math.max(0,Math.min(src.duration,grid.t0+Math.round((t-grid.t0)/b)*b))};
-$('gBpm').onchange=()=>{const v=parseFloat($('gBpm').value);if(isFinite(v)&&v>=40&&v<=240)gridSet({bpm:Math.round(v*100)/100,t0:grid?grid.t0:0,src:'user'});else gridUI()};
+/* ---- tempo map ----
+   grid.secs (optional): markers [{t,bpm}], sorted. From each marker a new section
+   starts with a bar at exactly t and its own tempo; before the first marker the
+   song follows grid.bpm with a bar at grid.t0. Bar numbers run on across
+   sections; a bar cut short by a marker keeps its number. Everything that uses
+   the grid goes through these helpers. */
+function gSecs(){
+ if(!grid)return[];const S=[{t:-1e9,a:grid.t0,bpm:grid.bpm,F:1}];
+ for(const m of grid.secs||[]){const p=S[S.length-1];if(m.t<=p.t)continue;const n=Math.max(0,Math.ceil((m.t-p.a)/(240/p.bpm)-1e-6));S.push({t:m.t,a:m.t,bpm:m.bpm,F:p.F+n})}
+ return S;
+}
+const secAt=(t,S=gSecs())=>{let i=0;while(i+1<S.length&&S[i+1].t<=t+1e-9)i++;return S[i]};
+const bpmAt=t=>grid?secAt(t).bpm:120;
+const barNoAt=t=>{const q=secAt(t);return Math.max(0,q.F+Math.floor((t-q.a)/(240/q.bpm)+1e-6))};
+function barAt(k){const S=gSecs();if(!S.length)return 0;let q=S[0];for(const x of S)if(x.F<=k)q=x;return q.a+(k-q.F)*240/q.bpm}
+/* Call cb(t,isBar,barNo,isMarker) for every beat in [x,y). */
+function gridBeats(x,y,cb){
+ const S=gSecs();
+ for(let i=0;i<S.length;i++){
+  const q=S[i],lo=Math.max(x,q.t),hi=Math.min(y,i+1<S.length?S[i+1].t:1e9),b=60/q.bpm;if(hi<=lo)continue;
+  let k=Math.ceil((lo-q.a)/b-1e-4);
+  for(let t=q.a+k*b;t<hi-1e-4;t=q.a+(++k)*b){const kb=((k%4)+4)%4;cb(t,kb===0,q.F+Math.floor(k/4),i>0&&k===0)}
+ }
+}
+const snapT=t=>{if(!grid||!snapOn)return t;const S=gSecs(),q=secAt(t,S),i=S.indexOf(q),b=60/q.bpm;let v=q.a+Math.round((t-q.a)/b)*b;if(i>0&&v<q.t)v=q.t;if(i+1<S.length&&v>S[i+1].t)v=S[i+1].t;return Math.max(0,Math.min(src.duration,v))};
+/* Fit one steady grid to [t0s,t1s): tempo within tol of bpm0, beat phase by a
+   comb over the full-band onsets, bar start from the beat with the most low-end
+   onsets, preferring pref's bar phase when it scores within 15%. */
+function gFit(E,t0s,t1s,bpm0,tol,pref){
+ const{o,ol,fps,n,off}=E,f0=Math.max(0,Math.floor((t0s-off)*fps)),f1=Math.min(n-1,Math.ceil((t1s-off)*fps));let best=null;
+ for(let bpm=bpm0*(1-tol);bpm<=bpm0*(1+tol)+1e-9;bpm+=.05){const P=fps*60/bpm;for(let ph=0;ph<P;ph+=.5){let s=0,c=0;for(let t=f0+ph;t<f1;t+=P){s+=o[Math.round(t)];c++}s/=Math.max(1,c);if(!best||s>best.s)best={bpm,ph,s,P}}}
+ const sc=[0,0,0,0];for(let k=0;k<4;k++)for(let t=f0+best.ph+k*best.P;t<f1;t+=4*best.P)sc[k]+=ol[Math.round(t)];
+ let db=sc.indexOf(Math.max(...sc));
+ if(pref!=null){const k=((Math.round(((pref-off)*fps-(f0+best.ph))/best.P)%4)+4)%4;if(sc[k]>=.85*sc[db])db=k}
+ return{bpm:Math.round(best.bpm*100)/100,t:(f0+best.ph+db*best.P)/fps+off,beat:(f0+best.ph)/fps+off,s:best.s};
+}
+/* Find where the beat shifts. An 8 s window slides through the song in 1 s steps.
+   Beat check: the window's own best beat phase against the current section's
+   grid; two windows in a row more than 0.15 beat off mean a tempo change or a
+   lost partial beat. A new grid is fitted to the 12 s starting three quarters of
+   the way into the window, then the marker is walked back a bar at a time while
+   the actual onsets sit closer to the new grid's beats than to the old one's.
+   Bar check: when the beats still line up, the low-end (kick and bass) onset
+   energy on each beat of the bar over 12 s; if another beat beats the grid's
+   beat 1 by 30% in three windows in a row, the bar has restarted (an odd bar,
+   whole beats added or dropped), and a marker goes on the new downbeat, walked
+   back while the new downbeat carries more low end than the old one. */
+async function gFind(){
+ const E=await gOnsets();if(!E||!grid)return null;
+ const dur=src.duration,W=8,TH=.15,found=[],on=E.o,lo=E.ol;let tot=0;for(let i=0;i<E.n;i++)tot+=on[i];const mean=tot/E.n;
+ let sec={a:grid.t0,bpm:grid.bpm},bad=0,barBad=0,barK=0,c=Math.max(0,grid.t0);
+ const mx=(arr,t,r)=>{const f=Math.round((t-E.off)*E.fps);let m=0;for(let d=-r;d<=r;d++){const v=arr[f+d]||0;if(v>m)m=v}return m};
+ const pk=t=>{const f=Math.round((t-E.off)*E.fps),r=Math.round(.06*E.fps);let bi=-1,bv=0;for(let d=-r;d<=r;d++){const v=on[f+d]||0;if(v>bv){bv=v;bi=f+d}}return bi<0?null:bi/E.fps+E.off};
+ const nearer=(nq,x,y)=>{let vn=0,vo=0;const b=60/nq.bpm,bo=60/sec.bpm;let k=Math.ceil((x-nq.a)/b-1e-4);
+  for(let t=nq.a+k*b;t<y-1e-4;t=nq.a+(++k)*b){const p=pk(t);if(p==null)continue;const ob=sec.a+Math.round((p-sec.a)/bo)*bo;if(Math.abs(p-t)+.004<Math.abs(p-ob))vn++;else if(Math.abs(p-ob)+.004<Math.abs(p-t))vo++}return vn>vo};
+ const floor=()=>found.length?found[found.length-1].t+4:Math.max(0,grid.t0);
+ while(c+W<=dur&&found.length<12){
+  const f0=Math.floor((c-E.off)*E.fps),f1=Math.floor((c+W-E.off)*E.fps);let e=0;for(let i=Math.max(0,f0);i<Math.min(E.n,f1);i++)e+=on[i];
+  if(e/(f1-f0)<.25*mean){bad=barBad=0;c+=1;continue}
+  const L=gFit(E,c,c+W,sec.bpm,.012,null),b=60/sec.bpm,d=(L.beat-(sec.a+Math.round((L.beat-sec.a)/b)*b))/b;
+  if(Math.abs(d)>TH){
+   barBad=0;if(++bad<2){c+=1;continue}
+   const m0=c+W*.75,b0=240/sec.bpm,pref=sec.a+Math.ceil((m0-sec.a)/b0)*b0,F=gFit(E,m0,Math.min(dur,m0+12),sec.bpm,.04,pref),nq={a:F.t,bpm:F.bpm},bn=240/F.bpm;
+   let t=F.t;while(t-bn>floor()&&nearer(nq,t-bn,t))t-=bn;
+   found.push({t:+t.toFixed(3),bpm:F.bpm});sec={a:t,bpm:F.bpm};bad=0;c=t;await tick();continue;
+  }
+  bad=0;
+  const sc=[0,0,0,0];let k=Math.ceil((c-sec.a)/b-1e-4);for(let t=sec.a+k*b;t<Math.min(dur,c+12);t=sec.a+(++k)*b)sc[((k%4)+4)%4]+=mx(lo,t,1);
+  const bk=sc.indexOf(Math.max(...sc));
+  if(bk!==0&&sc[bk]>=1.3*sc[0]&&sc[bk]>0){if(barBad&&barK===bk)barBad++;else{barBad=1;barK=bk}}else barBad=0;
+  if(barBad>=3){
+   const B=4*b;let t=sec.a+barK*b+Math.ceil((c+6-sec.a-barK*b)/B)*B;
+   while(t-B>floor()&&mx(lo,t-B,1)>1.1*mx(lo,t-B-barK*b,1))t-=B;
+   found.push({t:+t.toFixed(3),bpm:sec.bpm});sec={a:t,bpm:sec.bpm};barBad=0;c=t;await tick();continue;
+  }
+  c+=1;if(c%16===0)await tick();
+ }
+ return found;
+}
+const secsOk=a=>Array.isArray(a)?a.filter(m=>m&&isNum(m.t)&&isNum(m.bpm)&&m.t>0&&m.bpm>=40&&m.bpm<=240).map(m=>({t:+m.t.toFixed(3),bpm:Math.round(m.bpm*100)/100})).sort((p,q)=>p.t-q.t).slice(0,64):[];
+function marksUI(){
+ const el=$('gMarks');if(!el)return;const S=gSecs().slice(1);
+ el.innerHTML=S.map((q,i)=>`<div class="gmk"><span>Marker ${i+1}: bar ${q.F} at</span><input class="ti" data-mt="${i}" value="${tcf(q.t)}" inputmode="decimal" aria-label="Marker ${i+1} time"><input class="ti" data-mb="${i}" value="${q.bpm}" inputmode="decimal" aria-label="Marker ${i+1} tempo" style="width:62px"><span>BPM</span><button type="button" data-mn="${i}" data-d="-1" title="Move this marker one bar earlier">&#9664; bar</button><button type="button" data-mn="${i}" data-d="1" title="Move this marker one bar later">bar &#9654;</button><button type="button" data-mp="${i}" title="Play from just before this marker">Play</button><button type="button" class="x" data-mx="${i}">Remove</button></div>`).join('');
+ const upd=(i,f)=>{const m=(grid.secs||[]).map(x=>({...x}));f(m[i]);gridSet({...grid,secs:secsOk(m),src:'user'})};
+ el.querySelectorAll('[data-mt]').forEach(x=>x.onchange=()=>{const t=parseT(x.value);if(t!==null&&t>0)upd(+x.dataset.mt,m=>m.t=t);else marksUI()});
+ el.querySelectorAll('[data-mb]').forEach(x=>x.onchange=()=>{const v=parseFloat(x.value);if(v>=40&&v<=240)upd(+x.dataset.mb,m=>m.bpm=v);else marksUI()});
+ el.querySelectorAll('[data-mn]').forEach(x=>x.onclick=()=>{const i=+x.dataset.mn,q=S[i],t=q.t+(+x.dataset.d)*240/q.bpm;if(t>grid.t0+.05&&t<src.duration)upd(i,m=>m.t=t)});
+ el.querySelectorAll('[data-mx]').forEach(x=>x.onclick=()=>{const m=(grid.secs||[]).filter((_,k)=>k!==+x.dataset.mx);gridSet({...grid,secs:m})});
+ el.querySelectorAll('[data-mp]').forEach(x=>x.onclick=async()=>{const q=S[+x.dataset.mp];wpSeek(Math.max(0,q.t-1));vwShow(q.t/src.duration);if(!wpOn)await wpPlay()});
+}
+/* A marker placed by hand lands on the strongest onset within 60 ms of the playhead. */
+$('gMk').onclick=async()=>{
+ if(!src||!grid){$('gMsg').textContent='Set the tempo first.';return}
+ const E=await gOnsets();let t=wpPos();
+ if(E){let bi=-1,bv=-1;const f=Math.round((t-E.off)*E.fps),r=Math.round(.06*E.fps);for(let d=-r;d<=r;d++){const v=E.o[f+d]||0;if(v>bv){bv=v;bi=f+d}}if(bi>=0)t=bi/E.fps+E.off}
+ if(t<=grid.t0+.05){$('gMsg').textContent='Put the playhead on a downbeat after the start of bar 1, then press Marker here.';return}
+ gridSet({...grid,secs:secsOk([...(grid.secs||[]),{t,bpm:bpmAt(t)}]),src:'user'});
+ $('gMsg').textContent='Marker added at '+tcf(t)+': a new bar starts there. Adjust its BPM if the click drifts after it.';
+};
+$('gFind').onclick=async()=>{
+ if(!src||!grid)return;const b=$('gFind');b.disabled=true;$('gMsg').textContent='Looking for places where the beat shifts…';
+ let f=null;try{f=await gFind()}catch(_){}
+ b.disabled=false;if(!f){gridUI();return}
+ if(!f.length){gridSet({...grid,secs:[]});$('gMsg').textContent='No tempo changes found: the beat stays on one grid'+(grid.secs&&grid.secs.length?' (existing markers removed)':'')+'. If the click still drifts somewhere, play to a downbeat there and press Marker here.';return}
+ gridSet({...grid,secs:secsOk(f),src:'user'});
+ $('gMsg').textContent='Found '+f.length+' place'+(f.length>1?'s':'')+' where the beat shifts and added a marker at each: '+f.map(m=>tcf(m.t)+' ('+m.bpm+' BPM)').join(', ')+'. Check each with Click; Undo removes them.';
+};
+$('gBpm').onchange=()=>{const v=parseFloat($('gBpm').value);if(isFinite(v)&&v>=40&&v<=240)gridSet({...(grid||{}),bpm:Math.round(v*100)/100,t0:grid?grid.t0:0,src:'user'});else gridUI()};
 $('gT0').onchange=()=>{const t=parseT($('gT0').value);if(t!==null&&grid){const bar=240/grid.bpm;gridSet({...grid,t0:+(((t%bar)+bar)%bar).toFixed(3),src:'user'})}else gridUI()};
-$('gNow').onclick=()=>{if(!src)return;const t=wpPos(),bar=240/(grid?grid.bpm:120);gridSet({bpm:grid?grid.bpm:120,t0:+(((t%bar)+bar)%bar).toFixed(3),src:'user'})};
+$('gNow').onclick=()=>{if(!src)return;const t=wpPos(),bar=240/(grid?grid.bpm:120);gridSet({...(grid||{}),bpm:grid?grid.bpm:120,t0:+(((t%bar)+bar)%bar).toFixed(3),src:'user'})};
 $('gDet').onclick=gridDetect;
-const gScale=k=>{if(!grid)return;const bpm=Math.round(grid.bpm*k*100)/100;if(bpm<40||bpm>240)return;const bar=240/bpm;gridSet({bpm,t0:+(((grid.t0%bar)+bar)%bar).toFixed(3),src:'user'})};
+const gScale=k=>{if(!grid)return;const bpm=Math.round(grid.bpm*k*100)/100;if(bpm<40||bpm>240)return;const bar=240/bpm;gridSet({...grid,bpm,t0:+(((grid.t0%bar)+bar)%bar).toFixed(3),secs:secsOk((grid.secs||[]).map(m=>({t:m.t,bpm:m.bpm*k}))),src:'user'})};
 $('gHalf').onclick=()=>gScale(.5);$('gDbl').onclick=()=>gScale(2);
 $('gBeat').onclick=()=>{if(!grid)return;const bar=240/grid.bpm;gridSet({...grid,t0:+(((grid.t0+60/grid.bpm)%bar)).toFixed(3),src:'user'})};
 $('gSnap').onchange=()=>{snapOn=$('gSnap').checked;uiSave()};
@@ -2487,7 +2604,7 @@ async function songRestore(fp,gen){
  let m=null;try{m=await sget('songs',fp)}catch(_){}
  if(gen!==fileGen)return;
  savedUI();
- const G=m&&m.grid;if(G&&isNum(G.bpm)&&G.bpm>=40&&G.bpm<=240&&isNum(G.t0)){grid={bpm:G.bpm,t0:G.t0,src:G.src==='auto'?'auto':'user'};gridUI();drawWave()}else gridDetect();
+ const G=m&&m.grid;if(G&&isNum(G.bpm)&&G.bpm>=40&&G.bpm<=240&&isNum(G.t0)){grid={bpm:G.bpm,t0:G.t0,src:G.src==='auto'?'auto':'user'};if(G.secs)grid.secs=secsOk(G.secs);gridUI();drawWave()}else gridDetect();
  if(!m)return;
  const got=[];
  if(Array.isArray(m.arr)&&m.arr.length&&m.arr.every(q=>Array.isArray(q)&&isNum(q[0])&&isNum(q[1])&&q[0]>=0&&q[1]<=orig.buf.length&&q[1]>q[0])){arr=m.arr.map(q=>[Math.round(q[0]),Math.round(q[1])]);arrRebuild();got.push('arrangement')}
@@ -2614,7 +2731,7 @@ function aiFacts(){
  const an=analyze(c[0],c[1],fs);
  return{dur:+src.duration.toFixed(2),lufs:+src.inL.toFixed(1),st,oct:OCT.map((f,i)=>f+' Hz: '+an.dB[i].toFixed(1)).join(', '),
   regs:regions.filter(r=>r.mode!=='noise').map(r=>`${(r.s/fs).toFixed(1)}-${(r.e/fs).toFixed(1)} s ${r.mode}${r.amt?' '+r.amt:''}${r.stem?' on '+r.stem:''}`),
-  grid:grid?`${grid.bpm} BPM, 4/4; bars start at ${grid.t0} s and every ${(240/grid.bpm).toFixed(3)} s after (bar n starts at ${grid.t0} + (n-1) x ${(240/grid.bpm).toFixed(3)} s). Snap start and end to these bar or beat times`:'not known',
+  grid:grid?(()=>{const bs=[];for(let k=1;k<=400;k++){const t=barAt(k);if(t>src.duration)break;bs.push(+t.toFixed(2))}return(grid.secs&&grid.secs.length?'changes during the song ('+gSecs().map((q,i)=>(i?'from '+q.t.toFixed(2)+' s ':'')+q.bpm+' BPM').join(', ')+')':grid.bpm+' BPM')+', 4/4. Bar start times in seconds (bar 1, 2, 3...): '+bs.join(', ')+'. Snap start and end to these bar times or to beats between them'})():'not known',
   stems:stemsWhole()?'yes, the whole song':stemData?'only a section; stem edits wait until the user separates the whole song':'not yet; stem edits wait until the user separates the song, which is fine'};
 }
 function aiPrompt(F,ask){
@@ -2716,7 +2833,7 @@ function aiDesc(x){
  if(f&&x.act==='filter')return(f.ft==='hp'?'High-pass':'Low-pass')+' sweep '+fq(f.f0)+' \u2192 '+fq(f.f1);
  if(f&&x.act==='reverb')return'Reverb, '+f.sz+', '+f.amt+'%';
  if(f&&x.act==='delay')return'Delay '+f.dt.replace('d',' dotted')+', feedback '+f.fb+'%, '+f.amt+'%'+(f.pp?', ping-pong':'');
- if(x.act==='repeat'||x.act==='cut'){const b=grid?240/grid.bpm:0,f=grid?Math.max(0,Math.round((snapT(x.s)-grid.t0)/b)+1):0,l=grid?Math.round((snapT(x.e)-grid.t0)/b):0;return(x.act==='repeat'?'Repeat ':'Cut ')+(grid?(l>f?'bars '+f+'\u2013'+l:'bar '+f):'this part')}
+ if(x.act==='repeat'||x.act==='cut'){const f=grid?barNoAt(snapT(x.s)+.01):0,l=grid?Math.max(f,barNoAt(snapT(x.e)-.01)):0;return(x.act==='repeat'?'Repeat ':'Cut ')+(grid?(l>f?'bars '+f+'\u2013'+l:'bar '+f):'this part')}
  if(f&&x.act==='pitch_shift')return'Pitch shift '+(f.semi>0?'+':'')+f.semi+' semitones'+(f.amt<100?', '+f.amt+'% mix':'');
  if(f&&x.act==='riser')return(f.kind==='pitch'?'Pitch riser from the '+(f.src==='mix'?'mix':f.src)+(f.frz?' (held)':''):f.kind==='tape'?'Tape riser from the '+(f.src==='mix'?'mix':f.src):f.kind==='synth'?'Synth riser to '+f.key:'Noise riser')+', '+f.amt+'%';
  if(f&&x.act==='downlifter')return({noise:'Noise downlifter',sub:'Sub drop',both:'Noise + sub downlifter'}[f.kind])+(f.imp?' with impact':'')+', '+f.amt+'%';
@@ -3250,7 +3367,7 @@ const HELP={
 <p><b>Undo</b> and <b>Redo</b> (Ctrl or Cmd + Z, and + Shift) step through every change to settings, EQ, regions and stem levels. <b>Reset settings</b> returns every setting to its default but keeps your regions, stems and references, and can itself be undone. When you scroll past this card, a small player stays pinned to the bottom of the screen.</p>`,
 'Arrangement':`<p>Rearranges the song by bars: <b>Repeat</b> plays bars again straight after themselves, <b>Cut</b> removes them, <b>Move before bar</b> takes them out and puts them back earlier or later. Type the first and last bar, or select a region and press <b>From region</b>. Bars are counted on the Tempo grid, so make sure the numbered bar lines sit on the downbeats first.</p>
 <p>The file itself is never changed: the app keeps a list of which parts play in which order and joins them with 20 ms crossfades. Regions follow (a region on repeated bars is copied, one on cut bars removed), stems are rearranged too without separating again, and the preview and the master play the new order. Every change is one undo step and is saved with the song; <b>Back to the original</b> undoes all of it. A sustained note or reverb tail crossing a join can still sound cut: listen to each join, and a riser or downlifter can cover a big jump.</p>`,
-'Volume automation':`<p>Drag across the waveform in the Listen card to select a part of the song. Besides level, EQ and taming, a region can hold an effect: <b>Filter sweep</b>, <b>Reverb</b> and <b>Delay</b> (both ring on after the region ends), or <b>Pan / width</b>; <b>Pitch shift</b> (semitones up or down, timing unchanged; blend it for a harmony); or add new sound: a <b>Riser</b> (noise, synth, tape: your own audio sped up, or pitch: your own audio pitched up with the timing kept) that ends at the region&rsquo;s end, or a <b>Downlifter</b> that falls away from its start. <b>Tempo</b> shows the detected BPM and bar start; bar lines are drawn on the waveform, delays follow the tempo and new regions snap to beats. If the bar lines miss, use \u00f72, \u00d72 or Beat +1.</p><p> Clicking moves the playhead, and clicking inside a region also selects it.</p>
+'Volume automation':`<p>Drag across the waveform in the Listen card to select a part of the song. Besides level, EQ and taming, a region can hold an effect: <b>Filter sweep</b>, <b>Reverb</b> and <b>Delay</b> (both ring on after the region ends), or <b>Pan / width</b>; <b>Pitch shift</b> (semitones up or down, timing unchanged; blend it for a harmony); or add new sound: a <b>Riser</b> (noise, synth, tape: your own audio sped up, or pitch: your own audio pitched up with the timing kept) that ends at the region&rsquo;s end, or a <b>Downlifter</b> that falls away from its start. <b>Tempo</b> shows the detected BPM and bar start; bar lines are drawn on the waveform, delays follow the tempo and new regions snap to beats. If the bar lines miss, use \u00f72, \u00d72 or Beat +1. If the timing changes partway through (common in AI-made songs), <b>Find tempo changes</b> adds markers where the beat shifts, or press <b>Marker here</b> on a downbeat after the slip.</p><p> Clicking moves the playhead, and clicking inside a region also selects it.</p>
 <p><b>Zoom and exact times.</b> Under the waveform, <b>+</b> and <b>&minus;</b> zoom in and out (Ctrl or Cmd with the mouse wheel zooms at the pointer), <b>Fit</b> shows the whole song, and <b>Zoom to region</b> frames the selected region. When zoomed, a slider (or sideways scrolling) moves along the song, a time ruler appears, and the view follows the playhead while it plays. You can zoom in to about one second across. Every region's start and end are editable boxes in minutes and seconds with tenths, for example <code>1:23.5</code>, or just seconds like <code>83.5</code>. To add a region without dragging, type a start and end under <b>Add by time</b> (the <b>Now</b> buttons copy the playhead position). The round &#9654; on a region plays from its start.</p>
 <p>Mastering normally applies one setting to the whole song, but problems are usually local — one chorus that jumps, one verse too quiet, an intro you want left alone. Drag across the waveform to select a part and choose what happens there.</p>
 <p><b>Level</b> rides the fader by up to ±12 dB <i>before</i> the mastering chain, so the compressors respond to the corrected balance rather than fighting it. <b>Tame dynamics</b> adds compression inside the region only. <b>No tone processing</b> keeps the original tone there but still applies the final loudness and limiting, so the level still matches the rest.</p>

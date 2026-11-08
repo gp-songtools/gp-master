@@ -3,6 +3,13 @@
 All notable changes to GP Mastering, newest first. The version number is the small tag beside the app's title.
 This file mirrors `changelog.html`, which is the version shown in the app; keep the two in step.
 
+## v52 — Nov 8
+
+### Added
+
+- **Tempo markers** for songs whose timing changes partway, common in AI-generated songs at the joins between sections. Each marker starts a new section of the grid with a bar at that point and its own tempo; bar numbers run on. Edit, nudge a bar, play or remove each one. Click, bar lines, snapping, Arrangement, delays and the bar times given to Gemini all follow.
+- **Find tempo changes** scans the song for places where the beat or the bar shifts and adds markers there. On a test song with an odd bar and a tempo change it found both; with one nudge on the odd bar every downbeat sat within 4 ms of a bar line.
+
 ## v51 — Nov 8
 
 ### Added
