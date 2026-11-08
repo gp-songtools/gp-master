@@ -261,7 +261,7 @@ body.mini main{padding-bottom:84px}
 #eqApply{width:100%;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>GP Mastering <small style="font-size:13px;color:var(--mut);font-weight:400">v52</small></h1>
+<h1>GP Mastering <small style="font-size:13px;color:var(--mut);font-weight:400">v53</small></h1>
 <p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded unless you use the optional Gemini suggestions.</p>
 <p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or use it just to split the song and download each stem as a WAV.</p>
 
@@ -2500,7 +2500,7 @@ async function gFind(){
   if(e/(f1-f0)<.25*mean){bad=barBad=0;c+=1;continue}
   const L=gFit(E,c,c+W,sec.bpm,.012,null),b=60/sec.bpm,d=(L.beat-(sec.a+Math.round((L.beat-sec.a)/b)*b))/b;
   if(Math.abs(d)>TH){
-   barBad=0;if(++bad<2){c+=1;continue}
+   barBad=0;if(++bad<3){c+=1;continue}
    const m0=c+W*.75,b0=240/sec.bpm,pref=sec.a+Math.ceil((m0-sec.a)/b0)*b0,F=gFit(E,m0,Math.min(dur,m0+12),sec.bpm,.04,pref),nq={a:F.t,bpm:F.bpm},bn=240/F.bpm;
    let t=F.t;while(t-bn>floor()&&nearer(nq,t-bn,t))t-=bn;
    found.push({t:+t.toFixed(3),bpm:F.bpm});sec={a:t,bpm:F.bpm};bad=0;c=t;await tick();continue;
@@ -2517,6 +2517,42 @@ async function gFind(){
   c+=1;if(c%16===0)await tick();
  }
  return found;
+}
+/* Refine a list of sections by least squares on the drum hits: every grid beat
+   in a section is matched to the strongest onset within 50 ms, outliers over
+   25 ms are dropped, and a straight line through (beat number, time) gives the
+   exact tempo and phase. Then a marker is kept only if it is a real slip: it
+   moves bar 1 by at least half a beat against the previous section's grid
+   carried forward, or changes the tempo by more than 0.3%. Others are merged
+   and the section refitted, until nothing changes. */
+function gRefine(E,base,marks){
+ const on=E.o,dur=src.duration;
+ const pk=t=>{const f=Math.round((t-E.off)*E.fps),r=Math.round(.05*E.fps);let bi=-1,bv=0;for(let d=-r;d<=r;d++){const v=on[f+d]||0;if(v>bv){bv=v;bi=f+d}}return bi<0?null:[bi/E.fps+E.off,bv]};
+ const fit=(a,bpm,x,y)=>{
+  let b=60/bpm;
+  for(let it=0;it<3;it++){
+   const P=[];let k=Math.ceil((x-a)/b-1e-4);for(let t=a+k*b;t<y-1e-4;t=a+(++k)*b){const q=pk(t);if(q)P.push([k,q[0],q[1]])}
+   if(P.length<8)break;const med=P.map(p=>p[2]).sort((u,v)=>u-v)[P.length>>1];
+   const Q=P.filter(p=>p[2]>=.3*med&&Math.abs(p[1]-(a+p[0]*b))<.025);if(Q.length<8)break;
+   let n=0,sx=0,sy=0,sxx=0,sxy=0;for(const[j,t]of Q){n++;sx+=j;sy+=t;sxx+=j*j;sxy+=j*t}
+   const nb=(n*sxy-sx*sy)/(n*sxx-sx*sx),na=(sy-nb*sx)/n;if(!(nb>0))break;a=na;b=nb;
+  }
+  return{a,bpm:Math.round(6000/b)/100};
+ };
+ let secs=[{a:base.t0,bpm:base.bpm,t:0},...marks.map(m=>({a:m.t,bpm:m.bpm,t:m.t}))];
+ const refit=i=>{const x=Math.max(0,i?secs[i].t:0),y=i+1<secs.length?secs[i+1].t:dur,f=fit(secs[i].a,secs[i].bpm,x,y);const b=240/f.bpm;
+  if(i===0)secs[0]={a:f.a,bpm:f.bpm,t:0};else{const bar=f.a+Math.round((secs[i].t-f.a)/b)*b;secs[i]={a:bar,bpm:f.bpm,t:bar}}};
+ for(let i=0;i<secs.length;i++)refit(i);
+ for(let pass=0;pass<20;pass++){
+  let merged=false;
+  for(let i=1;i<secs.length;i++){
+   const p=secs[i-1],q=secs[i],bp=60/p.bpm,beats=(q.t-p.a)/bp,off=Math.abs(beats-4*Math.round(beats/4));
+   if(off<.5&&Math.abs(q.bpm-p.bpm)/p.bpm<.003){secs.splice(i,1);refit(i-1);merged=true;break}
+  }
+  if(!merged)break;
+ }
+ const t0=((secs[0].a%(240/secs[0].bpm))+240/secs[0].bpm)%(240/secs[0].bpm);
+ return{bpm:secs[0].bpm,t0:+t0.toFixed(3),secs:secs.slice(1).map(q=>({t:+q.t.toFixed(3),bpm:q.bpm}))};
 }
 const secsOk=a=>Array.isArray(a)?a.filter(m=>m&&isNum(m.t)&&isNum(m.bpm)&&m.t>0&&m.bpm>=40&&m.bpm<=240).map(m=>({t:+m.t.toFixed(3),bpm:Math.round(m.bpm*100)/100})).sort((p,q)=>p.t-q.t).slice(0,64):[];
 function marksUI(){
@@ -2540,11 +2576,18 @@ $('gMk').onclick=async()=>{
 };
 $('gFind').onclick=async()=>{
  if(!src||!grid)return;const b=$('gFind');b.disabled=true;$('gMsg').textContent='Looking for places where the beat shifts…';
- let f=null;try{f=await gFind()}catch(_){}
- b.disabled=false;if(!f){gridUI();return}
- if(!f.length){gridSet({...grid,secs:[]});$('gMsg').textContent='No tempo changes found: the beat stays on one grid'+(grid.secs&&grid.secs.length?' (existing markers removed)':'')+'. If the click still drifts somewhere, play to a downbeat there and press Marker here.';return}
- gridSet({...grid,secs:secsOk(f),src:'user'});
- $('gMsg').textContent='Found '+f.length+' place'+(f.length>1?'s':'')+' where the beat shifts and added a marker at each: '+f.map(m=>tcf(m.t)+' ('+m.bpm+' BPM)').join(', ')+'. Check each with Click; Undo removes them.';
+ let f=null,R=null;const old=grid.bpm,G0=grid;
+ try{
+  const E=await gOnsets();
+  /* settle the base tempo first, so slow drift from a slightly wrong BPM is not taken for changes */
+  const R0=gRefine(E,grid,[]);grid={...grid,bpm:R0.bpm,t0:R0.t0,secs:[]};
+  f=await gFind();if(f)R=gRefine(E,grid,f);
+ }catch(_){}
+ grid=G0;b.disabled=false;if(!R){gridUI();return}
+ gridSet({...grid,bpm:R.bpm,t0:R.t0,secs:secsOk(R.secs),src:'user'});
+ const tune=Math.abs(R.bpm-old)>=.005?' The base tempo was refined from '+old+' to '+R.bpm+' BPM.':'';
+ $('gMsg').textContent=R.secs.length?'Found '+R.secs.length+' place'+(R.secs.length>1?'s':'')+' where the beat really shifts and added a marker at each: '+R.secs.map(m=>tcf(m.t)+' ('+m.bpm+' BPM)').join(', ')+'.'+tune+' Check each with Click; Undo removes them.'
+  :'No tempo changes found: the beat stays on one grid.'+tune+' If the click still drifts somewhere, play to a downbeat there and press Marker here.';
 };
 $('gBpm').onchange=()=>{const v=parseFloat($('gBpm').value);if(isFinite(v)&&v>=40&&v<=240)gridSet({...(grid||{}),bpm:Math.round(v*100)/100,t0:grid?grid.t0:0,src:'user'});else gridUI()};
 $('gT0').onchange=()=>{const t=parseT($('gT0').value);if(t!==null&&grid){const bar=240/grid.bpm;gridSet({...grid,t0:+(((t%bar)+bar)%bar).toFixed(3),src:'user'})}else gridUI()};

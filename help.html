@@ -241,7 +241,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 <h4 id="markers">Songs whose timing changes: tempo markers</h4>
 <p>Many songs do not keep one steady grid: a band playing without a click drifts, a bridge can be slower, and AI-generated songs (Suno, Udio, Mozart AI and similar) often slip at the joins between sections, adding or losing a beat or two, or changing tempo slightly. With <b>Click</b> on, you hear the click lock to the drums and then, at some point, go off: suddenly but steadily (an odd bar), or more and more (a tempo change).</p>
 <ul>
-<li><b>Find tempo changes</b> scans the song and adds a marker wherever the beat or the bar shifts. Each marker starts a new section of the grid with a bar at exactly that point and its own tempo. Check each one with Click.</li>
+<li><b>Find tempo changes</b> first refines the song&rsquo;s tempo to a hundredth of a BPM from the measured drum hits (so a grid that is only slightly off does not drift and get mistaken for changes), then adds a marker only where the beat really shifts: bar 1 moving by at least half a beat, or the tempo changing by more than 0.3%. Small timing wobble is ignored. Each marker starts a new section of the grid with a bar at exactly that point and its own tempo. Check each one with Click.</li>
 <li><b>Marker here</b> adds one by hand: play or click to a downbeat after the slip and press it (it snaps to the nearest drum hit within 60 ms).</li>
 <li>Each marker row shows its bar number, time and BPM, all editable, with <b>&#9664; bar</b> / <b>bar &#9654;</b> to move it a whole bar (found markers at an odd bar can land one bar late when beats 1 and 3 sound alike), <b>Play</b> to hear it and <b>Remove</b>.</li>
 </ul>

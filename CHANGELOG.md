@@ -3,6 +3,12 @@
 All notable changes to GP Mastering, newest first. The version number is the small tag beside the app's title.
 This file mirrors `changelog.html`, which is the version shown in the app; keep the two in step.
 
+## v53 — Nov 8
+
+### Fixed
+
+- **Find tempo changes** could add a dozen markers differing by a few hundredths of a BPM: a grid only slightly off drifts slowly, and each drift was taken for a change. It now refines the tempo first by a least-squares fit to the drum hits, keeps a marker only for a real slip (bar 1 moved by half a beat or more, or the tempo changed by more than 0.3%) and merges the rest. On test songs: a steady song gridded 0.03 BPM off now gets no markers and its tempo corrected; timing wobble and slow drift get none; a real odd bar and tempo change still get one each.
+
 ## v52 — Nov 8
 
 ### Added
