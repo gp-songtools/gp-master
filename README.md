@@ -86,7 +86,8 @@ mastering chain but before loudness matching and the limiter. After a render,
 
 **Top player preview** — the player under the waveform switches between the
 original and a mastered preview, rendered with the real chain about five
-seconds at a time ahead of the playhead. "Apply to preview" buttons next to each setting
+seconds at a time ahead of the playhead. Click (a metronome on the beat grid) checks the tempo by ear; on wide screens
+the player spans the full width above the settings. "Apply to preview" buttons next to each setting
 apply a change from the current spot; Loop repeats the selected region.
 Undo / Redo (Ctrl or Cmd + Z) cover settings, EQ, regions and stem levels, and
 Reset settings returns to the defaults. On wide screens the page splits into two

@@ -259,7 +259,7 @@ body.mini main{padding-bottom:84px}
 #eqApply{width:100%;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>GP Mastering <small style="font-size:13px;color:var(--mut);font-weight:400">v50</small></h1>
+<h1>GP Mastering <small style="font-size:13px;color:var(--mut);font-weight:400">v51</small></h1>
 <p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded unless you use the optional Gemini suggestions.</p>
 <p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or use it just to split the song and download each stem as a WAV.</p>
 
@@ -3245,7 +3245,7 @@ const HELP={
 'Noise reduction':`<p>Removes steady background noise — hiss, hum, room tone, and the warble AI generators sometimes leave behind. It measures the noise floor per frequency band, then attenuates each band when it drops toward that floor.</p>
 <p><b>Mark a quiet passage</b> with a Noise profile region on the waveform for the best result: that measures the actual noise rather than guessing. Without one, the floor is estimated from the quietest 5% of each frequency band across the song, which on a test with known added noise came within 0.5 dB of the region result.</p>
 <p>Light is 6 dB of reduction, Medium 12 dB, Strong 20 dB. It runs first, before any EQ or compression, so the chain never amplifies noise. Gains are smoothed across frequency and time to avoid the warbling that makes denoisers obvious, but strong settings on dense music can still sound watery — check on Preview.</p>`,
-'Listen':`<p>The player for everything on the page. <b>Original</b> is the untouched song. <b>Mastered</b> is the real mastering chain with your current settings, region levels, stem balance and Tone EQ, rendered a few seconds ahead of the playhead; switching between them is instant. <b>Loop</b> repeats the selected region, or the whole song.</p>
+'Listen':`<p>The player for everything on the page. <b>Original</b> is the untouched song. <b>Mastered</b> is the real mastering chain with your current settings, region levels, stem balance and Tone EQ, rendered a few seconds ahead of the playhead; switching between them is instant. <b>Loop</b> repeats the selected region, or the whole song. <b>Click</b> adds a metronome on the tempo grid, higher on beat 1, to check the grid by ear.</p>
 <p>Press <b>Apply to preview</b> next to any setting to hear a change from the current spot, usually within a second. Settings you have already heard play from memory.</p>
 <p><b>Undo</b> and <b>Redo</b> (Ctrl or Cmd + Z, and + Shift) step through every change to settings, EQ, regions and stem levels. <b>Reset settings</b> returns every setting to its default but keeps your regions, stems and references, and can itself be undone. When you scroll past this card, a small player stays pinned to the bottom of the screen.</p>`,
 'Arrangement':`<p>Rearranges the song by bars: <b>Repeat</b> plays bars again straight after themselves, <b>Cut</b> removes them, <b>Move before bar</b> takes them out and puts them back earlier or later. Type the first and last bar, or select a region and press <b>From region</b>. Bars are counted on the Tempo grid, so make sure the numbered bar lines sit on the downbeats first.</p>

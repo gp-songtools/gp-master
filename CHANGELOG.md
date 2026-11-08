@@ -3,6 +3,16 @@
 All notable changes to GP Mastering, newest first. The version number is the small tag beside the app's title.
 This file mirrors `changelog.html`, which is the version shown in the app; keep the two in step.
 
+## v51 — Nov 8
+
+### Added
+
+- **Click**: a metronome in the Listen player on the tempo grid, higher on beat 1, scheduled on the audio clock so it stays locked to the music through loops, Mastered and rearranged songs. The quickest way to check the grid by ear; the setting is remembered.
+
+### Changed
+
+- On wide screens the Listen card spans the full width above the two columns, with a waveform about 60% taller.
+
 ## v50 — Nov 8
 
 ### Added

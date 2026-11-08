@@ -55,7 +55,9 @@
   - Accepted edits become regions with `note`; test with Playwright `page.route('https://generativelanguage.googleapis.com/**')` mocks
 - **Layout**
   - `.cols` > `.colL` (sticky: file, Listen, Arrangement, Volume automation, AI suggestions) + `.colR` (stems, settings, results); two columns at ≥1080 px, `display:contents` below
+  - At ≥1080 px `lisPlace()` moves `#lisCard` before `.cols` (full-width strip, taller `#wav`); below, back into `.colL` before `#arrCard`
   - Mini player `#mini` shows when `.wprow` scrolls above the viewport (`miniCheck`)
+  - Metronome: `wpClicks` schedules beat clicks per player segment into `wp.ck` (`clickOn`, saved in `gpmaster.ui.v1`)
 - **Stem separation**
   - Per-model `n_fft` is not inferable from the ONNX shape; wrong values fail silently. Change only with `docs/stem-separation.md`
   - Do not edit or re-commit `models/` or `ort/` files; they are large vendored binaries
