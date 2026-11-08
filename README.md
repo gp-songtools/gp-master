@@ -60,7 +60,8 @@ audio pitched up) and noise or
 sub-drop downlifters with an optional impact. The
 tempo and bar start are detected on load and drawn as a beat grid; new regions
 snap to beats; tempo markers (added by hand or by Find tempo changes) handle
-songs whose timing shifts partway, as AI-generated songs often do. Level rides the fader before the chain; region edges get 20 ms
+songs whose timing shifts partway, as AI-generated songs often do, and
+Follow the beat tracks every beat for songs whose tempo wanders. Level rides the fader before the chain; region edges get 20 ms
 fades. Preview follows the selected region.
 
 **Transients** — brings percussive hits forward relative to sustained sounds,

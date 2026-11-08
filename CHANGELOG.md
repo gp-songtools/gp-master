@@ -3,6 +3,13 @@
 All notable changes to GP Mastering, newest first. The version number is the small tag beside the app's title.
 This file mirrors `changelog.html`, which is the version shown in the app; keep the two in step.
 
+## v54 — Nov 8
+
+### Added
+
+- **Follow the beat** for songs whose tempo wanders, drifting ahead and pulling back in sync, as AI-generated songs often do. It finds every beat from the drum hits, so bar lines, Click, snapping, Arrangement, delays and the bar times given to Gemini follow the music instead of one steady grid. Bars count 4 beats from bar 1; in this mode a marker restarts bar 1 there, for odd bars. Beat +1, Now, ÷2 and ×2 still work, and **Steady grid** goes back. On a test song wobbling ±0.5 BPM with a 0.5 BPM step, every beat lands within 4 ms.
+- **Find tempo changes** suggests Follow the beat when it finds more than three markers.
+
 ## v53 — Nov 8
 
 ### Fixed

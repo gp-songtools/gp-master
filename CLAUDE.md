@@ -32,6 +32,7 @@
   - Arrangement: `orig` = decoded file + stems in file coords; `arr` = null or `[[a,b],...]` source sample ranges; `arrRebuild` makes working `src`/`stemData` (`arrCat`, 20 ms crossfades); `arrApply` carries regions, grid phase and pending AI edits through a change (`outToSrc`/`srcToOut`); separation and saved stems always use `orig`; caches keyed with `arrGen`
   - Beat grid `grid={bpm,t0,src,secs?}` (`detectGrid`, `snapT`); saved per song, part of `snap()` undo and `lpSig()`
   - Tempo map: `secs` = markers `[{t,bpm}]`; read the grid only through `gSecs`/`secAt`/`bpmAt`/`barNoAt`/`barAt`/`gridBeats`/`snapT`; `gFind` proposes markers, `gRefine` least-squares fits each section and merges markers that are not real slips (onsets from cached `gOnsets`)
+  - Beat mode (`beatMode()`): `grid.bt` = tracked beat times (`trackBeats`, DP beat tracker), `grid.b0` = bar-1 beat index, `secs` = bar restarts; `bbOf()` memoises beat-in-bar/bar numbers; every grid helper branches on it
   - Stem edits (`isStemEdit`: region with `r.stem` and a `TARG` mode) run per stem in `buildFromStems` via `stemRegions`; mix-level `regEnv`/`regEq` skip them; `stemWait()` explains why one is not applied
   - `pipeline(...,{raw:true,G})` returns pre-EQ base for preview chunks; `G` = whole-song `analyze()`/RMS/`distSample` measured once
   - `say()`/`tick()` are muted/fast while `sayMute` is set (background renders)

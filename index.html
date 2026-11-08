@@ -261,7 +261,7 @@ body.mini main{padding-bottom:84px}
 #eqApply{width:100%;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>GP Mastering <small style="font-size:13px;color:var(--mut);font-weight:400">v53</small></h1>
+<h1>GP Mastering <small style="font-size:13px;color:var(--mut);font-weight:400">v54</small></h1>
 <p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded unless you use the optional Gemini suggestions.</p>
 <p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or use it just to split the song and download each stem as a WAV.</p>
 
@@ -298,7 +298,7 @@ body.mini main{padding-bottom:84px}
  <span class="lbl">Volume automation</span>
  <p class="hint" style="margin:0 0 10px">Drag across the waveform above to select a part of the song (zoom in for precision, or type exact times below), then choose what happens there: a level change, extra dynamic taming, or no tone processing at all. Everything outside your regions is mastered normally.</p>
  <div class="rform" id="gridRow"><span>Tempo:</span><label><input class="ti" id="gBpm" inputmode="decimal" aria-label="Tempo in beats per minute" style="width:62px">BPM</label><label>Bar 1 at <input class="ti" id="gT0" inputmode="decimal" aria-label="Time of a bar start"></label><button type="button" id="gNow" title="Put a bar start at the playhead">Now</button><button type="button" id="gHalf" title="Half the tempo">&divide;2</button><button type="button" id="gDbl" title="Double the tempo">&times;2</button><button type="button" id="gBeat" title="Move bar 1 one beat later">Beat +1</button><button type="button" id="gDet" title="Detect the tempo again">Detect</button><label><input type="checkbox" id="gSnap" checked>Snap new regions to beats</label></div>
- <div class="rform"><button type="button" id="gFind" title="Look for places where the beat shifts and add markers there">Find tempo changes</button><button type="button" id="gMk" title="Start a new grid section at the downbeat under the playhead">Marker here</button></div>
+ <div class="rform"><button type="button" id="gFind" title="Look for places where the beat shifts and add markers there">Find tempo changes</button><button type="button" id="gMk" title="Start a new grid section at the downbeat under the playhead">Marker here</button><button type="button" id="gTrk" title="Track every beat, for songs whose tempo wanders">Follow the beat</button></div>
  <div id="gMarks"></div>
  <p class="hint" id="gMsg" style="margin:4px 0 0"></p>
  <div class="rform"><span>Add by time:</span><label>Start <input class="ti" id="rtS" inputmode="decimal" placeholder="0:00.0" aria-label="Region start time"></label><button type="button" id="rtSn" title="Use the playhead position">Now</button><label>End <input class="ti" id="rtE" inputmode="decimal" placeholder="0:10.0" aria-label="Region end time"></label><button type="button" id="rtEn" title="Use the playhead position">Now</button><button type="button" id="rtAdd">Add region</button></div>
@@ -1157,7 +1157,7 @@ function drawWave(){
    g.strokeStyle=cs0.getPropertyValue(bar?'--ac':'--ln').trim()||'#999';g.globalAlpha=bar?.45:.7;g.lineWidth=1;g.beginPath();g.moveTo(x+.5,0);g.lineTo(x+.5,HW);g.stroke();
    if(bar&&bpx*4>=26){g.globalAlpha=.8;g.fillStyle=g.strokeStyle;g.fillText(String(n),x+2,9)}
   });
-  for(const q of gSecs().slice(1)){const x=X(q.t);if(x<0||x>W)continue;g.globalAlpha=.9;g.strokeStyle=cs0.getPropertyValue('--warn').trim()||'#c33';g.lineWidth=2;g.setLineDash([3,3]);g.beginPath();g.moveTo(x+.5,0);g.lineTo(x+.5,HW);g.stroke();g.setLineDash([]);g.fillStyle=g.strokeStyle;g.fillText('\u2192'+q.bpm,x+3,HW-4)}
+  for(const q of beatMode()?(grid.secs||[]).map(m=>({t:grid.bt[bNear(m.t)],bpm:'bar 1'})):gSecs().slice(1)){const x=X(q.t);if(x<0||x>W)continue;g.globalAlpha=.9;g.strokeStyle=cs0.getPropertyValue('--warn').trim()||'#c33';g.lineWidth=2;g.setLineDash([3,3]);g.beginPath();g.moveTo(x+.5,0);g.lineTo(x+.5,HW);g.stroke();g.setLineDash([]);g.fillStyle=g.strokeStyle;g.fillText('\u2192'+q.bpm,x+3,HW-4)}
   g.restore();
  }
  const cs=cs0,cy=HW/2,cols=wavCols(Math.max(1,Math.round(W)));
@@ -2336,7 +2336,11 @@ function arrApply(next,msg){
  }
  if(ai.res)for(const x of ai.res.edits){if(x.st!=='new')continue;const a=arrMapT(old,next,x.s,0),b=arrMapT(old,next,x.e,1);if(a===null||b===null||b-a<.25)x.st='gone';else{x.s=a;x.e=b}}
  arr=next;regions=nr.sort((p,q)=>p.s-q.s);regSel=-1;
- if(grid){const a0=segsOf(arr)[0].a/fs;let t=((srcPhase-a0)%bar+bar)%bar;if(t>bar-.001)t=0;const ms=(grid.secs||[]).map(m=>({t:arrMapT(old,next,m.t,0),bpm:m.bpm})).filter(m=>m.t!==null&&m.t>0);grid={...grid,t0:+t.toFixed(3),secs:secsOk(ms)};gridUI()}
+ if(grid&&beatMode()){
+  const B=bbOf(),pts=[];grid.bt.forEach((t,i)=>{const x=Math.round(t*fs);for(const[a]of outToSrc(old,x,x+1))for(const[o]of srcToOut(next,a,a+1))pts.push([o/fs,B.v[i]])});
+  pts.sort((p,q)=>p[0]-q[0]);const bt=pts.map(p=>+p[0].toFixed(4)),b0=Math.max(0,pts.findIndex(p=>p[1]===0)),rs=[];for(let i=1;i<pts.length;i++)if(pts[i][1]===0&&pts[i-1][1]!==3)rs.push({t:bt[i],bpm:0});
+  grid={...grid,bt,b0,secs:rs};gridUI();
+ }else if(grid){const a0=segsOf(arr)[0].a/fs;let t=((srcPhase-a0)%bar+bar)%bar;if(t>bar-.001)t=0;const ms=(grid.secs||[]).map(m=>({t:arrMapT(old,next,m.t,0),bpm:m.bpm})).filter(m=>m.t!==null&&m.t>0);grid={...grid,t0:+t.toFixed(3),secs:secsOk(ms)};gridUI()}
  arrRebuild();if(ai.res)aiShow(ai.res);
  const now=snap();if(before!==null&&now!==before){H.past.push(before);if(H.past.length>100)H.past.shift();H.cur=now;H.future=[];histUI()}songSaveSoon();
  $('aMsg').textContent=msg||'';
@@ -2425,10 +2429,13 @@ async function detectGrid(){
 }
 function gridUI(){
  marksUI();
+ const bm=beatMode();if($('gTrk'))$('gTrk').textContent=bm?'Steady grid':'Follow the beat';if($('gFind'))$('gFind').disabled=bm;if($('gBpm'))$('gBpm').disabled=bm;if($('gT0'))$('gT0').disabled=bm;
  const b=$('gBpm');if(!b)return;
  if(document.activeElement!==b)b.value=grid?grid.bpm:'';
  if(document.activeElement!==$('gT0'))$('gT0').value=grid?tcf(grid.t0).replace(/(\.\d)$/,'$1'):'';
  $('gSnap').checked=snapOn;
+ if(beatMode()){const a=grid.bt,iv=[];for(let i=1;i<a.length;i++)iv.push(60/(a[i]-a[i-1]));iv.sort((p,q)=>p-q);const lo=iv[Math.floor(iv.length*.05)],hi=iv[Math.floor(iv.length*.95)],av=60*(a.length-1)/(a[a.length-1]-a[0]);
+  $('gMsg').textContent='Following the beat: '+a.length+' beats tracked, tempo '+lo.toFixed(1)+' to '+hi.toFixed(1)+' BPM (average '+av.toFixed(2)+'). Bar lines and Click follow the music as it speeds up and slows down. Beat +1 moves bar 1; Marker here restarts bar 1 at an odd bar; Steady grid goes back to one tempo.';return}
  $('gMsg').textContent=gridBusy?'Finding the tempo…':!grid?'No tempo yet. Type the BPM, or press Detect.':
   (grid.src==='auto'?'Detected ':'')+grid.bpm+' BPM, bars of '+(240/grid.bpm).toFixed(2)+' s'+(grid.secs&&grid.secs.length?', with '+grid.secs.length+' tempo marker'+(grid.secs.length>1?'s':''):'')+'. Bar lines show on the waveform; if they miss the beat, try \u00f72 or \u00d72 (detected tempos are sometimes half or double), Beat +1 if bar 1 sits on the wrong beat, or type the BPM and put a bar start at the playhead with Now. Delays follow this tempo.';
 }
@@ -2445,17 +2452,50 @@ async function gridDetect(){
    song follows grid.bpm with a bar at grid.t0. Bar numbers run on across
    sections; a bar cut short by a marker keeps its number. Everything that uses
    the grid goes through these helpers. */
+/* ---- following the beat ----
+   For songs whose tempo keeps wandering (common in AI-generated audio), the grid
+   can be a list of tracked beat times instead: grid.bt (seconds), grid.b0 (index
+   of a beat that starts a bar) and grid.secs reused as bar restarts (an odd bar:
+   bar 1 starts again at that beat). Beats come from dynamic-programming beat
+   tracking (Ellis 2007) on the full-band onset envelope: each frame's score is
+   its onset strength plus the best earlier beat 0.67 to 1.5 beat periods back,
+   penalised by the squared log of how far that gap is from the expected period;
+   backtracking from the best end gives the beat chain, and each beat is refined
+   to the onset peak with parabolic interpolation. */
+const beatMode=()=>!!(grid&&Array.isArray(grid.bt)&&grid.bt.length>8);
+let bbMemo=null;
+const bIdx=t=>{const a=grid.bt;let lo=0,hi=a.length-1;if(t<=a[0])return 0;if(t>=a[hi])return hi;while(hi-lo>1){const m=(lo+hi)>>1;if(a[m]<=t)lo=m;else hi=m}return lo};
+const bNear=t=>{const i=bIdx(t),a=grid.bt;return i+1<a.length&&Math.abs(a[i+1]-t)<Math.abs(a[i]-t)?i+1:i};
+function bbOf(){
+ if(bbMemo&&bbMemo.k===grid)return bbMemo;
+ const a=grid.bt,n=a.length,v=new Int8Array(n),no=new Int32Array(n),rs=new Set((grid.secs||[]).map(m=>bNear(m.t)));
+ let b=((-(grid.b0|0))%4+4)%4,bar=0;
+ for(let i=0;i<n;i++){if(rs.has(i)&&i>0)b=0;v[i]=b;if(b===0)bar++;no[i]=bar;b=(b+1)%4}
+ return bbMemo={k:grid,v,no,rs};
+}
+async function trackBeats(bpm){
+ const E=await gOnsets();if(!E)return null;
+ const o=E.o,n=E.n,fps=E.fps;let m=0,q=0;for(let i=0;i<n;i++){m+=o[i];q+=o[i]*o[i]}m/=n;const sd=Math.sqrt(Math.max(1e-12,q/n-m*m));
+ const on=new Float64Array(n);for(let i=0;i<n;i++)on[i]=o[i]/sd;
+ const P=fps*60/bpm,lo=Math.max(1,Math.round(P*.67)),hi=Math.round(P*1.5),al=300,pen=new Float64Array(hi+1);for(let d=lo;d<=hi;d++)pen[d]=al*Math.pow(Math.log(d/P),2);
+ const sc=new Float64Array(n),bk=new Int32Array(n).fill(-1);
+ for(let t=0;t<n;t++){let best=-1e18,bi=-1;for(let d=lo;d<=hi&&t-d>=0;d++){const v=sc[t-d]-pen[d];if(v>best){best=v;bi=t-d}}sc[t]=on[t]+(bi>=0?best:0);bk[t]=bi;if((t&8191)===0)await tick()}
+ let e=n-1,eb=-1e18;for(let t=Math.max(0,n-1-Math.round(P));t<n;t++)if(sc[t]>eb){eb=sc[t];e=t}
+ const f=[];for(let t=e;t>=0;t=bk[t])f.push(t);f.reverse();
+ return f.map(t=>{const a=on[t-1]||0,b=on[t],c=on[t+1]||0,d=a-2*b+c,x=d<0?Math.max(-.5,Math.min(.5,.5*(a-c)/d)):0;return+((t+x)/fps+E.off).toFixed(4)});
+}
 function gSecs(){
  if(!grid)return[];const S=[{t:-1e9,a:grid.t0,bpm:grid.bpm,F:1}];
  for(const m of grid.secs||[]){const p=S[S.length-1];if(m.t<=p.t)continue;const n=Math.max(0,Math.ceil((m.t-p.a)/(240/p.bpm)-1e-6));S.push({t:m.t,a:m.t,bpm:m.bpm,F:p.F+n})}
  return S;
 }
 const secAt=(t,S=gSecs())=>{let i=0;while(i+1<S.length&&S[i+1].t<=t+1e-9)i++;return S[i]};
-const bpmAt=t=>grid?secAt(t).bpm:120;
-const barNoAt=t=>{const q=secAt(t);return Math.max(0,q.F+Math.floor((t-q.a)/(240/q.bpm)+1e-6))};
-function barAt(k){const S=gSecs();if(!S.length)return 0;let q=S[0];for(const x of S)if(x.F<=k)q=x;return q.a+(k-q.F)*240/q.bpm}
+const bpmAt=t=>{if(!grid)return 120;if(beatMode()){const a=grid.bt,i=Math.min(a.length-2,bIdx(t));return 60/(a[i+1]-a[i])}return secAt(t).bpm};
+const barNoAt=t=>{if(beatMode()){const B=bbOf();return t<grid.bt[0]?0:B.no[bIdx(t)]}const q=secAt(t);return Math.max(0,q.F+Math.floor((t-q.a)/(240/q.bpm)+1e-6))};
+function barAt(k){if(beatMode()){const B=bbOf(),a=grid.bt;let last=-1;for(let i=0;i<a.length;i++)if(B.v[i]===0){if(B.no[i]===k)return a[i];last=i}const bl=4*(a[a.length-1]-a[0])/(a.length-1);return k<1?a[0]-(1-k)*bl:last<0?0:a[last]+(k-B.no[last])*bl}const S=gSecs();if(!S.length)return 0;let q=S[0];for(const x of S)if(x.F<=k)q=x;return q.a+(k-q.F)*240/q.bpm}
 /* Call cb(t,isBar,barNo,isMarker) for every beat in [x,y). */
 function gridBeats(x,y,cb){
+ if(beatMode()){const B=bbOf(),a=grid.bt;for(let i=Math.max(0,bIdx(x)-1);i<a.length&&a[i]<y;i++)if(a[i]>=x)cb(a[i],B.v[i]===0,B.no[i],B.rs.has(i)&&i>0);return}
  const S=gSecs();
  for(let i=0;i<S.length;i++){
   const q=S[i],lo=Math.max(x,q.t),hi=Math.min(y,i+1<S.length?S[i+1].t:1e9),b=60/q.bpm;if(hi<=lo)continue;
@@ -2463,7 +2503,7 @@ function gridBeats(x,y,cb){
   for(let t=q.a+k*b;t<hi-1e-4;t=q.a+(++k)*b){const kb=((k%4)+4)%4;cb(t,kb===0,q.F+Math.floor(k/4),i>0&&k===0)}
  }
 }
-const snapT=t=>{if(!grid||!snapOn)return t;const S=gSecs(),q=secAt(t,S),i=S.indexOf(q),b=60/q.bpm;let v=q.a+Math.round((t-q.a)/b)*b;if(i>0&&v<q.t)v=q.t;if(i+1<S.length&&v>S[i+1].t)v=S[i+1].t;return Math.max(0,Math.min(src.duration,v))};
+const snapT=t=>{if(!grid||!snapOn)return t;if(beatMode())return grid.bt[bNear(t)];const S=gSecs(),q=secAt(t,S),i=S.indexOf(q),b=60/q.bpm;let v=q.a+Math.round((t-q.a)/b)*b;if(i>0&&v<q.t)v=q.t;if(i+1<S.length&&v>S[i+1].t)v=S[i+1].t;return Math.max(0,Math.min(src.duration,v))};
 /* Fit one steady grid to [t0s,t1s): tempo within tol of bpm0, beat phase by a
    comb over the full-band onsets, bar start from the beat with the most low-end
    onsets, preferring pref's bar phase when it scores within 15%. */
@@ -2556,7 +2596,11 @@ function gRefine(E,base,marks){
 }
 const secsOk=a=>Array.isArray(a)?a.filter(m=>m&&isNum(m.t)&&isNum(m.bpm)&&m.t>0&&m.bpm>=40&&m.bpm<=240).map(m=>({t:+m.t.toFixed(3),bpm:Math.round(m.bpm*100)/100})).sort((p,q)=>p.t-q.t).slice(0,64):[];
 function marksUI(){
- const el=$('gMarks');if(!el)return;const S=gSecs().slice(1);
+ const el=$('gMarks');if(!el)return;
+ if(beatMode()){const R=(grid.secs||[]);el.innerHTML=R.map((m,i)=>`<div class="gmk"><span>Bar 1 restarts at</span><b>${tcf(grid.bt[bNear(m.t)])}</b><button type="button" data-rn="${i}" data-d="-4">&#9664; bar</button><button type="button" data-rn="${i}" data-d="4">bar &#9654;</button><button type="button" data-rn="${i}" data-d="-1">&#9664; beat</button><button type="button" data-rn="${i}" data-d="1">beat &#9654;</button><button type="button" class="x" data-rx="${i}">Remove</button></div>`).join('');
+  el.querySelectorAll('[data-rn]').forEach(x=>x.onclick=()=>{const i=+x.dataset.rn,R2=grid.secs.map(m=>({...m})),j=Math.max(1,Math.min(grid.bt.length-1,bNear(R2[i].t)+(+x.dataset.d)));R2[i].t=grid.bt[j];gridSet({...grid,secs:R2})});
+  el.querySelectorAll('[data-rx]').forEach(x=>x.onclick=()=>gridSet({...grid,secs:grid.secs.filter((_,k)=>k!==+x.dataset.rx)}));return}
+ const S=gSecs().slice(1);
  el.innerHTML=S.map((q,i)=>`<div class="gmk"><span>Marker ${i+1}: bar ${q.F} at</span><input class="ti" data-mt="${i}" value="${tcf(q.t)}" inputmode="decimal" aria-label="Marker ${i+1} time"><input class="ti" data-mb="${i}" value="${q.bpm}" inputmode="decimal" aria-label="Marker ${i+1} tempo" style="width:62px"><span>BPM</span><button type="button" data-mn="${i}" data-d="-1" title="Move this marker one bar earlier">&#9664; bar</button><button type="button" data-mn="${i}" data-d="1" title="Move this marker one bar later">bar &#9654;</button><button type="button" data-mp="${i}" title="Play from just before this marker">Play</button><button type="button" class="x" data-mx="${i}">Remove</button></div>`).join('');
  const upd=(i,f)=>{const m=(grid.secs||[]).map(x=>({...x}));f(m[i]);gridSet({...grid,secs:secsOk(m),src:'user'})};
  el.querySelectorAll('[data-mt]').forEach(x=>x.onchange=()=>{const t=parseT(x.value);if(t!==null&&t>0)upd(+x.dataset.mt,m=>m.t=t);else marksUI()});
@@ -2571,8 +2615,20 @@ $('gMk').onclick=async()=>{
  const E=await gOnsets();let t=wpPos();
  if(E){let bi=-1,bv=-1;const f=Math.round((t-E.off)*E.fps),r=Math.round(.06*E.fps);for(let d=-r;d<=r;d++){const v=E.o[f+d]||0;if(v>bv){bv=v;bi=f+d}}if(bi>=0)t=bi/E.fps+E.off}
  if(t<=grid.t0+.05){$('gMsg').textContent='Put the playhead on a downbeat after the start of bar 1, then press Marker here.';return}
+ if(beatMode()){const tb=grid.bt[bNear(t)];gridSet({...grid,secs:[...(grid.secs||[]),{t:tb,bpm:0}].sort((p,q)=>p.t-q.t)});$('gMsg').textContent='Bar 1 now restarts at '+tcf(tb)+'.';return}
  gridSet({...grid,secs:secsOk([...(grid.secs||[]),{t,bpm:bpmAt(t)}]),src:'user'});
  $('gMsg').textContent='Marker added at '+tcf(t)+': a new bar starts there. Adjust its BPM if the click drifts after it.';
+};
+$('gTrk').onclick=async()=>{
+ if(!src||!grid)return;
+ if(beatMode()){const a=grid.bt,av=Math.round(6000*(a.length-1)/(a[a.length-1]-a[0]))/100,t0=a[bbOf().v.indexOf(0)]||grid.t0,bar=240/av;gridSet({bpm:av,t0:+(((t0%bar)+bar)%bar).toFixed(3),src:'user'});$('gMsg').textContent='Back to a steady grid at '+av+' BPM.';return}
+ const b=$('gTrk');b.disabled=true;$('gMsg').textContent='Tracking every beat\u2026';
+ let bt=null;try{bt=await trackBeats(grid.bpm)}catch(_){}
+ b.disabled=false;if(!bt||bt.length<9){gridUI();return}
+ /* keep the bar phase the user checked: the tracked beat nearest a bar line of the current grid */
+ const near=t=>{let i=0,d=1e9;for(let k=0;k<bt.length;k++){const e=Math.abs(bt[k]-t);if(e<d){d=e;i=k}}return i};
+ const first=grid.t0+Math.ceil((bt[0]-grid.t0)/(240/grid.bpm)-.25)*(240/grid.bpm);
+ gridSet({bpm:grid.bpm,t0:grid.t0,src:'user',bt,b0:near(first)});
 };
 $('gFind').onclick=async()=>{
  if(!src||!grid)return;const b=$('gFind');b.disabled=true;$('gMsg').textContent='Looking for places where the beat shifts…';
@@ -2586,16 +2642,17 @@ $('gFind').onclick=async()=>{
  grid=G0;b.disabled=false;if(!R){gridUI();return}
  gridSet({...grid,bpm:R.bpm,t0:R.t0,secs:secsOk(R.secs),src:'user'});
  const tune=Math.abs(R.bpm-old)>=.005?' The base tempo was refined from '+old+' to '+R.bpm+' BPM.':'';
- $('gMsg').textContent=R.secs.length?'Found '+R.secs.length+' place'+(R.secs.length>1?'s':'')+' where the beat really shifts and added a marker at each: '+R.secs.map(m=>tcf(m.t)+' ('+m.bpm+' BPM)').join(', ')+'.'+tune+' Check each with Click; Undo removes them.'
+ $('gMsg').textContent=R.secs.length?'Found '+R.secs.length+' place'+(R.secs.length>1?'s':'')+' where the beat really shifts and added a marker at each: '+R.secs.map(m=>tcf(m.t)+' ('+m.bpm+' BPM)').join(', ')+'.'+tune+(R.secs.length>3?' The tempo wanders a lot: Follow the beat may fit better.':'')+' Check each with Click; Undo removes them.'
   :'No tempo changes found: the beat stays on one grid.'+tune+' If the click still drifts somewhere, play to a downbeat there and press Marker here.';
 };
 $('gBpm').onchange=()=>{const v=parseFloat($('gBpm').value);if(isFinite(v)&&v>=40&&v<=240)gridSet({...(grid||{}),bpm:Math.round(v*100)/100,t0:grid?grid.t0:0,src:'user'});else gridUI()};
 $('gT0').onchange=()=>{const t=parseT($('gT0').value);if(t!==null&&grid){const bar=240/grid.bpm;gridSet({...grid,t0:+(((t%bar)+bar)%bar).toFixed(3),src:'user'})}else gridUI()};
-$('gNow').onclick=()=>{if(!src)return;const t=wpPos(),bar=240/(grid?grid.bpm:120);gridSet({...(grid||{}),bpm:grid?grid.bpm:120,t0:+(((t%bar)+bar)%bar).toFixed(3),src:'user'})};
+$('gNow').onclick=()=>{if(!src)return;if(beatMode()){gridSet({...grid,b0:bNear(wpPos())});return}const t=wpPos(),bar=240/(grid?grid.bpm:120);gridSet({...(grid||{}),bpm:grid?grid.bpm:120,t0:+(((t%bar)+bar)%bar).toFixed(3),src:'user'})};
 $('gDet').onclick=gridDetect;
-const gScale=k=>{if(!grid)return;const bpm=Math.round(grid.bpm*k*100)/100;if(bpm<40||bpm>240)return;const bar=240/bpm;gridSet({...grid,bpm,t0:+(((grid.t0%bar)+bar)%bar).toFixed(3),secs:secsOk((grid.secs||[]).map(m=>({t:m.t,bpm:m.bpm*k}))),src:'user'})};
+const gScale=k=>{if(!grid)return;
+ if(beatMode()){const a=grid.bt;let bt;if(k>1){bt=[];for(let i=0;i<a.length;i++){bt.push(a[i]);if(i+1<a.length)bt.push(+((a[i]+a[i+1])/2).toFixed(4))}gridSet({...grid,bt,b0:2*(grid.b0|0),secs:(grid.secs||[])})}else{bt=a.filter((_,i)=>((i-(grid.b0|0))%2+2)%2===0);gridSet({...grid,bt,b0:0,secs:(grid.secs||[])})}return}const bpm=Math.round(grid.bpm*k*100)/100;if(bpm<40||bpm>240)return;const bar=240/bpm;gridSet({...grid,bpm,t0:+(((grid.t0%bar)+bar)%bar).toFixed(3),secs:secsOk((grid.secs||[]).map(m=>({t:m.t,bpm:m.bpm*k}))),src:'user'})};
 $('gHalf').onclick=()=>gScale(.5);$('gDbl').onclick=()=>gScale(2);
-$('gBeat').onclick=()=>{if(!grid)return;const bar=240/grid.bpm;gridSet({...grid,t0:+(((grid.t0+60/grid.bpm)%bar)).toFixed(3),src:'user'})};
+$('gBeat').onclick=()=>{if(!grid)return;if(beatMode()){gridSet({...grid,b0:(grid.b0|0)+1});return}const bar=240/grid.bpm;gridSet({...grid,t0:+(((grid.t0+60/grid.bpm)%bar)).toFixed(3),src:'user'})};
 $('gSnap').onchange=()=>{snapOn=$('gSnap').checked;uiSave()};
 try{const u=JSON.parse(localStorage.getItem(UIKEY)||'{}');if(typeof u.snap==='boolean')snapOn=u.snap;if(typeof u.click==='boolean')clickOn=u.click}catch(_){}
 
@@ -2647,7 +2704,7 @@ async function songRestore(fp,gen){
  let m=null;try{m=await sget('songs',fp)}catch(_){}
  if(gen!==fileGen)return;
  savedUI();
- const G=m&&m.grid;if(G&&isNum(G.bpm)&&G.bpm>=40&&G.bpm<=240&&isNum(G.t0)){grid={bpm:G.bpm,t0:G.t0,src:G.src==='auto'?'auto':'user'};if(G.secs)grid.secs=secsOk(G.secs);gridUI();drawWave()}else gridDetect();
+ const G=m&&m.grid;if(G&&isNum(G.bpm)&&G.bpm>=40&&G.bpm<=240&&isNum(G.t0)){grid={bpm:G.bpm,t0:G.t0,src:G.src==='auto'?'auto':'user'};if(G.secs)grid.secs=secsOk(G.secs);if(Array.isArray(G.bt)&&G.bt.length>8&&G.bt.length<40000&&G.bt.every(isNum)){grid.bt=G.bt;grid.b0=isNum(G.b0)?G.b0|0:0;grid.secs=(G.secs||[]).filter(m=>m&&isNum(m.t)).map(m=>({t:m.t,bpm:0}))}gridUI();drawWave()}else gridDetect();
  if(!m)return;
  const got=[];
  if(Array.isArray(m.arr)&&m.arr.length&&m.arr.every(q=>Array.isArray(q)&&isNum(q[0])&&isNum(q[1])&&q[0]>=0&&q[1]<=orig.buf.length&&q[1]>q[0])){arr=m.arr.map(q=>[Math.round(q[0]),Math.round(q[1])]);arrRebuild();got.push('arrangement')}
@@ -2774,7 +2831,7 @@ function aiFacts(){
  const an=analyze(c[0],c[1],fs);
  return{dur:+src.duration.toFixed(2),lufs:+src.inL.toFixed(1),st,oct:OCT.map((f,i)=>f+' Hz: '+an.dB[i].toFixed(1)).join(', '),
   regs:regions.filter(r=>r.mode!=='noise').map(r=>`${(r.s/fs).toFixed(1)}-${(r.e/fs).toFixed(1)} s ${r.mode}${r.amt?' '+r.amt:''}${r.stem?' on '+r.stem:''}`),
-  grid:grid?(()=>{const bs=[];for(let k=1;k<=400;k++){const t=barAt(k);if(t>src.duration)break;bs.push(+t.toFixed(2))}return(grid.secs&&grid.secs.length?'changes during the song ('+gSecs().map((q,i)=>(i?'from '+q.t.toFixed(2)+' s ':'')+q.bpm+' BPM').join(', ')+')':grid.bpm+' BPM')+', 4/4. Bar start times in seconds (bar 1, 2, 3...): '+bs.join(', ')+'. Snap start and end to these bar times or to beats between them'})():'not known',
+  grid:grid?(()=>{const bs=[];for(let k=1;k<=400;k++){const t=barAt(k);if(t>src.duration)break;bs.push(+t.toFixed(2))}return(beatMode()?'follows the music (tracked beat by beat, about '+(60*(grid.bt.length-1)/(grid.bt[grid.bt.length-1]-grid.bt[0])).toFixed(1)+' BPM on average)':grid.secs&&grid.secs.length?'changes during the song ('+gSecs().map((q,i)=>(i?'from '+q.t.toFixed(2)+' s ':'')+q.bpm+' BPM').join(', ')+')':grid.bpm+' BPM')+', 4/4. Bar start times in seconds (bar 1, 2, 3...): '+bs.join(', ')+'. Snap start and end to these bar times or to beats between them'})():'not known',
   stems:stemsWhole()?'yes, the whole song':stemData?'only a section; stem edits wait until the user separates the whole song':'not yet; stem edits wait until the user separates the song, which is fine'};
 }
 function aiPrompt(F,ask){
