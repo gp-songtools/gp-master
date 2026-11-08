@@ -26,6 +26,9 @@ main{max-width:520px;margin:0 auto;padding:20px 16px 40px}
  .colL{position:sticky;top:12px;max-height:calc(100vh - 12px);overflow-y:auto;overscroll-behavior:contain;padding:0 8px 24px 0;scrollbar-width:thin}
  .colR{padding-bottom:24px}
  .colR>.card:first-child{margin-top:0}
+ main>#lisCard #wav{height:170px}
+ main>#lisCard{margin:0 0 14px}
+ main>#lisCard>.hint:first-of-type{max-width:900px}
 }
 h1{font-size:28px;line-height:1.1;margin:8px 0 4px;letter-spacing:-.02em}
 .sub{color:var(--mut);margin:0 0 18px;font-size:14px}
@@ -273,7 +276,7 @@ body.mini main{padding-bottom:84px}
  <canvas id="wav" height="104" aria-label="Waveform — drag to select a region"></canvas>
  <div class="zbar"><button type="button" id="zOut" aria-label="Zoom out" title="Zoom out">&minus;</button><button type="button" id="zIn" aria-label="Zoom in" title="Zoom in">+</button><button type="button" id="zFit" title="Show the whole song">Fit</button><button type="button" id="zSel" title="Zoom to the selected region">Zoom to region</button><span id="zInfo">Whole song</span></div>
  <input type="range" id="zPan" min="0" max="1000" value="0" hidden aria-label="Scroll the zoomed waveform">
- <div class="prow wprow" style="margin-top:8px"><button class="ppb" id="wpBtn">Play</button><div class="om" role="group" aria-label="What the top player plays"><button type="button" id="wpO" aria-pressed="true">Original</button><button type="button" id="wpM" aria-pressed="false">Mastered</button></div><button type="button" class="ppb" id="wpLoop" aria-pressed="false" title="Repeat the selected region, or the whole song if none is selected">&#10227; Loop</button><span id="wpTime" style="flex:1;font-size:13px;color:var(--mut);font-variant-numeric:tabular-nums">0:00 / 0:00</span></div>
+ <div class="prow wprow" style="margin-top:8px"><button class="ppb" id="wpBtn">Play</button><div class="om" role="group" aria-label="What the top player plays"><button type="button" id="wpO" aria-pressed="true">Original</button><button type="button" id="wpM" aria-pressed="false">Mastered</button></div><button type="button" class="ppb" id="wpLoop" aria-pressed="false" title="Repeat the selected region, or the whole song if none is selected">&#10227; Loop</button><button type="button" class="ppb" id="wpClick" aria-pressed="false" title="Metronome: a click on every beat of the tempo grid, higher on beat 1">&#9833; Click</button><span id="wpTime" style="flex:1;font-size:13px;color:var(--mut);font-variant-numeric:tabular-nums">0:00 / 0:00</span></div>
  <label class="chk" style="margin:8px 0 0"><input type="checkbox" id="wpMatch" checked><span>Match levels when switching<small>Turns the louder one down so you compare the sound, not the volume.</small></span></label>
  <p class="hint" id="wpMsg" role="status" style="margin:4px 0 0"></p>
  <div class="hrow"><button type="button" id="unBtn" disabled title="Undo (Ctrl or Cmd + Z)">&#8630; Undo</button><button type="button" id="reBtn" disabled title="Redo (Ctrl or Cmd + Shift + Z)">&#8631; Redo</button><button type="button" id="rsBtn" title="Put every setting below back to its default. Regions, stems and references are kept.">Reset settings</button></div>
@@ -868,6 +871,19 @@ async function lpAhead(){
   s=n;
  }
 }
+/* Metronome: a short sine click on every beat of the grid that falls in this
+   segment, scheduled on the audio clock at the same offset as the music, so it
+   follows looping, seeking and the arrangement. Beat 1 of each bar is higher and
+   louder. All clicks go through wp.ck, so Click switches them on and off at once. */
+let clickOn=false;
+function wpClicks(w,s,d,xs){
+ if(!grid||!wp.ck)return;const b=60/grid.bpm;let k=Math.ceil((s-grid.t0)/b-1e-4);
+ for(let t=grid.t0+k*b;t<s+d-1e-4;t=grid.t0+(++k)*b){
+  if(t<0)continue;const at=w+(t-s),acc=((k%4)+4)%4===0,o=pc.createOscillator(),g=pc.createGain();
+  o.frequency.value=acc?1760:1175;g.gain.setValueAtTime(0,at);g.gain.linearRampToValueAtTime(acc?.5:.3,at+.002);g.gain.exponentialRampToValueAtTime(.001,at+.05);
+  o.connect(g);g.connect(wp.ck);o.start(at);o.stop(at+.06);xs.push(o);
+ }
+}
 function wpSched(s,e,m,gs){
  const w=wp.nextW,d=e-s,xs=[];
  const play=(buf,bus,off)=>{const x=pc.createBufferSource(),g=pc.createGain();x.buffer=buf;x.connect(g);g.connect(bus);
@@ -875,6 +891,7 @@ function wpSched(s,e,m,gs){
   x.start(w,off,d+XF);xs.push(x)};
  play(src,wp.og,s);
  if(lp.active)m?play(m,wp.mg,s-gs):play(src,wp.mg,s);
+ wpClicks(w,s,d,xs);
  wp.segs.push({s,w,d,xs});wp.nextW=w+d;
 }
 function wpPump(){
@@ -939,6 +956,7 @@ async function wpPlay(){
  wp.og.connect(wpEqO[0]);wpEqO.at(-1).connect(pc.destination);
  wp.mg.connect(wpEq[0]);wpEq.at(-1).connect(pc.destination);
  wp.og.gain.value=0;wp.mg.gain.value=0;
+ wp.ck=pc.createGain();wp.ck.gain.value=clickOn?1:0;wp.ck.connect(pc.destination);
  wp.segs=[];wp.nextS=wpOff;wp.nextW=pc.currentTime+.05;wp.lp=wpOff;wpOn=true;lp.miss='';
  wpLevels();$('wpBtn').textContent='Pause';miniUI();
  wpPump();wp.timer=setInterval(wpPump,100);wpTick();
@@ -947,9 +965,9 @@ function wpStop(){
  if(wpOn){
   wpOff=Math.min(wpDur(),wpPos());
   for(const g of wp.segs)g.xs.forEach(x=>{try{x.stop()}catch(_){}});
-  [wp.og,wp.mg].forEach(n=>{try{n.disconnect()}catch(_){}});
+  [wp.og,wp.mg,wp.ck].forEach(n=>{try{n&&n.disconnect()}catch(_){}});
  }
- clearInterval(wp.timer);wp.gen++;wp.segs=[];wpOn=false;wp.og=wp.mg=null;wpEq=wpEqO=null;
+ clearInterval(wp.timer);wp.gen++;wp.segs=[];wpOn=false;wp.og=wp.mg=wp.ck=null;wpEq=wpEqO=null;
  if(lp.starting){lp.starting=false;lpUI()}
  cancelAnimationFrame(wpRaf);
  const b=$('wpBtn');if(b)b.textContent='Play';
@@ -1102,7 +1120,7 @@ function regPick(i){
 const RFILL={gain:'rgba(0,150,136,.22)',eq:'rgba(40,110,220,.22)',filter:'rgba(200,60,130,.2)',reverb:'rgba(110,90,220,.22)',delay:'rgba(60,170,210,.22)',pan:'rgba(150,170,40,.24)',pitch:'rgba(220,170,20,.24)',riser:'rgba(240,120,30,.24)',down:'rgba(30,140,120,.24)',tame:'rgba(230,145,30,.22)',skip:'rgba(130,140,150,.26)',noise:'rgba(150,60,200,.22)'};
 function drawWave(){
  const c=$('wav');if(!c)return;
- const W=c.clientWidth||520,H=104,RH=16,HW=H-RH,dpr=window.devicePixelRatio||1;
+ const W=c.clientWidth||520,H=Math.round(c.clientHeight)||104,RH=16,HW=H-RH,dpr=window.devicePixelRatio||1;
  if(c.width!==Math.round(W*dpr)||c.height!==Math.round(H*dpr)){c.width=Math.round(W*dpr);c.height=Math.round(H*dpr)}
  const g=c.getContext('2d'),cs0=getComputedStyle(document.documentElement);
  g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
@@ -2418,8 +2436,8 @@ $('gDet').onclick=gridDetect;
 const gScale=k=>{if(!grid)return;const bpm=Math.round(grid.bpm*k*100)/100;if(bpm<40||bpm>240)return;const bar=240/bpm;gridSet({bpm,t0:+(((grid.t0%bar)+bar)%bar).toFixed(3),src:'user'})};
 $('gHalf').onclick=()=>gScale(.5);$('gDbl').onclick=()=>gScale(2);
 $('gBeat').onclick=()=>{if(!grid)return;const bar=240/grid.bpm;gridSet({...grid,t0:+(((grid.t0+60/grid.bpm)%bar)).toFixed(3),src:'user'})};
-$('gSnap').onchange=()=>{snapOn=$('gSnap').checked;try{localStorage.setItem(UIKEY,JSON.stringify({snap:snapOn}))}catch(_){}};
-try{const u=JSON.parse(localStorage.getItem(UIKEY)||'{}');if(typeof u.snap==='boolean')snapOn=u.snap}catch(_){}
+$('gSnap').onchange=()=>{snapOn=$('gSnap').checked;uiSave()};
+try{const u=JSON.parse(localStorage.getItem(UIKEY)||'{}');if(typeof u.snap==='boolean')snapOn=u.snap;if(typeof u.click==='boolean')clickOn=u.click}catch(_){}
 
 /* ---- saved songs: stems, regions and stem levels kept on this device ----
    IndexedDB, keyed by a SHA-256 of the file's bytes, so the same file finds its
@@ -2499,6 +2517,13 @@ $('wpO').onclick=()=>{lp.mode='o';lpUI();wpLevels()};
 $('wpM').onclick=()=>{lp.mode='m';if(!lp.active){lp.active=true;lpUI();if(wpOn)wpRestart()}else{lpUI();wpLevels()}};
 $('wpLoop').onclick=()=>{lp.loop=!lp.loop;lpUI();if(wpOn)wpRestart()};
 $('wpMatch').onchange=wpLevels;
+const uiSave=()=>{try{localStorage.setItem(UIKEY,JSON.stringify({snap:snapOn,click:clickOn}))}catch(_){}};
+const clickUI=()=>$('wpClick').setAttribute('aria-pressed',clickOn);
+$('wpClick').onclick=()=>{
+ if(!grid){$('wpMsg').textContent='The click follows the tempo grid: set the tempo under Volume automation first.';return}
+ clickOn=!clickOn;clickUI();uiSave();if(wp.ck)wp.ck.gain.setTargetAtTime(clickOn?1:0,pc.currentTime,.005);
+};
+clickUI();
 
 /* ---- AI suggestions (Gemini) ----
    The request goes straight from the browser to Google with the user's own key.
@@ -2802,6 +2827,18 @@ document.addEventListener('keydown',e=>{
  e.preventDefault();(k==='y'||e.shiftKey)?redo():undo();
 });
 $('unBtn').onclick=undo;$('reBtn').onclick=redo;$('rsBtn').onclick=resetSettings;
+
+/* ---- wide screens: the Listen card becomes a full-width strip above the two
+   columns, with a taller waveform; below 1080 px it goes back to its place in
+   the column, between the file picker and Arrangement. */
+const mqWide=matchMedia('(min-width:1080px)');
+function lisPlace(){
+ const c=$('lisCard'),cols=document.querySelector('.cols');
+ if(mqWide.matches){if(c.nextElementSibling!==cols)cols.parentNode.insertBefore(c,cols)}
+ else if(c.parentNode!==document.querySelector('.colL'))document.querySelector('.colL').insertBefore(c,$('arrCard'));
+ drawWave();
+}
+(mqWide.addEventListener?mqWide.addEventListener('change',lisPlace):mqWide.addListener(lisPlace));lisPlace();
 
 /* ---- pinned mini player, shown once the Listen controls scroll out of view ---- */
 function miniUI(){
