@@ -194,5 +194,12 @@ Stem separation needs the page to be served over http, not opened as a file (bro
 ## Stem separation speed and progress
 Separation runs in parallel. `sep-pool.js` cuts the song into independent chunks and a pool of up to four workers by default (one per core, leaving one free; choosable from 1 to 8; roughly 1 to 1.2 GB of memory each, measured) takes them from a shared queue, slowest model first. Each worker is single-threaded WebAssembly, so no special server headers are needed. The page downloads each model once and copies it to a worker only when that worker needs it. Output is identical to the old sequential worker, sample for sample. `eta.js` turns finished-chunk timings into a cost-weighted bar and a countdown of total time remaining.
 
+## Credits
+- **Stem separation models:** `Kim_Vocal_2` by [Kimberley Jensen](https://github.com/KimberleyJensen); `kuielab_a_drums` and `kuielab_a_bass` from [KUIELab-MDX-Net](https://github.com/kuielab/mdx-net) by KUIELab, trained on the MUSDB18-HQ research dataset. Distributed by [Ultimate Vocal Remover](https://github.com/Anjok07/ultimatevocalremovergui) (Anjok07 and aufr33). The model files carry no licence of their own; GP Mastering uses them with credit, free of charge, and never in anything paid.
+- **Libraries:** [ONNX Runtime Web](https://github.com/microsoft/onnxruntime) 1.20.1 (MIT, bundled in `ort/`), [lamejs](https://github.com/zhuker/lamejs) 1.2.1 (LGPL-3.0, from cdnjs), [mp4-muxer](https://github.com/Vanilagy/mp4-muxer) 5.1.3 (MIT, from jsDelivr).
+- **Font:** [Instrument Sans](https://fonts.google.com/specimen/Instrument+Sans) (SIL Open Font License) via Google Fonts.
+
+The full list is in the help page under "Credits and licences".
+
 ## Changelog
 See `changelog.html` (linked from the app) for what changed in each version.

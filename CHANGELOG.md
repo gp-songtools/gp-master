@@ -3,6 +3,12 @@
 All notable changes to GP Mastering, newest first. The version number is the small tag beside the app's title.
 This file mirrors `changelog.html`, which is the version shown in the app; keep the two in step.
 
+## v55 — Nov 9
+
+### Added
+
+- **Credits and licences** in the help page, linked as **Credits** beside Full guide and Changelog. It credits the stem separation models to Kimberley Jensen (vocals) and KUIELab (drums and bass), distributed by Ultimate Vocal Remover, and lists the libraries and font the app uses with their licences.
+
 ## v54 — Nov 8
 
 ### Added

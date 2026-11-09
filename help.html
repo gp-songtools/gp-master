@@ -64,6 +64,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 <li><a href="#spec">The spectrum view</a></li>
 <li><a href="#cant">What this tool cannot do</a></li>
 <li><a href="#trouble">Troubleshooting</a></li>
+<li><a href="#credits">Credits and licences</a></li>
 </ol></nav>
 
 <h2 id="flow">1. What the app does, in order</h2>
@@ -590,6 +591,24 @@ td:first-child{white-space:nowrap;font-weight:600}
 <tr><td>References vanished</td><td>Site data was cleared, or you are on a different browser or device. Use Export to keep a durable copy.</td></tr>
 <tr><td>Full master ignored my stem balance</td><td>You separated only 30 seconds. Separate the whole song.</td></tr>
 </table>
+<a class="top" href="#">↑ top</a>
+
+<h2 id="credits">23. Credits and licences</h2>
+<p>GP Mastering is free. It builds on other people's work, credited here with thanks.</p>
+<h3>Stem separation models</h3>
+<table>
+<tr><th>Stem</th><th>Model and credit</th></tr>
+<tr><td>Vocals</td><td><code>Kim_Vocal_2</code>, an MDX-Net model trained by <a href="https://github.com/KimberleyJensen">Kimberley Jensen</a>.</td></tr>
+<tr><td>Drums, bass</td><td><code>kuielab_a_drums</code> and <code>kuielab_a_bass</code>, from <a href="https://github.com/kuielab/mdx-net">KUIELab-MDX-Net</a> by KUIELab (Minseok Kim, Woosung Choi and colleagues), trained on the <a href="https://sigsep.github.io/datasets/musdb.html">MUSDB18-HQ</a> research dataset.</td></tr>
+</table>
+<p>The models are distributed by <a href="https://github.com/Anjok07/ultimatevocalremovergui">Ultimate Vocal Remover</a> (UVR, by Anjok07 and aufr33), whose MDX-Net settings GP Mastering follows. The model files carry no licence of their own, so GP Mastering uses them with credit, free of charge, and never as part of anything paid. If you are an author and want them used differently or removed, please <a href="https://github.com/gp-songtools/gp-master/issues">open an issue</a>.</p>
+<h3>Software</h3>
+<ul>
+<li><a href="https://github.com/microsoft/onnxruntime">ONNX Runtime Web</a> 1.20.1 by Microsoft (MIT licence) runs the models. It is bundled unmodified in <code>ort/</code>.</li>
+<li><a href="https://github.com/zhuker/lamejs">lamejs</a> 1.2.1 (LGPL-3.0) encodes MP3, loaded unmodified from cdnjs.</li>
+<li><a href="https://github.com/Vanilagy/mp4-muxer">mp4-muxer</a> 5.1.3 by Vanilagy (MIT licence) writes M4A files, loaded from jsDelivr.</li>
+<li><a href="https://fonts.google.com/specimen/Instrument+Sans">Instrument Sans</a> (SIL Open Font License), served by Google Fonts.</li>
+</ul>
 <a class="top" href="#">↑ top</a>
 
 </main></body></html>
