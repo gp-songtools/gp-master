@@ -194,7 +194,7 @@ body.mini main{padding-bottom:84px}
 .hx p{margin:0 0 7px}.hx p:last-child{margin:0}
 .hx b{color:var(--ink)}
 .hx a{color:var(--ac)}
-#helpTop{display:flex;gap:8px;margin-bottom:18px}
+#helpTop{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
 #helpTop a,#helpTop button{flex:1;text-align:center;border:1px solid var(--ln);background:transparent;color:var(--ink);border-radius:8px;padding:9px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;text-decoration:none}
 #helpTop a:hover,#helpTop button:hover{border-color:var(--ac);color:var(--ac)}
 #refList div.out #refName::after{content:' — outlier';color:var(--warn)}
@@ -261,11 +261,11 @@ body.mini main{padding-bottom:84px}
 #eqApply{width:100%;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>GP Mastering <small style="font-size:13px;color:var(--mut);font-weight:400">v55</small></h1>
+<h1>GP Mastering <small style="font-size:13px;color:var(--mut);font-weight:400">v56</small></h1>
 <p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded unless you use the optional Gemini suggestions.</p>
 <p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or use it just to split the song and download each stem as a WAV.</p>
 
-<div id="helpTop"><a href="help.html">Full guide</a><a href="changelog.html">Changelog</a><a href="help.html#credits">Credits</a><button type="button" id="helpAll">Show all hints</button></div>
+<div id="helpTop"><a href="help.html">Full guide</a><a href="changelog.html">Changelog</a><a href="help.html#credits">Credits</a><a href="https://gp-songtools.github.io/toolsmenu/privacy.html">Privacy</a><button type="button" id="helpAll">Show all hints</button></div>
 
 <div class="cols"><div class="colL">
 <div class="drop"><span id="fl">Tap to choose an audio file</span><input type="file" id="file" accept="audio/*" aria-label="Choose an audio file"></div>
@@ -3547,4 +3547,4 @@ const HELP={
  lpUI();
 })();
 window.addEventListener('error',e=>say('Error: '+e.message,1));
-</script></body></html>
+</script><!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "2c5b0c69f74b496998f02d0e1f651bd5"}'></script><!-- End Cloudflare Web Analytics --></body></html>

@@ -155,7 +155,7 @@ for the lossy formats, leaving headroom for encoder overshoot.
 
 ## Stored data
 
-Nothing leaves the browser. Three keys in `localStorage`:
+Audio never leaves the browser, except the compressed copy sent to Gemini when you press Analyze. Pages load Cloudflare Web Analytics, shared by all GP Song Tools, for anonymous visit counts (no cookies; it never sees audio, settings or keys); see [Privacy & credits](https://gp-songtools.github.io/toolsmenu/privacy.html). Three keys in `localStorage`:
 
 | Key | Holds |
 | --- | --- |

@@ -3,6 +3,16 @@
 All notable changes to GP Mastering, newest first. The version number is the small tag beside the app's title.
 This file mirrors `changelog.html`, which is the version shown in the app; keep the two in step.
 
+## v56 — Nov 9
+
+### Added
+
+- **Privacy** link beside Full guide, Changelog and Credits, opening the Privacy & credits page shared by all GP Song Tools.
+
+### Changed
+
+- GP Mastering now counts visits with Cloudflare Web Analytics: anonymous totals only, with no cookies. It never sees your audio, settings or key.
+
 ## v55 — Nov 9
 
 ### Added

@@ -63,6 +63,9 @@
 - **Stem separation**
   - Per-model `n_fft` is not inferable from the ONNX shape; wrong values fail silently. Change only with `docs/stem-separation.md`
   - Do not edit or re-commit `models/` or `ort/` files; they are large vendored binaries
+- **Analytics, privacy, credits**
+  - `index.html`, `help.html`, `changelog.html` end with the Cloudflare Web Analytics snippet (same token on all GP Song Tools); `stems.html` is an instant redirect and has none
+  - Suite Privacy & credits page: `https://gp-songtools.github.io/toolsmenu/privacy.html` (repo `gp-songtools/toolsmenu`); update it and `help.html#credits` when changing what is sent, stored or credited
 - **Git**
   - Pushing directly to `main` is allowed (owner's instruction); fetch first and push only as a fast-forward
   - Branch + PR to `main` is still fine when the owner asks for one
