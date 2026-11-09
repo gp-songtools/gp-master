@@ -28,6 +28,10 @@ table{width:100%;border-collapse:collapse;margin:0 0 14px;font-size:14.5px}
 th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--ln);vertical-align:top}
 th{font-weight:600;color:var(--mut);font-size:13px}
 td:first-child{white-space:nowrap;font-weight:600}
+@media(max-width:600px){td:first-child{white-space:normal}}
+.toc ol ul{margin:3px 0 0;padding-left:18px;list-style:disc}
+.tw{overflow-x:auto;margin:0 0 14px}
+.tw table{margin:0;min-width:480px}
 .note{background:var(--card);border:1px solid var(--ln);border-left:3px solid var(--ac);border-radius:8px;padding:12px 14px;margin:0 0 14px;font-size:15px}
 .note.w{border-left-color:var(--warn)}
 .note p:last-child{margin:0}
@@ -48,8 +52,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 <li><a href="#genre">Genre preset</a></li>
 <li><a href="#loud">Target loudness</a></li>
 <li><a href="#fmt">Output format</a></li>
-<li><a href="#regions">Volume automation</a></li>
-<li><a href="#ai">AI suggestions (Gemini)</a></li>
+<li><a href="#regions">Volume automation</a><ul><li><a href="#ai">AI suggestions (Gemini)</a></li></ul></li>
 <li><a href="#noise">Noise reduction</a></li>
 <li><a href="#trans">Transients</a></li>
 <li><a href="#stems">Stem balance</a></li>
@@ -444,12 +447,12 @@ td:first-child{white-space:nowrap;font-weight:600}
 
 <h2 id="amount">13. Processing amount</h2>
 <p>This scales every automatic decision at once. On Gentle it also raises the dynamic EQ and de-esser thresholds by 3 dB so they react only to clear problems rather than working continuously.</p>
-<table>
+<div class="tw"><table>
 <tr><th>Amount</th><th>Tone EQ</th><th>Dynamic EQ / de-ess</th><th>Compression</th><th>Saturation</th></tr>
 <tr><td>Gentle</td><td>55%, capped ±1.4 dB</td><td>55% / 50%, +3 dB threshold</td><td>55%</td><td>40%</td></tr>
 <tr><td>Standard</td><td>100%, capped ±2.5 dB</td><td>100%</td><td>100%</td><td>100%</td></tr>
 <tr><td>Strong</td><td>140%, capped ±3.5 dB</td><td>140% / 130%, −2 dB threshold</td><td>140%</td><td>130%</td></tr>
-</table>
+</table></div>
 <p>Measured on real material, Gentle made four tone moves up to 1.4 dB with the dynamic EQ averaging 0.0 dB and peaking at 1.6 dB; Strong made seven moves up to 3.5 dB with the dynamic EQ averaging 0.8 dB and peaking at 4.2 dB.</p>
 <p>Gentle is the default because over-processing is harder to hear than under-processing, and much harder to undo. Start there.</p>
 <h3>Saturation setting and character</h3>

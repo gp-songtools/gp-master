@@ -3,6 +3,13 @@
 All notable changes to GP Mastering, newest first. The version number is the small tag beside the app's title.
 This file mirrors `changelog.html`, which is the version shown in the app; keep the two in step.
 
+## v57 — Nov 9
+
+### Fixed
+
+- The help page no longer scrolls sideways on phones: long first-column text in tables wraps, and the wide **Processing amount** table scrolls inside its own box.
+- The help page's contents list numbered sections one higher than their headings from Volume automation on. AI suggestions is now listed under Volume automation, so the numbers match.
+
 ## v56 — Nov 9
 
 ### Added
