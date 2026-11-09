@@ -3,6 +3,12 @@
 All notable changes to GP Mastering, newest first. The version number is the small tag beside the app's title.
 This file mirrors `changelog.html`, which is the version shown in the app; keep the two in step.
 
+## v58 — Nov 9
+
+### Changed
+
+- The browser tab now shows GP Mastering's own icon, 🎚️, the same one as on the GP Song Tools menu, on every page.
+
 ## v57 — Nov 9
 
 ### Fixed
