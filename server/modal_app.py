@@ -39,7 +39,7 @@ web_image = (
     .add_local_file(HERE / 'api.py', '/root/api.py')
 )
 
-@app.cls(image=gpu_image, gpu='L4', cpu=4.0, memory=8192, timeout=900, scaledown_window=120, max_containers=2)
+@app.cls(image=gpu_image, gpu='T4', cpu=4.0, memory=8192, timeout=900, scaledown_window=120, max_containers=2)
 class Separator:
     @modal.enter()
     def load(self):

@@ -9,7 +9,7 @@ minus the stems, worked out in the browser.
 | --- | --- |
 | `sep_core.py` | The separation itself, a NumPy port of `sep-worker.js` (keep `MODELS` in step) |
 | `api.py` | The web front: access token, CORS, start a job, poll for the result |
-| `modal_app.py` | Deploys both to [Modal](https://modal.com) (GPU L4) |
+| `modal_app.py` | Deploys both to [Modal](https://modal.com) (GPU T4) |
 | `local.py` | Runs the same server on your own computer or a Linux server |
 
 ## Deploy on Modal
