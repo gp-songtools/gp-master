@@ -57,7 +57,9 @@ def build_api(token, start, poll):
         except KeyError:
             raise HTTPException(404, 'No such job')
         except Exception as e:
-            raise HTTPException(500, 'Separation failed on the server: ' + type(e).__name__)
+            m = ' '.join(str(e).split())
+            m = m if len(m) <= 400 else m[:200] + ' … ' + m[-200:]
+            raise HTTPException(500, 'Separation failed on the server: ' + type(e).__name__ + (': ' + m if m else ''))
         return Response(out, media_type='application/octet-stream')
 
     return api

@@ -35,7 +35,7 @@ gpu_image = (
 )
 web_image = (
     modal.Image.debian_slim(python_version='3.12')
-    .pip_install('fastapi[standard]==0.115.12')
+    .pip_install('fastapi[standard]==0.115.12', 'numpy==2.2.6')
     .add_local_file(HERE / 'api.py', '/root/api.py')
 )
 
@@ -63,7 +63,12 @@ class Separator:
                 progress[key] = (d, t)
             except Exception:
                 pass
-        out = run_job(body, sr, n, stems, scale, self.sess, self.provider, tick)
+        try:
+            out = run_job(body, sr, n, stems, scale, self.sess, self.provider, tick)
+        except Exception as e:
+            # a plain RuntimeError so the web container can read it without numpy or onnxruntime
+            print('separation failed:', repr(e))
+            raise RuntimeError(f'{type(e).__name__}: {e}'[:400]) from None
         try:
             progress.pop(key)
         except Exception:
