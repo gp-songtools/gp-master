@@ -23,13 +23,24 @@ You need a Modal account and its command-line tool (`pip install modal`, then
 `modal setup`). Then, in the `gp-master` folder:
 
 1. Make up a long random access token and store it on Modal as a secret. On
-   macOS or Linux, this makes one and prints it so you can copy it into the app:
+   macOS or Linux, this makes one and prints it so you can copy it into the app
+   (any long random password works too):
 
    ```bash
    TOKEN=$(python3 -c "import secrets;print(secrets.token_urlsafe(24))"); echo $TOKEN
    ```
 
    ```bash
+   modal secret create gpm-sep GPM_TOKEN=$TOKEN
+   ```
+
+   On Windows, in PowerShell (no Python needed):
+
+   ```powershell
+   $TOKEN = [guid]::NewGuid().ToString('N') + [guid]::NewGuid().ToString('N'); $TOKEN
+   ```
+
+   ```powershell
    modal secret create gpm-sep GPM_TOKEN=$TOKEN
    ```
 
