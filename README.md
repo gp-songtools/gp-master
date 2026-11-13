@@ -108,7 +108,9 @@ restored when the same file is loaded again),
 rebalance them, master each stem with its own EQ, compression and (for vocals)
 de-essing, then recombine. The app measures each stem against the full mix and
 suggests level moves for the chosen genre (rules of thumb, not reference-matched). The limiter always runs last on the summed mix, so
-the balance you set is the balance you hear.
+the balance you set is the balance you hear. Separation runs in the browser, or
+on your own server with **Separate on: My server** (for example a free Modal GPU;
+the section is uploaded there). Setup: [`server/README.md`](server/README.md).
 
 **Controls**
 

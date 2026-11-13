@@ -2,6 +2,8 @@
   - `index.html` — the whole app: CSS, markup and one inline `<script>` (DSP, players, UI)
   - `help.html`, `changelog.html`, `README.md` — user docs; keep in step with every user-facing change
   - `sep-pool.js`, `sep-worker.js`, `eta.js` — stem separation worker pool, ONNX inference worker, progress/ETA
+  - `sep-remote.js` — optional separation on the owner's server (`separateRemote`, same result shape as `separateParallel`)
+  - `server/` — that server: `sep_core.py` (NumPy port of `sep-worker.js`), `api.py` (token, CORS, jobs), `modal_app.py` (Modal T4 deploy), `local.py` (self-hosted); setup in `server/README.md`
   - `models/*.onnx` (~123 MB), `ort/` — MDX-Net models and vendored onnxruntime-web 1.20.1 (unmodified)
   - `docs/stem-separation.md` — verified per-model separation parameters
 - **Commands** (no build step, no package manager, no test suite)
@@ -43,7 +45,7 @@
   - "Apply to preview" buttons are attached by label text in the IIFE at the end of the script; add new setting labels to its `keys` list
 - **Settings, undo, storage**
   - Persist via `getCfg()`/`applyCfg()` (validate every field in `applyCfg`); `DEFCFG` is captured before `cfgLoad()`
-  - localStorage keys: `gpmaster.cfg.v1`, `gpmaster.refs.v1`, `gpmaster.setups.v1`, `gpmaster.workers.v1`, `gpmaster.ai.v1`, `gpmaster.aikey.v1` (only when Remember is ticked), `gpmaster.ui.v1` (snap); never change a key's format without migration
+  - localStorage keys: `gpmaster.cfg.v1`, `gpmaster.refs.v1`, `gpmaster.setups.v1`, `gpmaster.workers.v1`, `gpmaster.sepsrv.v1` (Separate on, server URL; token only when Remember is ticked), `gpmaster.ai.v1`, `gpmaster.aikey.v1` (only when Remember is ticked), `gpmaster.ui.v1` (snap); never change a key's format without migration
   - Undo history (`H`) records on any document click/change/pointerup/keyup; non-user changes call `histAbsorb()`
   - IndexedDB `gpmaster` (stores `stems`, `songs`) keyed by SHA-256 of file bytes (`songFp`): 16-bit stems without `other`, plus regions/stem levels (`songSaveSoon`, `songRestore`); keep 5 songs' stems
 - **Tone EQ**
@@ -63,6 +65,9 @@
 - **Stem separation**
   - Per-model `n_fft` is not inferable from the ONNX shape; wrong values fail silently. Change only with `docs/stem-separation.md`
   - Do not edit or re-commit `models/` or `ort/` files; they are large vendored binaries
+  - Server separation (`server/sep_core.py`) must match `sep-worker.js`: same `MODELS`, chunking and STFT; change both together
+  - Server wire format (documented in `server/modal_app.py`): upload int16 interleaved + `scale`; result = uint32 header length, JSON header, one 16-bit FLAC per stem; token only in `Authorization: Bearer`, never in a URL, log or error text
+  - Test server mode locally: `GPM_TOKEN=t python3 server/local.py 8790` (needs `onnxruntime numpy soundfile fastapi[standard]`), then Separate on: My server with `http://localhost:8790`
   - Used by another app: Randomash (`gp-songtools/gp-randomash`, `split.html`) loads this site's `sep-pool.js`, `sep-worker.js`, `eta.js`, `ort/` and `models/` from `../gp-master/` and runs them unmodified; keep those paths and the `sep-pool.js` interface stable, or update Randomash in step
 - **Analytics, privacy, credits**
   - `index.html`, `help.html`, `changelog.html` end with the Cloudflare Web Analytics snippet (same token on all GP Song Tools); `stems.html` is an instant redirect and has none

@@ -1,0 +1,67 @@
+"""The web front of the separation server: auth, CORS, job start and polling.
+modal_app.py plugs in Modal's job runner; the same code can be run locally for testing."""
+import hmac
+import os
+
+from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
+VERSION = 1
+STEMS = ('vocals', 'drums', 'bass')
+
+
+class Running(Exception):
+    def __init__(self, done=0, total=0):
+        self.done, self.total = done, total
+
+
+def build_api(token, start, poll):
+    """start(body, sr, n, stems, scale) -> job id (awaitable); poll(id) -> bytes, or raises Running."""
+    api = FastAPI()
+    api.add_middleware(CORSMiddleware, allow_origins=['*'], allow_methods=['GET', 'POST'],
+                       allow_headers=['Authorization', 'Content-Type'], max_age=86400)
+
+    def auth(req: Request):
+        got = req.headers.get('authorization', '')
+        if not token or not hmac.compare_digest(got.encode(), ('Bearer ' + token).encode()):
+            raise HTTPException(401, 'Wrong or missing access token')
+
+    @api.get('/health')
+    def health():
+        return {'ok': True, 'version': VERSION}
+
+    @api.get('/check')
+    def check(req: Request):
+        auth(req)
+        return {'ok': True, 'version': VERSION}
+
+    @api.post('/jobs')
+    async def jobs(req: Request, sr: int, n: int, stems: str, scale: float = 1.0):
+        auth(req)
+        st = [s for s in stems.split(',') if s in STEMS]
+        if not st or n <= 0 or not 8000 <= sr <= 192000 or not 0 < scale < 100:
+            raise HTTPException(400, 'Bad request')
+        body = await req.body()
+        if len(body) < 4 * n:
+            raise HTTPException(400, 'The audio upload was cut short')
+        return {'id': await start(body, sr, n, st, scale)}
+
+    @api.get('/jobs/{jid}')
+    def job(jid: str, req: Request):
+        auth(req)
+        try:
+            out = poll(jid)
+        except Running as r:
+            return JSONResponse({'state': 'running', 'done': r.done, 'total': r.total}, status_code=202)
+        except KeyError:
+            raise HTTPException(404, 'No such job')
+        except Exception as e:
+            raise HTTPException(500, 'Separation failed on the server: ' + type(e).__name__)
+        return Response(out, media_type='application/octet-stream')
+
+    return api
+
+
+def new_key():
+    return os.urandom(12).hex()

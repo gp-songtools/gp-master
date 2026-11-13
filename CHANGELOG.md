@@ -3,6 +3,12 @@
 All notable changes to GP Mastering, newest first. The version number is the small tag beside the app's title.
 This file mirrors `changelog.html`, which is the version shown in the app; keep the two in step.
 
+## v59 — Nov 13
+
+### Added
+
+- **Separate on: My server** under Stem balance. The same vocals, drums and bass models can run on your own server instead of in the browser, for example a free GPU on Modal, where a whole song takes seconds. Paste the address and access token, press **Test**, then separate as usual; the stems are saved on this device as before. The section you separate is uploaded to that server. The server code and setup steps are in the project's `server` folder.
+
 ## v58 — Nov 9
 
 ### Changed

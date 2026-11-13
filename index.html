@@ -262,7 +262,7 @@ body.mini main{padding-bottom:84px}
 #eqApply{width:100%;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>GP Mastering <small style="font-size:13px;color:var(--mut);font-weight:400">v58</small></h1>
+<h1>GP Mastering <small style="font-size:13px;color:var(--mut);font-weight:400">v59</small></h1>
 <p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded unless you use the optional Gemini suggestions.</p>
 <p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or use it just to split the song and download each stem as a WAV.</p>
 
@@ -329,6 +329,13 @@ body.mini main{padding-bottom:84px}
  <span class="lbl">Stem balance <span style="font-weight:400;color:var(--mut)">(optional)</span></span>
  <p class="hint" style="margin:0 0 10px">Splits the song into vocals, drums, bass and other, shows each stem's waveform, lets you listen to them, download them as WAV files, and rebalance them before mastering. Separating is slow and downloads 123 MB of models the first time, so start with the 30-second section.</p>
  <div class="ssel" id="ssel"><span style="color:var(--mut)">Separate:</span><label><input type="checkbox" id="ss-vocals" checked>Vocals</label><label><input type="checkbox" id="ss-drums" checked>Drums</label><label><input type="checkbox" id="ss-bass" checked>Bass</label><span style="color:var(--mut);font-size:13px">Anything you skip stays in Other, and fewer stems finish sooner.</span></div>
+ <div class="ssel"><label for="sepOn" style="color:var(--mut)">Separate on:</label><select id="sepOn" aria-label="Where to separate" style="font:inherit;padding:4px 6px;border:1px solid var(--ln);border-radius:6px;background:var(--card);color:var(--ink)"><option value="browser">This browser</option><option value="server">My server</option></select></div>
+ <div id="srvBox" hidden>
+  <div class="airow" style="margin-bottom:6px"><input type="url" id="srvUrl" placeholder="Server address, e.g. https://you--gpm-sep-web.modal.run" autocomplete="off" spellcheck="false" aria-label="Separation server address"></div>
+  <div class="airow"><input type="password" id="srvTok" placeholder="Access token" autocomplete="off" spellcheck="false" aria-label="Separation server access token"><button type="button" class="btn" id="srvTest">Test</button><button type="button" class="btn" id="srvForget">Forget</button></div>
+  <label class="chk" style="margin:8px 0 6px"><input type="checkbox" id="srvRemember"><span>Remember the token on this device<small>Unchecked, it is kept only until you close the page.</small></span></label>
+  <p class="hint" id="srvMsg" role="status" style="margin:0 0 10px">Runs the same models on your own server, for example a free Modal GPU (see the guide). The section you separate is uploaded to that server.</p>
+ </div>
  <div class="ssel" id="wsel"><label for="wk" style="color:var(--mut)">Workers:</label><select id="wk" aria-label="Number of parallel workers" style="font:inherit;padding:4px 6px;border:1px solid var(--ln);border-radius:6px;background:var(--card);color:var(--ink)"></select><span id="wkHint" style="color:var(--mut);font-size:13px"></span></div>
  <div class="two" style="margin-bottom:8px">
   <button class="go alt" id="sepPv" disabled>Separate 30 s section</button>
@@ -470,6 +477,7 @@ body.mini main{padding-bottom:84px}
 <div id="mini" hidden><div class="mi"><button type="button" class="ppb" id="mPlay">Play</button><div class="om" role="group" aria-label="What the player plays"><button type="button" id="mO" aria-pressed="true">Original</button><button type="button" id="mM" aria-pressed="false">Mastered</button></div><button type="button" class="ppb" id="mLoop" aria-pressed="false" aria-label="Loop" title="Loop">&#10227;</button><span id="mTime">0:00</span><button type="button" class="ppb" id="mUn" disabled aria-label="Undo" title="Undo">&#8630;</button><button type="button" class="ppb" id="mRe" disabled aria-label="Redo" title="Redo">&#8631;</button></div></div>
 <script src="eta.js"></script>
 <script src="sep-pool.js"></script>
+<script src="sep-remote.js"></script>
 <script>
 let sayMute=false;
 const esc=t=>String(t??'').replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
@@ -2256,6 +2264,24 @@ function wkInit(){
  sel.onchange=upd;upd();
 }
 wkInit();
+/* separate on: this browser, or the owner's own server (sep-remote.js); token only kept if Remember is ticked */
+const SRV_KEY='gpmaster.sepsrv.v1';
+const srvOn=()=>$('sepOn').value==='server';
+function srvSave(){const o={on:$('sepOn').value,url:$('srvUrl').value.trim()};if($('srvRemember').checked&&$('srvTok').value)o.tok=$('srvTok').value;try{localStorage.setItem(SRV_KEY,JSON.stringify(o))}catch(_){}}
+function srvUI(){const on=srvOn();$('srvBox').hidden=!on;$('wsel').style.display=on?'none':''}
+function srvInit(){
+ let o={};try{o=JSON.parse(localStorage.getItem(SRV_KEY)||'{}')||{}}catch(_){}
+ $('sepOn').value=o.on==='server'?'server':'browser';
+ if(typeof o.url==='string')$('srvUrl').value=o.url;
+ if(typeof o.tok==='string'){$('srvTok').value=o.tok;$('srvRemember').checked=true}
+ $('sepOn').onchange=()=>{srvUI();srvSave()};
+ $('srvUrl').onchange=$('srvTok').onchange=$('srvRemember').onchange=srvSave;
+ $('srvForget').onclick=()=>{$('srvTok').value='';$('srvRemember').checked=false;srvSave();$('srvMsg').textContent='Token removed from this page and from this browser\u2019s storage.'};
+ $('srvTest').onclick=()=>{const u=$('srvUrl').value.trim();if(!/^https?:\/\/\S+$/.test(u)){$('srvMsg').textContent='Enter the server address, starting with https://';return}
+  $('srvMsg').textContent='Checking…';sepRemoteCheck(u,$('srvTok').value).then(t=>$('srvMsg').textContent=t,e=>$('srvMsg').textContent=e.message)};
+ srvUI();
+}
+srvInit();
 function runSeparation(scope){
  if(!src)return;
  if(arr&&scope==='preview'){ssay('While the song is rearranged, separate the whole song: stems are made from the original file and then follow the arrangement.',1);return}
@@ -2266,6 +2292,18 @@ function runSeparation(scope){
  spReset();busy(true);$('sepPv').disabled=true;$('sepAll').disabled=true;$('mix').hidden=true;$('sbar').style.width='0';
  const ch=chans(orig.buf),mix=[new Float32Array(ch[0].subarray(r.start,r.start+r.len)),new Float32Array(ch[1].subarray(r.start,r.start+r.len))];
  const t0=performance.now(),free=()=>{$('sepPv').disabled=false;$('sepAll').disabled=false;busy(false)};
+ if(srvOn()){
+  const u=$('srvUrl').value.trim();
+  if(!/^https?:\/\/\S+$/.test(u)||!$('srvTok').value){ssay('Enter your separation server\u2019s address and access token, or choose Separate on: This browser.',1);free();return}
+  stemWorker=separateRemote({mix,stems:[...chosen,'other'],sampleRate:src.sampleRate,url:u,token:$('srvTok').value,onStatus:t=>ssay(t),onProgress:f=>{$('sbar').style.width=(f*100).toFixed(1)+'%'}});
+  stemWorker.then(d=>{
+   orig.stems={d:d.result,start:r.start,len:r.len,scope};arrStems();
+   $('sbar').style.width='100%';
+   ssay(`Separated ${scope==='preview'?'the 30-second section':'the whole song'} in ${((performance.now()-t0)/60000).toFixed(1)} min on your server${d.provider?' ('+(/CUDA/.test(d.provider)?'GPU':'CPU')+', '+d.serverSecs+' s of processing)':''}.`);
+   mixRows();free();regRender();drawWave();stemsSave();
+  }).catch(err=>{ssay('Separation failed: '+(err&&err.message||err),1);free()});
+  return;
+ }
  const eta=SepEta(t=>ssay(t));eta.start();
  stemWorker=separateParallel({mix,stems:[...chosen,'other'],baseUrl:location.href.replace(/[^/]*$/,''),sampleRate:src.sampleRate,eta,workers:wkChoice(),
   onStatus:t=>eta.note(t),onProgress:()=>{$('sbar').style.width=(eta.frac()*100).toFixed(1)+'%'}});
@@ -3486,7 +3524,8 @@ const HELP={
 'Stem balance':`<p>Splits the song into vocals, drums, bass and other, lets you rebalance them, then masters the result. Optionally each stem gets its own EQ and compression first; the limiter always stays on the summed mix so your balance survives.</p>
 <p>Separation downloads about 123 MB of models the first time and is slow — several times the length of the audio. <b>Use the 30-second option first</b>, and use a desktop browser: a full song needs more memory than most phones have.</p>
 <p><b>Separate once:</b> the stems are saved on this device with the song&rsquo;s regions and stem levels, and come back automatically when you load the same file again, even after a refresh. <b>Forget saved stems</b> removes them.</p>
-<p>Stems only apply to the section you separated. Separated audio carries artifacts; real stems from your session are always better if you have them.</p>`,
+<p>Stems only apply to the section you separated. Separated audio carries artifacts; real stems from your session are always better if you have them.</p>
+<p><b>Separate on: My server</b> runs the same models on your own server (for example a free Modal GPU) instead of in this browser: much faster, but the section is uploaded to that server. Paste its address and access token and press Test. Setup: <code>server/README.md</code> in the project.</p>`,
 'Processing mode':`<p><b>Full master</b> analyzes the song and adapts every stage to it. <b>Light polish</b> applies one fixed EQ and compressor, identical for every song. <b>Loudness only</b> changes no tone at all.</p>
 <p>Loudness only is the honest choice when you trust your mix. It is also the best way to hear what the other modes are doing: master once each way and compare.</p>
 <p>Clarity, width, the vocal enhancer, the pumper and the processing amount apply to Full master only.</p>`,
