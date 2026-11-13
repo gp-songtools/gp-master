@@ -29,7 +29,7 @@ progress = modal.Dict.from_name('gpm-sep-progress', create_if_missing=True)
 
 gpu_image = (
     modal.Image.debian_slim(python_version='3.12')
-    .pip_install('onnxruntime-gpu[cuda,cudnn]==1.22.0', 'numpy==2.2.6', 'soundfile==0.13.1')
+    .pip_install('onnxruntime-gpu[cuda,cudnn]==1.22.0', 'cupy-cuda12x[ctk]==14.2.0', 'numpy==2.2.6', 'soundfile==0.13.1')
     .add_local_file(HERE / 'sep_core.py', '/root/sep_core.py')
     .add_local_dir(HERE.parent / 'models', '/models')
 )
@@ -57,7 +57,15 @@ class Separator:
         self.ro = ort.RunOptions()
         if self.provider == 'CUDAExecutionProvider':
             self.ro.add_run_config_entry('memory.enable_memory_arena_shrinkage', 'gpu:0')
-        print('running on', self.provider)
+        # The spectrum maths (STFT and its inverse) runs on the GPU with CuPy when it can.
+        self.xp = None
+        try:
+            import cupy as cp
+            cp.fft.irfft(cp.fft.rfft(cp.ones(7680))).get()  # proves cuFFT and the kernels load
+            self.xp = cp
+        except Exception as e:
+            print('CuPy unavailable, spectrum maths on the CPU:', repr(e))
+        print('models on', self.provider, '- spectrum maths on', 'GPU' if self.xp else 'CPU')
 
     @modal.method()
     def run(self, body: bytes, sr: int, n: int, stems: list, scale: float, key: str) -> bytes:
@@ -69,11 +77,24 @@ class Separator:
             except Exception:
                 pass
         try:
-            out = run_job(body, sr, n, stems, scale, self.sess, self.provider, tick, batch=2, run_options=self.ro)
+            try:
+                out = run_job(body, sr, n, stems, scale, self.sess, self.provider, tick, batch=2, run_options=self.ro,
+                              **({'xp': self.xp} if self.xp else {}))
+            except Exception as e:
+                if not self.xp:
+                    raise
+                # GPU spectrum maths failed: say so in the log, and redo this song with NumPy
+                print('CuPy failed, retrying on the CPU:', repr(e))
+                self.xp.get_default_memory_pool().free_all_blocks()
+                self.xp = None
+                out = run_job(body, sr, n, stems, scale, self.sess, self.provider, tick, batch=2, run_options=self.ro)
         except Exception as e:
             # a plain RuntimeError so the web container can read it without numpy or onnxruntime
             print('separation failed:', repr(e))
             raise RuntimeError(f'{type(e).__name__}: {e}'[:400]) from None
+        finally:
+            if self.xp:
+                self.xp.get_default_memory_pool().free_all_blocks()  # leave the GPU to the models
         try:
             progress.pop(key)
         except Exception:

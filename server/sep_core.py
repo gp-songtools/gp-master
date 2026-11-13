@@ -28,41 +28,42 @@ def _segments(mix, M):
     return np.stack([pad[:, k * gen:k * gen + chunk] for k in range(K)])
 
 
-def _stft(seg, M):
-    """(B, 2, chunk) -> (B, 4, dim_f, dim_t) as [re_L, im_L, re_R, im_R]."""
+def _stft(seg, M, xp=np):
+    """(B, 2, chunk) -> (B, 4, dim_f, dim_t) as [re_L, im_L, re_R, im_R].
+    xp is numpy, or cupy to do the maths on the GPU (same float64 precision)."""
     N, F, T = M['n_fft'], M['dim_f'], M['dim_t']
     h = N // 2
-    win = 0.5 - 0.5 * np.cos(2 * np.pi * np.arange(N) / N)
-    x = np.pad(seg.astype(np.float64), ((0, 0), (0, 0), (h, h)), mode='reflect')
-    idx = np.arange(T)[:, None] * HOP + np.arange(N)[None, :]
-    S = np.fft.rfft(x[:, :, idx] * win, axis=-1)[..., :F]  # (B, 2, T, F)
-    S = np.transpose(S, (0, 1, 3, 2))  # (B, 2, F, T)
-    out = np.empty((seg.shape[0], 4, F, T), np.float32)
+    win = 0.5 - 0.5 * xp.cos(2 * xp.pi * xp.arange(N) / N)
+    x = xp.pad(seg.astype(xp.float64), ((0, 0), (0, 0), (h, h)), mode='reflect')
+    idx = xp.arange(T)[:, None] * HOP + xp.arange(N)[None, :]
+    S = xp.fft.rfft(x[:, :, idx] * win, axis=-1)[..., :F]  # (B, 2, T, F)
+    S = xp.transpose(S, (0, 1, 3, 2))  # (B, 2, F, T)
+    out = xp.empty((seg.shape[0], 4, F, T), xp.float32)
     out[:, 0::2] = S.real
     out[:, 1::2] = S.imag
     return out
 
 
-def _istft(spec, M, n):
+def _istft(spec, M, n, xp=np):
     """(B, 4, dim_f, dim_t) -> (B, 2, n), window-squared overlap-add normalisation."""
     N, F, T = M['n_fft'], M['dim_f'], M['dim_t']
     h = N // 2
-    win = 0.5 - 0.5 * np.cos(2 * np.pi * np.arange(N) / N)
+    win = 0.5 - 0.5 * xp.cos(2 * xp.pi * xp.arange(N) / N)
     B = spec.shape[0]
-    Z = np.zeros((B, 2, T, N // 2 + 1), np.complex128)
-    Z[..., :F] = np.transpose(spec[:, 0::2] + 1j * spec[:, 1::2].astype(np.float64), (0, 1, 3, 2))
-    fr = np.fft.irfft(Z, n=N, axis=-1) * win  # (B, 2, T, N)
+    Z = xp.zeros((B, 2, T, N // 2 + 1), xp.complex128)
+    Z[..., :F] = xp.transpose(spec[:, 0::2] + 1j * spec[:, 1::2].astype(xp.float64), (0, 1, 3, 2))
+    fr = xp.fft.irfft(Z, n=N, axis=-1) * win  # (B, 2, T, N)
     L = (T - 1) * HOP + N
-    acc = np.zeros((B, 2, L))
-    ws = np.zeros(L)
+    acc = xp.zeros((B, 2, L))
+    ws = xp.zeros(L)
     for t in range(T):
         acc[:, :, t * HOP:t * HOP + N] += fr[:, :, t]
         ws[t * HOP:t * HOP + N] += win * win
-    ws = np.maximum(ws, 1e-8)
+    ws = xp.maximum(ws, 1e-8)
     return (acc / ws)[:, :, h:h + n]
 
 
-def separate(mix, stem, session, batch=4, progress=None, run_options=None):
+def separate(mix, stem, session, batch=4, progress=None, run_options=None, xp=np):
     """Run one model over the whole mix. mix: (2, n) float32. Returns (2, n) float32.
     Every batch has the same shape (the last one is padded with silence), so a GPU memory
     pool sized for the first batch is reused instead of growing."""
@@ -72,13 +73,15 @@ def separate(mix, stem, session, batch=4, progress=None, run_options=None):
     segs = _segments(mix, M)
     name = session.get_inputs()[0].name
     out = np.zeros((2, segs.shape[0] * gen), np.float32)
+    host = getattr(xp, 'asnumpy', np.asarray)  # cupy -> numpy; a no-op for numpy
     for a in range(0, segs.shape[0], batch):
         b = segs[a:a + batch]
         real = b.shape[0]
         if real < batch:
             b = np.concatenate([b, np.zeros((batch - real,) + b.shape[1:], b.dtype)])
-        y = session.run(None, {name: _stft(b, M)}, run_options)[0][:real]
-        w = _istft(y, M, chunk)[:, :, trim:trim + gen] * M['comp']
+        x = host(_stft(xp.asarray(b), M, xp))
+        y = session.run(None, {name: x}, run_options)[0][:real]
+        w = host(_istft(xp.asarray(y), M, chunk, xp)[:, :, trim:trim + gen] * M['comp'])
         for i in range(w.shape[0]):
             out[:, (a + i) * gen:(a + i + 1) * gen] = w[i]
         if progress:
@@ -86,7 +89,7 @@ def separate(mix, stem, session, batch=4, progress=None, run_options=None):
     return out[:, :n]
 
 
-def run_job(body, sr, n, stems, scale, sessions, provider='', progress=None, batch=4, run_options=None):
+def run_job(body, sr, n, stems, scale, sessions, provider='', progress=None, batch=4, run_options=None, xp=np):
     """Upload bytes -> result bytes, in the wire format described in modal_app.py."""
     import io
     import json
@@ -104,7 +107,7 @@ def run_job(body, sr, n, stems, scale, sessions, provider='', progress=None, bat
             progress(sum(done.values()), total)
     head, parts = {'stems': [], 'provider': provider, 'version': 1}, []
     for s in stems:
-        y = separate(mix, s, sessions[s], batch=batch, progress=tick, run_options=run_options)
+        y = separate(mix, s, sessions[s], batch=batch, progress=tick, run_options=run_options, xp=xp)
         pk = float(np.max(np.abs(y))) or 1e-9
         q = np.round(y.T / pk * 32767).astype('<i2')
         b = io.BytesIO()

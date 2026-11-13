@@ -3,7 +3,7 @@
   - `help.html`, `changelog.html`, `README.md` — user docs; keep in step with every user-facing change
   - `sep-pool.js`, `sep-worker.js`, `eta.js` — stem separation worker pool, ONNX inference worker, progress/ETA
   - `sep-remote.js` — optional separation on the owner's server (`separateRemote`, same result shape as `separateParallel`)
-  - `server/` — that server: `sep_core.py` (NumPy port of `sep-worker.js`), `api.py` (token, CORS, jobs), `modal_app.py` (Modal T4 deploy), `local.py` (self-hosted); setup in `server/README.md`
+  - `server/` — that server: `sep_core.py` (NumPy port of `sep-worker.js`; on Modal the STFT runs on the GPU via CuPy, `xp=cupy`, falling back to NumPy), `api.py` (token, CORS, jobs), `modal_app.py` (Modal T4 deploy), `local.py` (self-hosted); setup in `server/README.md`
   - `models/*.onnx` (~123 MB), `ort/` — MDX-Net models and vendored onnxruntime-web 1.20.1 (unmodified)
   - `docs/stem-separation.md` — verified per-model separation parameters
 - **Commands** (no build step, no package manager, no test suite)
