@@ -50,7 +50,9 @@ You need a Modal account and its command-line tool (`pip install modal`, then
    modal deploy server/modal_app.py
    ```
 
-   The output lists the web address, ending in `-web.modal.run`.
+   To find the web address, open the deployment link it prints and click the
+   `web` function. It looks like `https://<you>--gpm-sep-web.<region>.modal.run`.
+   Opening it with `/health` on the end should show `{"ok":true,"version":1}`.
 
 3. In GP Mastering, under **Stem balance**, set **Separate on** to **My server**,
    paste the address and the token, and press **Test**.
