@@ -11,6 +11,14 @@ minus the stems, worked out in the browser.
 | `api.py` | The web front: access token, CORS, start a job, poll for the result |
 | `modal_app.py` | Deploys both to [Modal](https://modal.com) (GPU T4) |
 | `local.py` | Runs the same server on your own computer or a Linux server |
+| `kit/` | Setup scripts and README for the **Server kit** the app zips up for users |
+
+Users who are not working from this repository should use the app's
+**⬇ Server kit** button instead (Stem balance → Separate on: My server). The page
+zips `modal_app.py`, `sep_core.py`, `api.py` and `kit/*` in the browser, so the kit
+always matches this folder. Without a `models` folder next to `modal_app.py`, Modal
+downloads the models from the site at build time; both paths check the SHA-256
+in `MODEL_SHA256`.
 
 ## Deploy on Modal
 

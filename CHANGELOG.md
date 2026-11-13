@@ -3,6 +3,12 @@
 All notable changes to GP Mastering, newest first. The version number is the small tag beside the app's title.
 This file mirrors `changelog.html`, which is the version shown in the app; keep the two in step.
 
+## v60 — Nov 13
+
+### Added
+
+- **⬇ Server kit** under Separate on: My server. It downloads a small zip with setup scripts for Windows and for macOS and Linux that set up your own separation server on Modal: they install Modal's tool, sign you in, make the access token, deploy, and print the address and token to paste into GP Mastering. Modal fetches the models from this site; the README explains how to include your own copy instead.
+
 ## v59 — Nov 13
 
 ### Added

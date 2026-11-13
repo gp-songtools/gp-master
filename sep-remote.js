@@ -111,3 +111,47 @@ async function sepRemoteCheck(url, token) {
   if (!r.ok) throw new Error(sepRemoteExplain(r.status, url));
   return 'Connected. The server accepted the token.';
 }
+
+/* The server kit: the server files from this site, zipped in the browser so the kit always
+   matches the code (no build step, nothing committed). The models are not included; Modal
+   fetches them from this site, or the user adds a models folder (see server/kit/README.txt). */
+const SEP_KIT = [['server/modal_app.py', 'modal_app.py'], ['server/sep_core.py', 'sep_core.py'], ['server/api.py', 'api.py'],
+  ['server/kit/setup.ps1', 'setup.ps1'], ['server/kit/setup.sh', 'setup.sh', 0o755], ['server/kit/README.txt', 'README.txt']];
+let sepCrcT = null;
+function sepCrc(b) {
+  if (!sepCrcT) { sepCrcT = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; sepCrcT[n] = c >>> 0; } }
+  let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = sepCrcT[(c ^ b[i]) & 255] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+// files: [{name, data: Uint8Array, mode?}] -> Blob (stored, no compression; Unix modes kept)
+function sepZip(files) {
+  const d = new Date(), tm = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1),
+    dt = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate(), enc = new TextEncoder();
+  const parts = [], cen = []; let off = 0;
+  for (const f of files) {
+    const nm = enc.encode(f.name), crc = sepCrc(f.data), n = f.data.length;
+    const h = new DataView(new ArrayBuffer(30));
+    [[0, 0x04034b50, 4], [4, 20, 2], [6, 0x800, 2], [8, 0, 2], [10, tm, 2], [12, dt, 2], [14, crc, 4], [18, n, 4], [22, n, 4], [26, nm.length, 2], [28, 0, 2]]
+      .forEach(([o, v, s]) => s === 4 ? h.setUint32(o, v, true) : h.setUint16(o, v, true));
+    const c = new DataView(new ArrayBuffer(46));
+    [[0, 0x02014b50, 4], [4, 0x314, 2], [6, 20, 2], [8, 0x800, 2], [10, 0, 2], [12, tm, 2], [14, dt, 2], [16, crc, 4], [20, n, 4], [24, n, 4],
+      [28, nm.length, 2], [30, 0, 2], [32, 0, 2], [34, 0, 2], [36, 0, 2], [38, ((f.mode || 0o644) | 0o100000) * 65536, 4], [42, off, 4]]
+      .forEach(([o, v, s]) => s === 4 ? c.setUint32(o, v >>> 0, true) : c.setUint16(o, v, true));
+    parts.push(h, nm, f.data); cen.push(c, nm); off += 30 + nm.length + n;
+  }
+  const size = cen.reduce((t, x) => t + x.byteLength, 0), e = new DataView(new ArrayBuffer(22));
+  [[0, 0x06054b50, 4], [4, 0, 2], [6, 0, 2], [8, files.length, 2], [10, files.length, 2], [12, size, 4], [16, off, 4], [20, 0, 2]]
+    .forEach(([o, v, s]) => s === 4 ? e.setUint32(o, v, true) : e.setUint16(o, v, true));
+  return new Blob([...parts, ...cen, e], { type: 'application/zip' });
+}
+async function sepKitZip(base) {
+  const files = [];
+  for (const [p, name, mode] of SEP_KIT) {
+    const r = await fetch(base + p, { cache: 'no-cache' });
+    if (!r.ok) throw new Error('Could not fetch ' + p + ' (' + r.status + ')');
+    let t = await r.text();
+    if (/\.(ps1|txt)$/.test(name)) t = t.replace(/\r?\n/g, '\r\n');  // Windows line endings for Windows files
+    files.push({ name: 'gpm-sep-server/' + name, data: new TextEncoder().encode(t), mode });
+  }
+  return sepZip(files);
+}

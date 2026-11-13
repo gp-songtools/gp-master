@@ -18,6 +18,7 @@ Wire format (all little-endian):
   GET  /check      -> the same, but checks the token
 All except /health need "Authorization: Bearer <GPM_TOKEN>"."""
 import os
+import shlex
 from pathlib import Path
 
 import modal
@@ -27,12 +28,49 @@ app = modal.App('gpm-sep')
 secret = modal.Secret.from_name('gpm-sep')
 progress = modal.Dict.from_name('gpm-sep-progress', create_if_missing=True)
 
-gpu_image = (
-    modal.Image.debian_slim(python_version='3.12')
-    .pip_install('onnxruntime-gpu[cuda,cudnn]==1.22.0', 'cupy-cuda12x[ctk]==14.2.0', 'numpy==2.2.6', 'soundfile==0.13.1')
-    .add_local_file(HERE / 'sep_core.py', '/root/sep_core.py')
-    .add_local_dir(HERE.parent / 'models', '/models')
-)
+# The three model files (see sep_core.MODELS) and their SHA-256. A local `models` folder is used
+# when it holds all three (the repository has one; the server kit can be given one); otherwise
+# Modal downloads them from the GP Mastering site while it builds the image. Either way the
+# hashes are checked, so a wrong or damaged file stops the deploy instead of giving bad stems.
+MODELS_URL = 'https://gp-songtools.github.io/gp-master/models/'
+MODEL_SHA256 = {
+    'Kim_Vocal_2.onnx': 'ce74ef3b6a6024ce44211a07be9cf8bc6d87728cc852a68ab34eb8e58cde9c8b',
+    'kuielab_a_drums.onnx': '40f586b7091934dd6f5563f0cba8f14bad57ce88440da1098bf388ea716c2901',
+    'kuielab_a_bass.onnx': '0c3e77b9963185b1ea6bb46a4b8924137d9370fc1ccdefec7b1b416ef550dcaa',
+}
+
+
+def local_models():
+    """The local models folder if it holds all three files, else None; a wrong file is an error."""
+    import hashlib
+    for d in (HERE / 'models', HERE.parent / 'models'):
+        if not all((d / f).is_file() for f in MODEL_SHA256):
+            continue
+        for f, h in MODEL_SHA256.items():
+            if hashlib.sha256((d / f).read_bytes()).hexdigest() != h:
+                raise SystemExit(f'{d / f} is not the expected model file. Download it again, or delete '
+                                 f'the models folder to let Modal fetch the models itself.')
+        return d
+    return None
+
+
+FETCH = ('import hashlib,os,urllib.request as u;os.makedirs("/models",exist_ok=True)\n'
+         'for f,h in %r.items():\n'
+         ' p="/models/"+f;u.urlretrieve(%r+f,p)\n'
+         ' assert hashlib.sha256(open(p,"rb").read()).hexdigest()==h,"bad download: "+f' % (MODEL_SHA256, MODELS_URL))
+
+gpu_image = modal.Image.debian_slim(python_version='3.12').pip_install(
+    'onnxruntime-gpu[cuda,cudnn]==1.22.0', 'cupy-cuda12x[ctk]==14.2.0', 'numpy==2.2.6', 'soundfile==0.13.1')
+if modal.is_local():
+    _models = local_models()
+    print('Models: ' + (f'uploading from {_models}' if _models else f'Modal downloads them from {MODELS_URL}'))
+else:
+    _models = None
+if not _models:
+    gpu_image = gpu_image.run_commands('python -c ' + shlex.quote(FETCH))
+gpu_image = gpu_image.add_local_file(HERE / 'sep_core.py', '/root/sep_core.py')
+if _models:
+    gpu_image = gpu_image.add_local_dir(_models, '/models')
 web_image = (
     modal.Image.debian_slim(python_version='3.12')
     .pip_install('fastapi[standard]==0.115.12', 'numpy==2.2.6')
