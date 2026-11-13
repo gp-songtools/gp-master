@@ -39,7 +39,7 @@ web_image = (
     .add_local_file(HERE / 'api.py', '/root/api.py')
 )
 
-@app.cls(image=gpu_image, gpu='T4', cpu=4.0, memory=8192, timeout=900, scaledown_window=120, max_containers=2)
+@app.cls(image=gpu_image, gpu='L4', cpu=4.0, memory=8192, timeout=900, scaledown_window=120, max_containers=2)
 class Separator:
     @modal.enter()
     def load(self):
@@ -49,7 +49,7 @@ class Separator:
             ort.preload_dlls()
         except Exception as e:  # falls back to the CPU below
             print('preload_dlls failed:', e)
-        # The three models share one 16 GB GPU: grow each memory pool only by what is asked for,
+        # The three models share one GPU: grow each memory pool only by what is asked for,
         # and give it back after every run, so no model starves the others.
         prov = [('CUDAExecutionProvider', {'arena_extend_strategy': 'kSameAsRequested'}), 'CPUExecutionProvider']
         self.sess = {k: ort.InferenceSession(f"/models/{M['file']}", providers=prov) for k, M in MODELS.items()}
