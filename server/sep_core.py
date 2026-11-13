@@ -62,8 +62,10 @@ def _istft(spec, M, n):
     return (acc / ws)[:, :, h:h + n]
 
 
-def separate(mix, stem, session, batch=4, progress=None):
-    """Run one model over the whole mix. mix: (2, n) float32. Returns (2, n) float32."""
+def separate(mix, stem, session, batch=4, progress=None, run_options=None):
+    """Run one model over the whole mix. mix: (2, n) float32. Returns (2, n) float32.
+    Every batch has the same shape (the last one is padded with silence), so a GPU memory
+    pool sized for the first batch is reused instead of growing."""
     M = MODELS[stem]
     n = mix.shape[1]
     chunk, trim, gen = geometry(M)
@@ -72,7 +74,10 @@ def separate(mix, stem, session, batch=4, progress=None):
     out = np.zeros((2, segs.shape[0] * gen), np.float32)
     for a in range(0, segs.shape[0], batch):
         b = segs[a:a + batch]
-        y = session.run(None, {name: _stft(b, M)})[0]
+        real = b.shape[0]
+        if real < batch:
+            b = np.concatenate([b, np.zeros((batch - real,) + b.shape[1:], b.dtype)])
+        y = session.run(None, {name: _stft(b, M)}, run_options)[0][:real]
         w = _istft(y, M, chunk)[:, :, trim:trim + gen] * M['comp']
         for i in range(w.shape[0]):
             out[:, (a + i) * gen:(a + i + 1) * gen] = w[i]
@@ -81,7 +86,7 @@ def separate(mix, stem, session, batch=4, progress=None):
     return out[:, :n]
 
 
-def run_job(body, sr, n, stems, scale, sessions, provider='', progress=None, batch=4):
+def run_job(body, sr, n, stems, scale, sessions, provider='', progress=None, batch=4, run_options=None):
     """Upload bytes -> result bytes, in the wire format described in modal_app.py."""
     import io
     import json
@@ -99,7 +104,7 @@ def run_job(body, sr, n, stems, scale, sessions, provider='', progress=None, bat
             progress(sum(done.values()), total)
     head, parts = {'stems': [], 'provider': provider, 'version': 1}, []
     for s in stems:
-        y = separate(mix, s, sessions[s], batch=batch, progress=tick)
+        y = separate(mix, s, sessions[s], batch=batch, progress=tick, run_options=run_options)
         pk = float(np.max(np.abs(y))) or 1e-9
         q = np.round(y.T / pk * 32767).astype('<i2')
         b = io.BytesIO()

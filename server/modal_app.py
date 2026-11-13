@@ -49,9 +49,14 @@ class Separator:
             ort.preload_dlls()
         except Exception as e:  # falls back to the CPU below
             print('preload_dlls failed:', e)
-        prov = ['CUDAExecutionProvider', 'CPUExecutionProvider']
+        # The three models share one 16 GB GPU: grow each memory pool only by what is asked for,
+        # and give it back after every run, so no model starves the others.
+        prov = [('CUDAExecutionProvider', {'arena_extend_strategy': 'kSameAsRequested'}), 'CPUExecutionProvider']
         self.sess = {k: ort.InferenceSession(f"/models/{M['file']}", providers=prov) for k, M in MODELS.items()}
         self.provider = self.sess['vocals'].get_providers()[0]
+        self.ro = ort.RunOptions()
+        if self.provider == 'CUDAExecutionProvider':
+            self.ro.add_run_config_entry('memory.enable_memory_arena_shrinkage', 'gpu:0')
         print('running on', self.provider)
 
     @modal.method()
@@ -64,7 +69,7 @@ class Separator:
             except Exception:
                 pass
         try:
-            out = run_job(body, sr, n, stems, scale, self.sess, self.provider, tick)
+            out = run_job(body, sr, n, stems, scale, self.sess, self.provider, tick, batch=2, run_options=self.ro)
         except Exception as e:
             # a plain RuntimeError so the web container can read it without numpy or onnxruntime
             print('separation failed:', repr(e))
