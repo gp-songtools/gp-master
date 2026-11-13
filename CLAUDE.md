@@ -63,13 +63,14 @@
 - **Stem separation**
   - Per-model `n_fft` is not inferable from the ONNX shape; wrong values fail silently. Change only with `docs/stem-separation.md`
   - Do not edit or re-commit `models/` or `ort/` files; they are large vendored binaries
+  - Used by another app: Randomash (`gp-songtools/gp-randomash`, `split.html`) loads this site's `sep-pool.js`, `sep-worker.js`, `eta.js`, `ort/` and `models/` from `../gp-master/` and runs them unmodified; keep those paths and the `sep-pool.js` interface stable, or update Randomash in step
 - **Analytics, privacy, credits**
   - `index.html`, `help.html`, `changelog.html` end with the Cloudflare Web Analytics snippet (same token on all GP Song Tools); `stems.html` is an instant redirect and has none
   - Suite Privacy & credits page: `https://gp-songtools.github.io/toolsmenu/privacy.html` (repo `gp-songtools/toolsmenu`); update it and `help.html#credits` when changing what is sent, stored or credited
 - **Publishing (GitHub Pages, branch `main`)**
   - Each publish copies the whole site, about 132 MB (almost all `models/` and `ort/`); normally ~40 s
   - If a "pages build and deployment" run times out in `syncing_files` (first seen 2026-11-09, a GitHub-side problem), its re-runs can stick in "queued" and can't be cancelled; a new commit on `main` starts a fresh publish instead
-  - Option on file: move `models/` to a separate org site (e.g. `gp-songtools/gp-models`) so this site's publishes are ~1 MB; not done, ask the owner first
+  - Option on file: move `models/` to a separate org site (e.g. `gp-songtools/gp-models`) so this site's publishes are ~1 MB; not done, ask the owner first (Randomash's `split.html` would need the new model paths too)
 - **Git**
   - Pushing directly to `main` is allowed (owner's instruction); fetch first and push only as a fast-forward
   - Branch + PR to `main` is still fine when the owner asks for one
