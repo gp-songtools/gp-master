@@ -60,6 +60,22 @@ You need a Modal account and its command-line tool (`pip install modal`, then
 To change the token later, run `modal secret create gpm-sep GPM_TOKEN=<new> --force`
 and deploy again. To stop it altogether, run `modal app stop gpm-sep`.
 
+## Deploy automatically
+
+`.github/workflows/modal-deploy.yml` redeploys the server whenever `server/` or
+`models/` changes on `main`, and can also be run by hand from the repository's
+**Actions** tab (**Deploy separation server to Modal → Run workflow**). It needs
+a Modal API token stored as two repository secrets:
+
+1. In Modal, go to **Settings → API Tokens → New Token** and copy the token
+   ID (`ak-…`) and secret (`as-…`).
+2. On GitHub, open the repository's **Settings → Secrets and variables →
+   Actions → New repository secret**, and add `MODAL_TOKEN_ID` and
+   `MODAL_TOKEN_SECRET`.
+
+Until both are set, the workflow only shows a warning. The app's access token
+stays in the Modal secret `gpm-sep`; GitHub never needs it.
+
 ## Run it yourself
 
 ```bash

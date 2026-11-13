@@ -1,0 +1,50 @@
+# Deploys the optional separation server (server/) to Modal whenever it changes on main.
+# Needs two repository secrets, MODAL_TOKEN_ID and MODAL_TOKEN_SECRET (a Modal API token);
+# without them the job says so and stops. The app's own access token stays in the Modal
+# secret "gpm-sep" and is never needed here. See server/README.md.
+name: Deploy separation server to Modal
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'server/**'
+      - 'models/**'
+      - '.github/workflows/modal-deploy.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: modal-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+      MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+    steps:
+      - name: Check for the Modal token
+        id: tok
+        run: |
+          if [ -z "$MODAL_TOKEN_ID" ] || [ -z "$MODAL_TOKEN_SECRET" ]; then
+            echo "::warning::MODAL_TOKEN_ID / MODAL_TOKEN_SECRET are not set, so nothing was deployed. See server/README.md."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.tok.outputs.ok == 'true'
+      - uses: actions/setup-python@v5
+        if: steps.tok.outputs.ok == 'true'
+        with:
+          python-version: '3.12'
+      - name: Deploy
+        if: steps.tok.outputs.ok == 'true'
+        run: |
+          pip install modal==1.6.4
+          modal deploy server/modal_app.py
