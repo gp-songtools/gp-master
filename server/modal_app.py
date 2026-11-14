@@ -163,7 +163,7 @@ class Separator:
             if self.xp:
                 self.xp.get_default_memory_pool().free_all_blocks()  # leave the GPU to the models
         try:
-            progress.pop(key)
+            progress[key] = (1, 1)  # finished; poll() removes it once the result is collected
         except Exception:
             pass
         return out
@@ -207,7 +207,7 @@ class TorchSeparator:
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
         try:
-            progress.pop(key)
+            progress[key] = (1, 1)  # finished; poll() removes it once the result is collected
         except Exception:
             pass
         return out
@@ -242,6 +242,10 @@ def web():
             try:
                 outs.append(modal.FunctionCall.from_id(cid).get(timeout=0))
                 d, t = d + 100, t + 100
+                try:
+                    progress.pop(key)
+                except Exception:
+                    pass
             except (TimeoutError, modal.exception.TimeoutError):
                 running = True
                 pd, pt = progress.get(key, (0, 0))

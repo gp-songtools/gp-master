@@ -63,6 +63,7 @@ function separateRemote(o) {
     const id = json(x).id;
     if (!id) throw new Error('The separation server sent an unexpected answer.');
     const t0 = performance.now();
+    let best = 0;
     for (;;) {
       await new Promise(r => { timer = setTimeout(r, 1500); });
       if (dead) return;
@@ -74,7 +75,7 @@ function separateRemote(o) {
       if (dead) return;
       if (x.status === 202) {
         const d = json(x), s = Math.round((performance.now() - t0) / 1000);
-        if (d.total) { say('Separating on the server… ' + Math.round(d.done / d.total * 100) + '%'); prog(0.1 + 0.8 * d.done / d.total); }
+        if (d.total) { best = Math.max(best, d.done / d.total); say('Separating on the server… ' + Math.round(best * 100) + '%'); prog(0.1 + 0.8 * best); }  // never step back
         else say('Waiting for the server to start (' + s + ' s; the first song after a break takes longest)…');
         continue;
       }
