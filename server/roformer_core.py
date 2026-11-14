@@ -47,7 +47,11 @@ def fetch_script(code_dir, ckpt_dir):
 def load(device, code_dir, ckpt_dir):
     import torch
     sys.path.insert(0, code_dir)
+    import models.bs_roformer.attend as attend
     from models.bs_roformer.bs_roformer import BSRoformer
+    # The pinned code's fast path calls sdpa_kernel(..., set_priority=True), which needs PyTorch 2.6;
+    # this image stays on 2.5 for Demucs. Its other path (torch.backends.cuda.sdp_kernel) works on 2.5.
+    attend._HAS_SDPA_KERNEL = False
     m = BSRoformer(**CFG)
     sd = torch.load(f'{ckpt_dir}/{CKPT}', map_location='cpu', weights_only=False)
     m.load_state_dict(sd.get('state_dict', sd) if isinstance(sd, dict) else sd)
