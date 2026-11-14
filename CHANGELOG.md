@@ -3,6 +3,12 @@
 All notable changes to GP Mastering, newest first. The version number is the small tag beside the app's title.
 This file mirrors `changelog.html`, which is the version shown in the app; keep the two in step.
 
+## v64 — Nov 14
+
+### Changed
+
+- Removed **Other: Demucs** from the server Models row. In testing it was not clearly cleaner than the standard Other (the song minus the other stems), and it made separating slower. Songs already saved with a Demucs Other still load as they were.
+
 ## v63 — Nov 14
 
 ### Added

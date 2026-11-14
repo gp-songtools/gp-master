@@ -6,8 +6,8 @@
 
 const SEP_OLD = 'Your separation server is older than this page and cannot run the models you picked. Update it: download a new Server kit and run its setup again (keep your access-token.txt), or pick Standard for every stem.';
 /* per-stem models a server can run: 'mdx' = Standard (the browser's models), 'demucs', 'roformer' (vocals only) */
-// other: 'mdx' = the song minus the separated stems (made here); 'demucs' = Demucs's own Other model
-const SEP_MODELS = { vocals: ['mdx', 'roformer', 'demucs'], drums: ['mdx', 'demucs'], bass: ['mdx', 'demucs'], other: ['mdx', 'demucs'] };
+// Other is always the song minus the separated stems, made here (a Demucs Other was tried in v63 and removed in v64)
+const SEP_MODELS = { vocals: ['mdx', 'roformer', 'demucs'], drums: ['mdx', 'demucs'], bass: ['mdx', 'demucs'] };
 const SEP_MNAME = { mdx: 'Standard', demucs: 'Demucs', roformer: 'RoFormer' };
 function sepRemoteExplain(status, url) {
   if (status === 0) return 'Could not reach the separation server at ' + url + '. Check the address and your connection. A server that has been idle can take a minute to start.';
@@ -52,15 +52,9 @@ function separateRemote(o) {
     for (let i = 0; i < n; i++) { pcm[2 * i] = Math.round(L[i] * k); pcm[2 * i + 1] = Math.round(R[i] * k); }
     const mb = (pcm.byteLength / 1048576).toFixed(0);
     say('Uploading ' + mb + ' MB to the separation server…');
-    const want = {}, pick = s => (SEP_MODELS[s] || ['mdx']).includes((o.models || {})[s]) ? o.models[s] : 'mdx';
-    for (const s of stems) want[s] = pick(s);
-    // Demucs Other: the server makes it. Stems that are not ticked would then be lost, so they are
-    // separated too (with Demucs) and folded into Other, which keeps "anything you skip stays in Other".
-    const dOther = wantOther && pick('other') === 'demucs';
-    const fold = dOther ? ['vocals', 'drums', 'bass'].filter(s => !stems.includes(s)) : [];
-    for (const s of fold) want[s] = 'demucs';
-    if (dOther) want.other = 'demucs';
-    const ask = Object.keys(want);
+    const want = {};
+    for (const s of stems) want[s] = (SEP_MODELS[s] || ['mdx']).includes((o.models || {})[s]) ? o.models[s] : 'mdx';
+    const ask = stems;
     // `model` is for servers from before per-stem models: when every stem uses the same one it still works there
     const same = ask.every(s => want[s] === want[ask[0]]) ? want[ask[0]] : 'mdx';
     let x = await req('POST', '/jobs?sr=' + o.sampleRate + '&n=' + n + '&stems=' + ask.join(',') + '&scale=' + scale +
@@ -111,11 +105,8 @@ function separateRemote(o) {
       }
       result[s.name] = out;
     }
-    // a server from before Demucs Other ignores "other" in the request and leaves it out
-    for (const s of ask) if (!result[s]) throw new Error(s === 'other' || fold.includes(s) ? SEP_OLD : 'The separation server did not return the ' + s + ' stem.');
-    if (dOther) {
-      for (const s of fold) { for (let c = 0; c < 2; c++) { const y = result[s][c], z = result.other[c]; for (let i = 0; i < n; i++) z[i] += y[i]; } delete result[s]; delete want[s]; }
-    } else if (wantOther) {
+    for (const s of stems) if (!result[s]) throw new Error('The separation server did not return the ' + s + ' stem.');
+    if (wantOther) {
       const oth = [new Float32Array(L), new Float32Array(R)];
       for (let c = 0; c < 2; c++) for (const s of stems) { const y = result[s][c], z = oth[c]; for (let i = 0; i < n; i++) z[i] -= y[i]; }
       result.other = oth;
@@ -140,7 +131,7 @@ async function sepRemoteCheck(url, token) {
   try { d = await r.json(); } catch (e) { /* older server */ }
   const all = Array.isArray(d.models) ? d.models : ['mdx'];
   const per = d.stem_models && typeof d.stem_models === 'object' ? d.stem_models : { vocals: all, drums: all, bass: all };
-  const miss = Object.keys(SEP_MODELS).flatMap(s => SEP_MODELS[s].filter(m => !(s === 'other' && m === 'mdx') && !(per[s] || []).includes(m)).map(m => SEP_MNAME[m] + ' ' + s));
+  const miss = Object.keys(SEP_MODELS).flatMap(s => SEP_MODELS[s].filter(m => !(per[s] || []).includes(m)).map(m => SEP_MNAME[m] + ' ' + s));
   return { models: per, msg: 'Connected. The server accepted the token' + (miss.length ? '. It cannot run ' + miss.join(', ') + '; for those, update it with a new Server kit.' : ' and runs every model.') };
 }
 

@@ -105,6 +105,7 @@ def encode_result(stems, sr, head, models=None):
     parts = []
     for s, y in stems.items():
         pk = float(np.max(np.abs(y))) or 1e-9
+        print(f'stem {s} ({(models or {}).get(s, head.get("model", "mdx"))}): peak {pk:.4f}, rms {float(np.sqrt(np.mean(y.astype(np.float64) ** 2))):.5f}, n {y.shape[-1]}')
         q = np.round(y.T / pk * 32767).astype('<i2')
         b = io.BytesIO()
         sf.write(b, q, sr, format='FLAC', subtype='PCM_16')
@@ -119,6 +120,7 @@ def run_job(body, sr, n, stems, scale, sessions, provider='', progress=None, bat
     import time
     t0 = time.time()
     mix = decode_upload(body, n, scale)
+    print(f'input: {n} frames at {sr} Hz, peak {float(np.max(np.abs(mix))):.4f}, rms {float(np.sqrt(np.mean(mix.astype(np.float64) ** 2))):.5f}')
     total = sum(-(-n // geometry(MODELS[s])[2]) for s in stems)
     done = {s: 0 for s in stems}
 

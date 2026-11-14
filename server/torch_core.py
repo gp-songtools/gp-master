@@ -12,6 +12,7 @@ def run_torch(body, sr, n, plan, scale, get_model, device, progress=None):
     import roformer_core
     t0 = time.time()
     mix = torch.from_numpy(decode_upload(body, n, scale)).to(device)
+    print(f'input: {n} frames at {sr} Hz on {device}, peak {float(mix.abs().max()):.4f}, rms {float(mix.pow(2).mean().sqrt()):.5f}, plan {plan}')
     ro = [s for s, m in plan.items() if m == 'roformer']
     de = [s for s, m in plan.items() if m == 'demucs']
     steps = [x for x in (ro, de) if x]
