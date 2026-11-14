@@ -83,7 +83,11 @@ function separateRemote(o) {
       if (dead) return;
       if (x.status === 202) {
         const d = json(x), s = Math.round((performance.now() - t0) / 1000);
-        if (d.total) { best = Math.max(best, d.done / d.total); say('Separating on the server… ' + Math.round(best * 100) + '%'); prog(0.1 + 0.8 * best); }  // never step back
+        if (d.total) {
+          best = Math.max(best, d.done / d.total);  // never step back
+          say('Separating on the server… ' + Math.round(best * 100) + '%' + (d.waiting ? ' (waiting for a GPU to start ' + (d.waiting > 1 ? 'the job' : 'part of the job') + ', ' + s + ' s so far)' : ''));
+          prog(0.1 + 0.8 * best);
+        }
         else say('Waiting for the server to start (' + s + ' s; the first song after a break takes longest)…');
         continue;
       }

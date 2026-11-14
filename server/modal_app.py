@@ -106,7 +106,7 @@ web_image = (
     .add_local_file(HERE / 'sep_core.py', '/root/sep_core.py')
 )
 
-@app.cls(image=gpu_image, gpu='T4', cpu=4.0, memory=8192, timeout=900, scaledown_window=120, max_containers=2)
+@app.cls(image=gpu_image, gpu=['T4', 'L4'], cpu=4.0, memory=8192, timeout=900, scaledown_window=120, max_containers=2)
 class Separator:
     @modal.enter()
     def load(self):
@@ -143,6 +143,7 @@ class Separator:
                 progress[key] = (d, t)
             except Exception:
                 pass
+        tick(0, 1)  # started: until now poll reports this part as waiting for a GPU
         try:
             try:
                 out = run_job(body, sr, n, stems, scale, self.sess, self.provider, tick, batch=2, run_options=self.ro,
@@ -169,7 +170,7 @@ class Separator:
         return out
 
 
-@app.cls(image=torch_image, gpu='L4', cpu=4.0, memory=16384, timeout=900, scaledown_window=120, max_containers=2)
+@app.cls(image=torch_image, gpu=['L4', 'T4'], cpu=4.0, memory=16384, timeout=900, scaledown_window=120, max_containers=2)
 class TorchSeparator:
     @modal.enter()
     def load(self):
@@ -197,6 +198,7 @@ class TorchSeparator:
                 progress[key] = (d, t)
             except Exception:
                 pass
+        tick(0, 1)  # started: until now poll reports this part as waiting for a GPU
         try:
             out = run_torch(body, sr, n, plan, scale, self.get_model, self.dev, tick)
         except Exception as e:
@@ -236,7 +238,7 @@ def web():
         return '~'.join(ids)
 
     def poll(jid):
-        outs, d, t, running = [], 0, 0, False
+        outs, d, t, running, waiting = [], 0, 0, False, 0
         for part in jid.split('~'):
             cid, _, key = part.partition('.')
             try:
@@ -249,9 +251,10 @@ def web():
             except (TimeoutError, modal.exception.TimeoutError):
                 running = True
                 pd, pt = progress.get(key, (0, 0))
+                waiting += not pt  # no record yet: Modal has not started this job (no free GPU yet)
                 d, t = d + (100 * pd // pt if pt else 0), t + 100
         if running:
-            raise Running(d, t)
+            raise Running(d, t, waiting)
         return outs[0] if len(outs) == 1 else merge_results(outs)
 
     offers = {'vocals': ['mdx', 'demucs', 'roformer'], 'drums': ['mdx', 'demucs'], 'bass': ['mdx', 'demucs'], 'other': ['demucs']}

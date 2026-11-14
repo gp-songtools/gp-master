@@ -12,8 +12,8 @@ STEMS = ('vocals', 'drums', 'bass', 'other')  # 'other' only from models that ma
 
 
 class Running(Exception):
-    def __init__(self, done=0, total=0):
-        self.done, self.total = done, total
+    def __init__(self, done=0, total=0, waiting=0):
+        self.done, self.total, self.waiting = done, total, waiting
 
 
 MDX_ONLY = {s: ['mdx'] for s in ('vocals', 'drums', 'bass')}  # Standard 'other' is the mix minus stems, made by the page
@@ -64,7 +64,7 @@ def build_api(token, start, poll, offers=MDX_ONLY):
         try:
             out = poll(jid)
         except Running as r:
-            return JSONResponse({'state': 'running', 'done': r.done, 'total': r.total}, status_code=202)
+            return JSONResponse({'state': 'running', 'done': r.done, 'total': r.total, 'waiting': r.waiting}, status_code=202)
         except KeyError:
             raise HTTPException(404, 'No such job')
         except Exception as e:
