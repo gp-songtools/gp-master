@@ -7,7 +7,7 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-VERSION = 1
+VERSION = 2
 STEMS = ('vocals', 'drums', 'bass')
 
 
@@ -16,8 +16,9 @@ class Running(Exception):
         self.done, self.total = done, total
 
 
-def build_api(token, start, poll):
-    """start(body, sr, n, stems, scale) -> job id (awaitable); poll(id) -> bytes, or raises Running."""
+def build_api(token, start, poll, models=('mdx',)):
+    """start(body, sr, n, stems, scale, model) -> job id (awaitable); poll(id) -> bytes, or raises Running.
+    models: the separation models this server offers ('mdx' = the browser's models, 'demucs')."""
     api = FastAPI()
     api.add_middleware(CORSMiddleware, allow_origins=['*'], allow_methods=['GET', 'POST'],
                        allow_headers=['Authorization', 'Content-Type'], max_age=86400)
@@ -34,18 +35,20 @@ def build_api(token, start, poll):
     @api.get('/check')
     def check(req: Request):
         auth(req)
-        return {'ok': True, 'version': VERSION}
+        return {'ok': True, 'version': VERSION, 'models': list(models)}
 
     @api.post('/jobs')
-    async def jobs(req: Request, sr: int, n: int, stems: str, scale: float = 1.0):
+    async def jobs(req: Request, sr: int, n: int, stems: str, scale: float = 1.0, model: str = 'mdx'):
         auth(req)
         st = [s for s in stems.split(',') if s in STEMS]
+        if model not in models:
+            raise HTTPException(400, f'This server does not offer the {model} model; choose Standard.')
         if not st or n <= 0 or not 8000 <= sr <= 192000 or not 0 < scale < 100:
             raise HTTPException(400, 'Bad request')
         body = await req.body()
         if len(body) < 4 * n:
             raise HTTPException(400, 'The audio upload was cut short')
-        return {'id': await start(body, sr, n, st, scale)}
+        return {'id': await start(body, sr, n, st, scale, model)}
 
     @api.get('/jobs/{jid}')
     def job(jid: str, req: Request):

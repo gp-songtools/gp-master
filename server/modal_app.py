@@ -8,14 +8,15 @@ The web endpoint is a small CPU container. It starts a GPU job per song and the 
 for the result, so a cold GPU start never runs into the web request time limit.
 
 Wire format (all little-endian):
-  POST /jobs?sr=44100&n=<frames>&stems=vocals,drums,bass&scale=<float>
+  POST /jobs?sr=44100&n=<frames>&stems=vocals,drums,bass&scale=<float>&model=mdx|demucs
        body: interleaved stereo int16; sample = round(x / scale * 32767)
        -> {"id": "<job id>"}
   GET  /jobs/<id>  -> 202 {"state": "running", "done": d, "total": t} while it runs
-                   -> 200 binary: uint32 header length, JSON header, then one 16-bit stereo
+                   -> 200 binary: uint32 header length, JSON header ({"stems": [...], "model",
+                      "provider", "secs"}), then one 16-bit stereo
                       FLAC per stem, in header order; float = decoded * scale * 32768 / 32767
-  GET  /health     -> {"ok": true, "version": 1}
-  GET  /check      -> the same, but checks the token
+  GET  /health     -> {"ok": true, "version": 2}
+  GET  /check      -> the same plus "models": ["mdx", "demucs"], and checks the token
 All except /health need "Authorization: Bearer <GPM_TOKEN>"."""
 import os
 import shlex
@@ -71,6 +72,15 @@ if not _models:
 gpu_image = gpu_image.add_local_file(HERE / 'sep_core.py', '/root/sep_core.py')
 if _models:
     gpu_image = gpu_image.add_local_dir(_models, '/models')
+# Demucs (htdemucs_ft, MIT licence) runs in its own image: PyTorch brings its own CUDA libraries.
+# torch stays below 2.6, whose torch.load defaults would refuse the Demucs checkpoints.
+demucs_image = (
+    modal.Image.debian_slim(python_version='3.12')
+    .pip_install('torch==2.5.1', 'torchaudio==2.5.1', 'demucs==4.0.1', 'numpy==2.2.6', 'soundfile==0.13.1')
+    .run_commands('python -c "from demucs.pretrained import get_model; get_model(\'htdemucs_ft\')"')
+    .add_local_file(HERE / 'sep_core.py', '/root/sep_core.py')
+    .add_local_file(HERE / 'demucs_core.py', '/root/demucs_core.py')
+)
 web_image = (
     modal.Image.debian_slim(python_version='3.12')
     .pip_install('fastapi[standard]==0.115.12', 'numpy==2.2.6')
@@ -140,15 +150,51 @@ class Separator:
         return out
 
 
+@app.cls(image=demucs_image, gpu='T4', cpu=4.0, memory=16384, timeout=900, scaledown_window=120, max_containers=2)
+class DemucsSeparator:
+    @modal.enter()
+    def load(self):
+        import torch
+        from demucs_core import load
+        self.dev = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.model = load(self.dev)
+        print('Demucs on', self.dev)
+
+    @modal.method()
+    def run(self, body: bytes, sr: int, n: int, stems: list, scale: float, key: str) -> bytes:
+        from demucs_core import run_demucs
+
+        def tick(d, t):
+            try:
+                progress[key] = (d, t)
+            except Exception:
+                pass
+        try:
+            out = run_demucs(body, sr, n, stems, scale, self.model, self.dev, tick)
+        except Exception as e:
+            print('Demucs failed:', repr(e))
+            raise RuntimeError(f'{type(e).__name__}: {e}'[:400]) from None
+        finally:
+            import torch
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+        try:
+            progress.pop(key)
+        except Exception:
+            pass
+        return out
+
+
 @app.function(image=web_image, secrets=[secret], timeout=300)
 @modal.concurrent(max_inputs=20)
 @modal.asgi_app()
 def web():
     from api import Running, build_api, new_key
 
-    async def start(body, sr, n, stems, scale):
+    async def start(body, sr, n, stems, scale, model):
         key = new_key()
-        call = await Separator().run.spawn.aio(body, sr, n, stems, scale, key)
+        worker = DemucsSeparator() if model == 'demucs' else Separator()
+        call = await worker.run.spawn.aio(body, sr, n, stems, scale, key)
         return call.object_id + '.' + key
 
     def poll(jid):
@@ -158,4 +204,4 @@ def web():
         except (TimeoutError, modal.exception.TimeoutError):
             raise Running(*progress.get(key, (0, 0)))
 
-    return build_api(os.environ.get('GPM_TOKEN', ''), start, poll)
+    return build_api(os.environ.get('GPM_TOKEN', ''), start, poll, models=('mdx', 'demucs'))

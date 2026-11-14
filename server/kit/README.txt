@@ -47,8 +47,17 @@ The token is also saved in access-token.txt in this folder. Keep it private:
 anyone with the address and the token can use your server.
 
 
-The models
+Two models
 ----------
+In GP Mastering you choose the server's Model:
+- Standard: the same three models as in the browser, so the same stems.
+- Demucs: Meta's Hybrid Transformer Demucs (htdemucs_ft, MIT licence). It often
+  gives cleaner drums and bass. Modal downloads it from Meta while it builds the
+  server; the first deploy takes a few minutes longer because of it.
+
+
+The standard models
+-------------------
 By default Modal downloads the three model files (123 MB) from the GP Mastering
 site while it builds your server, so this kit stays small.
 

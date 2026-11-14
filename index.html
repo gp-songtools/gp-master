@@ -262,7 +262,7 @@ body.mini main{padding-bottom:84px}
 #eqApply{width:100%;margin:10px 0 0}
 </style></head>
 <body><main>
-<h1>GP Mastering <small style="font-size:13px;color:var(--mut);font-weight:400">v60</small></h1>
+<h1>GP Mastering <small style="font-size:13px;color:var(--mut);font-weight:400">v61</small></h1>
 <p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded unless you use the optional Gemini suggestions.</p>
 <p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or use it just to split the song and download each stem as a WAV.</p>
 
@@ -333,6 +333,7 @@ body.mini main{padding-bottom:84px}
  <div id="srvBox" hidden>
   <div class="airow" style="margin-bottom:6px"><input type="url" id="srvUrl" placeholder="Server address, e.g. https://you--gpm-sep-web.modal.run" autocomplete="off" spellcheck="false" aria-label="Separation server address"></div>
   <div class="airow"><input type="password" id="srvTok" placeholder="Access token" autocomplete="off" spellcheck="false" aria-label="Separation server access token"><button type="button" class="btn" id="srvTest">Test</button><button type="button" class="btn" id="srvForget">Forget</button></div>
+  <div class="ssel" style="margin:8px 0 0"><label for="srvModel" style="color:var(--mut)">Model:</label><select id="srvModel" aria-label="Separation model on the server" style="font:inherit;padding:4px 6px;border:1px solid var(--ln);border-radius:6px;background:var(--card);color:var(--ink)"><option value="mdx">Standard (same as the browser)</option><option value="demucs">Demucs</option></select></div>
   <label class="chk" style="margin:8px 0 6px"><input type="checkbox" id="srvRemember"><span>Remember the token on this device<small>Unchecked, it is kept only until you close the page.</small></span></label>
   <p class="hint" id="srvMsg" role="status" style="margin:0 0 4px">Runs the same models on your own server, for example a free Modal GPU. The section you separate is uploaded to that server.</p>
   <p class="hint" style="margin:0 0 10px">No server yet? <button type="button" class="btn" id="srvKit">⬇ Server kit</button> sets one up on Modal in a few commands; its README explains each step.</p>
@@ -2268,18 +2269,19 @@ wkInit();
 /* separate on: this browser, or the owner's own server (sep-remote.js); token only kept if Remember is ticked */
 const SRV_KEY='gpmaster.sepsrv.v1';
 const srvOn=()=>$('sepOn').value==='server';
-function srvSave(){const o={on:$('sepOn').value,url:$('srvUrl').value.trim()};if($('srvRemember').checked&&$('srvTok').value)o.tok=$('srvTok').value;try{localStorage.setItem(SRV_KEY,JSON.stringify(o))}catch(_){}}
+function srvSave(){const o={on:$('sepOn').value,url:$('srvUrl').value.trim(),model:$('srvModel').value};if($('srvRemember').checked&&$('srvTok').value)o.tok=$('srvTok').value;try{localStorage.setItem(SRV_KEY,JSON.stringify(o))}catch(_){}}
 function srvUI(){const on=srvOn();$('srvBox').hidden=!on;$('wsel').style.display=on?'none':''}
 function srvInit(){
  let o={};try{o=JSON.parse(localStorage.getItem(SRV_KEY)||'{}')||{}}catch(_){}
  $('sepOn').value=o.on==='server'?'server':'browser';
  if(typeof o.url==='string')$('srvUrl').value=o.url;
+ $('srvModel').value=o.model==='demucs'?'demucs':'mdx';
  if(typeof o.tok==='string'){$('srvTok').value=o.tok;$('srvRemember').checked=true}
  $('sepOn').onchange=()=>{srvUI();srvSave()};
- $('srvUrl').onchange=$('srvTok').onchange=$('srvRemember').onchange=srvSave;
+ $('srvUrl').onchange=$('srvTok').onchange=$('srvRemember').onchange=$('srvModel').onchange=srvSave;
  $('srvForget').onclick=()=>{$('srvTok').value='';$('srvRemember').checked=false;srvSave();$('srvMsg').textContent='Token removed from this page and from this browser\u2019s storage.'};
  $('srvTest').onclick=()=>{const u=$('srvUrl').value.trim();if(!/^https?:\/\/\S+$/.test(u)){$('srvMsg').textContent='Enter the server address, starting with https://';return}
-  $('srvMsg').textContent='Checking…';sepRemoteCheck(u,$('srvTok').value).then(t=>$('srvMsg').textContent=t,e=>$('srvMsg').textContent=e.message)};
+  $('srvMsg').textContent='Checking…';sepRemoteCheck(u,$('srvTok').value).then(r=>$('srvMsg').textContent=r.msg,e=>$('srvMsg').textContent=e.message)};
  $('srvKit').onclick=()=>{const b=$('srvKit');b.disabled=true;
   sepKitZip(location.href.replace(/[^/]*$/,'')).then(z=>{const a=document.createElement('a');a.href=URL.createObjectURL(z);a.download='gpm-sep-server.zip';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
    $('srvMsg').textContent='Downloaded gpm-sep-server.zip. Unzip it and follow README.txt; at the end it prints the address and token to paste here.'},
@@ -2300,11 +2302,11 @@ function runSeparation(scope){
  if(srvOn()){
   const u=$('srvUrl').value.trim();
   if(!/^https?:\/\/\S+$/.test(u)||!$('srvTok').value){ssay('Enter your separation server\u2019s address and access token, or choose Separate on: This browser.',1);free();return}
-  stemWorker=separateRemote({mix,stems:[...chosen,'other'],sampleRate:src.sampleRate,url:u,token:$('srvTok').value,onStatus:t=>ssay(t),onProgress:f=>{$('sbar').style.width=(f*100).toFixed(1)+'%'}});
+  stemWorker=separateRemote({mix,stems:[...chosen,'other'],sampleRate:src.sampleRate,url:u,token:$('srvTok').value,model:$('srvModel').value,onStatus:t=>ssay(t),onProgress:f=>{$('sbar').style.width=(f*100).toFixed(1)+'%'}});
   stemWorker.then(d=>{
    orig.stems={d:d.result,start:r.start,len:r.len,scope};arrStems();
    $('sbar').style.width='100%';
-   ssay(`Separated ${scope==='preview'?'the 30-second section':'the whole song'} in ${((performance.now()-t0)/60000).toFixed(1)} min on your server${d.provider?' ('+(/CUDA/.test(d.provider)?'GPU':'CPU')+', '+d.serverSecs+' s of processing)':''}.`);
+   ssay(`Separated ${scope==='preview'?'the 30-second section':'the whole song'} in ${((performance.now()-t0)/60000).toFixed(1)} min on your server${d.model==='demucs'?' with Demucs':''}${d.provider?' ('+(/CUDA/.test(d.provider)?'GPU':'CPU')+', '+d.serverSecs+' s of processing)':''}.`);
    mixRows();free();regRender();drawWave();stemsSave();
   }).catch(err=>{ssay('Separation failed: '+(err&&err.message||err),1);free()});
   return;
@@ -3530,7 +3532,7 @@ const HELP={
 <p>Separation downloads about 123 MB of models the first time and is slow — several times the length of the audio. <b>Use the 30-second option first</b>, and use a desktop browser: a full song needs more memory than most phones have.</p>
 <p><b>Separate once:</b> the stems are saved on this device with the song&rsquo;s regions and stem levels, and come back automatically when you load the same file again, even after a refresh. <b>Forget saved stems</b> removes them.</p>
 <p>Stems only apply to the section you separated. Separated audio carries artifacts; real stems from your session are always better if you have them.</p>
-<p><b>Separate on: My server</b> runs the same models on your own server (for example a free Modal GPU) instead of in this browser: much faster, but the section is uploaded to that server. Paste its address and access token and press Test. No server yet? <b>⬇ Server kit</b> downloads a small zip that sets one up on Modal; follow its README.txt.</p>`,
+<p><b>Separate on: My server</b> runs the same models on your own server (for example a free Modal GPU) instead of in this browser: much faster, but the section is uploaded to that server. Paste its address and access token and press Test. No server yet? <b>⬇ Server kit</b> downloads a small zip that sets one up on Modal; follow its README.txt. <b>Model</b>: Standard runs the browser&rsquo;s models; Demucs (Meta&rsquo;s htdemucs_ft) often gives cleaner drums and bass. Compare both on one song.</p>`,
 'Processing mode':`<p><b>Full master</b> analyzes the song and adapts every stage to it. <b>Light polish</b> applies one fixed EQ and compressor, identical for every song. <b>Loudness only</b> changes no tone at all.</p>
 <p>Loudness only is the honest choice when you trust your mix. It is also the best way to hear what the other modes are doing: master once each way and compare.</p>
 <p>Clarity, width, the vocal enhancer, the pumper and the processing amount apply to Full master only.</p>`,

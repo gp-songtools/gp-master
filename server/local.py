@@ -24,12 +24,13 @@ lock, jobs = threading.Lock(), {}
 def worker(key, args):
     try:
         with lock:  # one song at a time
-            jobs[key]['out'] = run_job(*args, sess, prov[0], lambda d, t: jobs[key].update(p=(d, t)))
+            # one chunk at a time: on a CPU that is as fast as batches and needs far less memory
+            jobs[key]['out'] = run_job(*args, sess, prov[0], lambda d, t: jobs[key].update(p=(d, t)), batch=1)
     except Exception as e:
         jobs[key]['err'] = e
 
 
-async def start(body, sr, n, stems, scale):
+async def start(body, sr, n, stems, scale, model='mdx'):
     key = new_key()
     jobs[key] = {'p': (0, 0)}
     threading.Thread(target=worker, args=(key, (body, sr, n, stems, scale)), daemon=True).start()

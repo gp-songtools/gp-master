@@ -89,15 +89,35 @@ def separate(mix, stem, session, batch=4, progress=None, run_options=None, xp=np
     return out[:, :n]
 
 
-def run_job(body, sr, n, stems, scale, sessions, provider='', progress=None, batch=4, run_options=None, xp=np):
-    """Upload bytes -> result bytes, in the wire format described in modal_app.py."""
+def decode_upload(body, n, scale):
+    """Upload bytes (interleaved stereo int16) -> (2, n) float32."""
+    return np.frombuffer(body, '<i2', count=2 * n).reshape(n, 2).T.astype(np.float32) * (scale / 32767)
+
+
+def encode_result(stems, sr, head):
+    """{name: (2, n) float32} -> result bytes: uint32 header length, JSON header, one FLAC per stem."""
     import io
     import json
     import struct
-    import time
     import soundfile as sf
+    head = dict(head, stems=[])
+    parts = []
+    for s, y in stems.items():
+        pk = float(np.max(np.abs(y))) or 1e-9
+        q = np.round(y.T / pk * 32767).astype('<i2')
+        b = io.BytesIO()
+        sf.write(b, q, sr, format='FLAC', subtype='PCM_16')
+        parts.append(b.getvalue())
+        head['stems'].append({'name': s, 'scale': pk, 'bytes': len(parts[-1])})
+    h = json.dumps(head).encode()
+    return struct.pack('<I', len(h)) + h + b''.join(parts)
+
+
+def run_job(body, sr, n, stems, scale, sessions, provider='', progress=None, batch=4, run_options=None, xp=np):
+    """Upload bytes -> result bytes, in the wire format described in modal_app.py."""
+    import time
     t0 = time.time()
-    mix = np.frombuffer(body, '<i2', count=2 * n).reshape(n, 2).T.astype(np.float32) * (scale / 32767)
+    mix = decode_upload(body, n, scale)
     total = sum(-(-n // geometry(MODELS[s])[2]) for s in stems)
     done = {s: 0 for s in stems}
 
@@ -105,15 +125,5 @@ def run_job(body, sr, n, stems, scale, sessions, provider='', progress=None, bat
         done[s] = d
         if progress:
             progress(sum(done.values()), total)
-    head, parts = {'stems': [], 'provider': provider, 'version': 1}, []
-    for s in stems:
-        y = separate(mix, s, sessions[s], batch=batch, progress=tick, run_options=run_options, xp=xp)
-        pk = float(np.max(np.abs(y))) or 1e-9
-        q = np.round(y.T / pk * 32767).astype('<i2')
-        b = io.BytesIO()
-        sf.write(b, q, sr, format='FLAC', subtype='PCM_16')
-        parts.append(b.getvalue())
-        head['stems'].append({'name': s, 'scale': pk, 'bytes': len(parts[-1])})
-    head['secs'] = round(time.time() - t0, 2)
-    h = json.dumps(head).encode()
-    return struct.pack('<I', len(h)) + h + b''.join(parts)
+    out = {s: separate(mix, s, sessions[s], batch=batch, progress=tick, run_options=run_options, xp=xp) for s in stems}
+    return encode_result(out, sr, {'provider': provider, 'model': 'mdx', 'version': 2, 'secs': round(time.time() - t0, 2)})

@@ -110,7 +110,8 @@ de-essing, then recombine. The app measures each stem against the full mix and
 suggests level moves for the chosen genre (rules of thumb, not reference-matched). The limiter always runs last on the summed mix, so
 the balance you set is the balance you hear. Separation runs in the browser, or
 on your own server with **Separate on: My server** (for example a free Modal GPU;
-the section is uploaded there). **⬇ Server kit** in the app downloads a zip that sets one up;
+the section is uploaded there). **⬇ Server kit** in the app downloads a zip that sets one up; a server
+can also run Demucs (Meta's htdemucs_ft) instead of the browser's models;
 developers can deploy from [`server/README.md`](server/README.md).
 
 **Controls**

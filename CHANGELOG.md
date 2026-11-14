@@ -3,6 +3,12 @@
 All notable changes to GP Mastering, newest first. The version number is the small tag beside the app's title.
 This file mirrors `changelog.html`, which is the version shown in the app; keep the two in step.
 
+## v61 — Nov 14
+
+### Added
+
+- **Model: Standard / Demucs** for Separate on: My server. Demucs runs Meta's Hybrid Transformer Demucs (htdemucs_ft, MIT licence) on your server instead of the browser's models; it often gives cleaner drums and bass. Pick it, separate, and compare with Standard on the same song. A server set up before this needs a new Server kit to offer Demucs, and says so.
+
 ## v60 — Nov 13
 
 ### Added
