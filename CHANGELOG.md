@@ -3,6 +3,12 @@
 All notable changes to GP Mastering, newest first. The version number is the small tag beside the app's title.
 This file mirrors `changelog.html`, which is the version shown in the app; keep the two in step.
 
+## v63 — Nov 14
+
+### Added
+
+- **Other: Standard / Demucs** in the server Models row. Standard is the song minus the other stems, as before. Demucs uses Demucs's own Other model, usually cleaner, with less drum residue and smearing; the four stems then no longer add up to the song exactly. Stems you do not tick are added to a Demucs Other, and a Demucs Other is saved on this device with the rest.
+
 ## v62 — Nov 14
 
 ### Added

@@ -53,6 +53,8 @@ In GP Mastering you choose the model for each stem:
 - Standard: the same models as in the browser, so the same stems.
 - Demucs (vocals, drums, bass): Meta's Hybrid Transformer Demucs (htdemucs_ft,
   MIT licence). Often crisper drums.
+- Other: Standard is the song minus the other stems (worked out in GP Mastering);
+  Demucs uses Demucs's own Other model.
 - RoFormer (vocals only): BS-RoFormer, viperx edition, a newer vocal model,
   distributed by Ultimate Vocal Remover on the same terms as the standard
   models (credit, free, never in anything paid). Its code is ZFTurbo's Music
