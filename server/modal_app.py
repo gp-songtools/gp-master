@@ -19,7 +19,6 @@ Wire format (all little-endian):
   GET  /check      -> the same plus "models": ["mdx", "demucs"], and checks the token
 All except /health need "Authorization: Bearer <GPM_TOKEN>"."""
 import os
-import shlex
 import sys
 from pathlib import Path
 
@@ -62,6 +61,13 @@ FETCH = ('import hashlib,os,urllib.request as u;os.makedirs("/models",exist_ok=T
          ' p="/models/"+f;u.urlretrieve(%r+f,p)\n'
          ' assert hashlib.sha256(open(p,"rb").read()).hexdigest()==h,"bad download: "+f' % (MODEL_SHA256, MODELS_URL))
 
+def py_cmd(src):
+    """A multi-line Python script as ONE shell line: Modal runs each build command as a single
+    Dockerfile line, so newlines in `python -c` would cut the script short."""
+    import base64
+    return 'python -c "import base64;exec(base64.b64decode(\'%s\'))"' % base64.b64encode(src.encode()).decode()
+
+
 gpu_image = modal.Image.debian_slim(python_version='3.12').pip_install(
     'onnxruntime-gpu[cuda,cudnn]==1.22.0', 'cupy-cuda12x[ctk]==14.2.0', 'numpy==2.2.6', 'soundfile==0.13.1')
 if modal.is_local():
@@ -70,7 +76,7 @@ if modal.is_local():
 else:
     _models = None
 if not _models:
-    gpu_image = gpu_image.run_commands('python -c ' + shlex.quote(FETCH))
+    gpu_image = gpu_image.run_commands(py_cmd(FETCH))
 gpu_image = gpu_image.add_local_file(HERE / 'sep_core.py', '/root/sep_core.py')
 if _models:
     gpu_image = gpu_image.add_local_dir(_models, '/models')
@@ -87,7 +93,7 @@ torch_image = (
     .pip_install('torch==2.5.1', 'torchaudio==2.5.1', 'demucs==4.0.1', 'numpy==2.2.6', 'soundfile==0.13.1',
                  'rotary-embedding-torch==0.9.2', 'beartype==0.23.1', 'einops==0.8.2', 'packaging')
     .run_commands('python -c "from demucs.pretrained import get_model; get_model(\'htdemucs_ft\')"')
-    .run_commands('python -c ' + shlex.quote(_ro_fetch))
+    .run_commands(py_cmd(_ro_fetch))
     .add_local_file(HERE / 'sep_core.py', '/root/sep_core.py')
     .add_local_file(HERE / 'demucs_core.py', '/root/demucs_core.py')
     .add_local_file(HERE / 'roformer_core.py', '/root/roformer_core.py')
