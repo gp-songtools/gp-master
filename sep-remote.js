@@ -4,7 +4,10 @@
    minus the stems, exactly as in sep-pool.js. Resolves like separateParallel().
    The access token is sent only in the Authorization header, never in a URL or message. */
 
-const SEP_OLD = 'Your separation server is older than this page and has no Demucs. Update it: download a new Server kit and run its setup again (keep your access-token.txt), or choose the Standard model.';
+const SEP_OLD = 'Your separation server is older than this page and cannot run the models you picked. Update it: download a new Server kit and run its setup again (keep your access-token.txt), or pick Standard for every stem.';
+/* per-stem models a server can run: 'mdx' = Standard (the browser's models), 'demucs', 'roformer' (vocals only) */
+const SEP_MODELS = { vocals: ['mdx', 'roformer', 'demucs'], drums: ['mdx', 'demucs'], bass: ['mdx', 'demucs'] };
+const SEP_MNAME = { mdx: 'Standard', demucs: 'Demucs', roformer: 'RoFormer' };
 function sepRemoteExplain(status, url) {
   if (status === 0) return 'Could not reach the separation server at ' + url + '. Check the address and your connection. A server that has been idle can take a minute to start.';
   if (status === 401) return 'The separation server refused the access token. Check the access token under Separate on: My server.';
@@ -48,8 +51,12 @@ function separateRemote(o) {
     for (let i = 0; i < n; i++) { pcm[2 * i] = Math.round(L[i] * k); pcm[2 * i + 1] = Math.round(R[i] * k); }
     const mb = (pcm.byteLength / 1048576).toFixed(0);
     say('Uploading ' + mb + ' MB to the separation server…');
-    const model = o.model === 'demucs' ? 'demucs' : 'mdx';
-    let x = await req('POST', '/jobs?sr=' + o.sampleRate + '&n=' + n + '&stems=' + stems.join(',') + '&scale=' + scale + '&model=' + model, pcm.buffer,
+    const want = {};
+    for (const s of stems) want[s] = (SEP_MODELS[s] || ['mdx']).includes((o.models || {})[s]) ? o.models[s] : 'mdx';
+    // `model` is for servers from before per-stem models: when every stem uses the same one it still works there
+    const same = stems.every(s => want[s] === want[stems[0]]) ? want[stems[0]] : 'mdx';
+    let x = await req('POST', '/jobs?sr=' + o.sampleRate + '&n=' + n + '&stems=' + stems.join(',') + '&scale=' + scale +
+      '&model=' + same + '&models=' + stems.map(s => s + ':' + want[s]).join(','), pcm.buffer,
       f => { say('Uploading ' + mb + ' MB to the separation server… ' + Math.round(f * 100) + '%'); prog(0.1 * f); });
     if (dead) return;
     if (x.status !== 200) throw fail(x);
@@ -77,8 +84,8 @@ function separateRemote(o) {
     say('Unpacking the stems…');
     const buf = x.response, dv = new DataView(buf), hl = dv.getUint32(0, true);
     const head = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 4, hl)));
-    // a server from before Demucs ignores the model and runs the standard models; say so rather than mislabel the stems
-    if ((head.model || 'mdx') !== model) throw new Error(SEP_OLD);
+    // an older server ignores models it does not know and runs others; say so rather than mislabel the stems
+    for (const s of head.stems) if (want[s.name] && (s.model || head.model || 'mdx') !== want[s.name]) throw new Error(SEP_OLD);
     const result = {};
     let at = 4 + hl;
     for (const s of head.stems) {
@@ -98,7 +105,7 @@ function separateRemote(o) {
       result.other = oth;
     }
     prog(1);
-    return { result, sampleRate: o.sampleRate, workers: 0, remote: true, provider: head.provider || '', serverSecs: head.secs, model };
+    return { result, sampleRate: o.sampleRate, workers: 0, remote: true, provider: head.provider || '', serverSecs: head.secs, models: want };
   }
 
   const promise = new Promise((res, rej) => { rejectFn = rej; run().then(v => { if (!dead) res(v); }, e => { if (!dead) { dead = true; rej(e); } }); });
@@ -106,7 +113,7 @@ function separateRemote(o) {
   return promise;
 }
 
-/* Quick check from the settings: reachable, token accepted, which models. Resolves to {models, msg}. */
+/* Quick check from the settings: reachable, token accepted, which models per stem. Resolves to {models, msg}. */
 async function sepRemoteCheck(url, token) {
   url = url.replace(/\/+$/, '');
   let r;
@@ -115,14 +122,16 @@ async function sepRemoteCheck(url, token) {
   if (!r.ok) throw new Error(sepRemoteExplain(r.status, url));
   let d = {};
   try { d = await r.json(); } catch (e) { /* older server */ }
-  const m = Array.isArray(d.models) ? d.models : ['mdx'];
-  return { models: m, msg: 'Connected. The server accepted the token' + (m.includes('demucs') ? ' and offers both models.' : '. It has only the Standard model; for Demucs, update it with a new Server kit.') };
+  const all = Array.isArray(d.models) ? d.models : ['mdx'];
+  const per = d.stem_models && typeof d.stem_models === 'object' ? d.stem_models : { vocals: all, drums: all, bass: all };
+  const miss = Object.keys(SEP_MODELS).flatMap(s => SEP_MODELS[s].filter(m => !(per[s] || []).includes(m)).map(m => SEP_MNAME[m] + ' ' + s));
+  return { models: per, msg: 'Connected. The server accepted the token' + (miss.length ? '. It cannot run ' + miss.join(', ') + '; for those, update it with a new Server kit.' : ' and runs every model.') };
 }
 
 /* The server kit: the server files from this site, zipped in the browser so the kit always
    matches the code (no build step, nothing committed). The models are not included; Modal
    fetches them from this site, or the user adds a models folder (see server/kit/README.txt). */
-const SEP_KIT = [['server/modal_app.py', 'modal_app.py'], ['server/sep_core.py', 'sep_core.py'], ['server/demucs_core.py', 'demucs_core.py'], ['server/api.py', 'api.py'],
+const SEP_KIT = [['server/modal_app.py', 'modal_app.py'], ['server/sep_core.py', 'sep_core.py'], ['server/demucs_core.py', 'demucs_core.py'], ['server/roformer_core.py', 'roformer_core.py'], ['server/torch_core.py', 'torch_core.py'], ['server/api.py', 'api.py'],
   ['server/kit/setup.ps1', 'setup.ps1'], ['server/kit/setup.sh', 'setup.sh', 0o755], ['server/kit/README.txt', 'README.txt']];
 let sepCrcT = null;
 function sepCrc(b) {

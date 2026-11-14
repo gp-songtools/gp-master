@@ -94,8 +94,9 @@ def decode_upload(body, n, scale):
     return np.frombuffer(body, '<i2', count=2 * n).reshape(n, 2).T.astype(np.float32) * (scale / 32767)
 
 
-def encode_result(stems, sr, head):
-    """{name: (2, n) float32} -> result bytes: uint32 header length, JSON header, one FLAC per stem."""
+def encode_result(stems, sr, head, models=None):
+    """{name: (2, n) float32} -> result bytes: uint32 header length, JSON header, one FLAC per stem.
+    models: {name: model} recorded per stem, so the page can check it got what it asked for."""
     import io
     import json
     import struct
@@ -108,7 +109,7 @@ def encode_result(stems, sr, head):
         b = io.BytesIO()
         sf.write(b, q, sr, format='FLAC', subtype='PCM_16')
         parts.append(b.getvalue())
-        head['stems'].append({'name': s, 'scale': pk, 'bytes': len(parts[-1])})
+        head['stems'].append({'name': s, 'scale': pk, 'bytes': len(parts[-1]), 'model': (models or {}).get(s, head.get('model', 'mdx'))})
     h = json.dumps(head).encode()
     return struct.pack('<I', len(h)) + h + b''.join(parts)
 
@@ -126,4 +127,24 @@ def run_job(body, sr, n, stems, scale, sessions, provider='', progress=None, bat
         if progress:
             progress(sum(done.values()), total)
     out = {s: separate(mix, s, sessions[s], batch=batch, progress=tick, run_options=run_options, xp=xp) for s in stems}
-    return encode_result(out, sr, {'provider': provider, 'model': 'mdx', 'version': 2, 'secs': round(time.time() - t0, 2)})
+    return encode_result(out, sr, {'provider': provider, 'model': 'mdx', 'version': 3, 'secs': round(time.time() - t0, 2)})
+
+
+def merge_results(blobs):
+    """Several result blobs (one per GPU job) -> one: stems in order, the slowest job's time."""
+    import json
+    import struct
+    head, parts = None, []
+    for b in blobs:
+        hl = struct.unpack('<I', b[:4])[0]
+        h = json.loads(b[4:4 + hl])
+        parts.append(b[4 + hl:])
+        if head is None:
+            head = dict(h, stems=[])
+        head['stems'] += h['stems']
+        head['secs'] = max(head.get('secs', 0), h.get('secs', 0))
+        if 'CUDA' in h.get('provider', ''):
+            head['provider'] = h['provider']
+    head.pop('model', None)  # per stem now
+    hb = json.dumps(head).encode()
+    return struct.pack('<I', len(hb)) + hb + b''.join(parts)

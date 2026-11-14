@@ -20,11 +20,13 @@ Wire format (all little-endian):
 All except /health need "Authorization: Bearer <GPM_TOKEN>"."""
 import os
 import shlex
+import sys
 from pathlib import Path
 
 import modal
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
 app = modal.App('gpm-sep')
 secret = modal.Secret.from_name('gpm-sep')
 progress = modal.Dict.from_name('gpm-sep-progress', create_if_missing=True)
@@ -72,19 +74,30 @@ if not _models:
 gpu_image = gpu_image.add_local_file(HERE / 'sep_core.py', '/root/sep_core.py')
 if _models:
     gpu_image = gpu_image.add_local_dir(_models, '/models')
-# Demucs (htdemucs_ft, MIT licence) runs in its own image: PyTorch brings its own CUDA libraries.
-# torch stays below 2.6, whose torch.load defaults would refuse the Demucs checkpoints.
-demucs_image = (
+# The PyTorch models (Demucs htdemucs_ft, MIT; BS-RoFormer vocals, see roformer_core.py) share an
+# image: PyTorch brings its own CUDA libraries. torch stays below 2.6, whose torch.load defaults
+# would refuse the Demucs checkpoints. Both models are downloaded and checked at image build.
+if modal.is_local():  # only the deploy needs the download script; containers never build images
+    import roformer_core
+    _ro_fetch = roformer_core.fetch_script('/root/zf', '/torch-models')
+else:
+    _ro_fetch = 'pass'
+torch_image = (
     modal.Image.debian_slim(python_version='3.12')
-    .pip_install('torch==2.5.1', 'torchaudio==2.5.1', 'demucs==4.0.1', 'numpy==2.2.6', 'soundfile==0.13.1')
+    .pip_install('torch==2.5.1', 'torchaudio==2.5.1', 'demucs==4.0.1', 'numpy==2.2.6', 'soundfile==0.13.1',
+                 'rotary-embedding-torch==0.9.2', 'beartype==0.23.1', 'einops==0.8.2', 'packaging')
     .run_commands('python -c "from demucs.pretrained import get_model; get_model(\'htdemucs_ft\')"')
+    .run_commands('python -c ' + shlex.quote(_ro_fetch))
     .add_local_file(HERE / 'sep_core.py', '/root/sep_core.py')
     .add_local_file(HERE / 'demucs_core.py', '/root/demucs_core.py')
+    .add_local_file(HERE / 'roformer_core.py', '/root/roformer_core.py')
+    .add_local_file(HERE / 'torch_core.py', '/root/torch_core.py')
 )
 web_image = (
     modal.Image.debian_slim(python_version='3.12')
-    .pip_install('fastapi[standard]==0.115.12', 'numpy==2.2.6')
+    .pip_install('fastapi[standard]==0.115.12', 'numpy==2.2.6', 'soundfile==0.13.1')
     .add_local_file(HERE / 'api.py', '/root/api.py')
+    .add_local_file(HERE / 'sep_core.py', '/root/sep_core.py')
 )
 
 @app.cls(image=gpu_image, gpu='T4', cpu=4.0, memory=8192, timeout=900, scaledown_window=120, max_containers=2)
@@ -150,19 +163,28 @@ class Separator:
         return out
 
 
-@app.cls(image=demucs_image, gpu='T4', cpu=4.0, memory=16384, timeout=900, scaledown_window=120, max_containers=2)
-class DemucsSeparator:
+@app.cls(image=torch_image, gpu='T4', cpu=4.0, memory=16384, timeout=900, scaledown_window=120, max_containers=2)
+class TorchSeparator:
     @modal.enter()
     def load(self):
         import torch
-        from demucs_core import load
         self.dev = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.model = load(self.dev)
-        print('Demucs on', self.dev)
+        self.models = {}
+        print('PyTorch models on', self.dev)
+
+    def get_model(self, name):  # loaded on first use, then kept while the container lives
+        if name not in self.models:
+            if name == 'demucs':
+                import demucs_core
+                self.models[name] = demucs_core.load(self.dev)
+            else:
+                import roformer_core
+                self.models[name] = roformer_core.load(self.dev, '/root/zf', '/torch-models')
+        return self.models[name]
 
     @modal.method()
-    def run(self, body: bytes, sr: int, n: int, stems: list, scale: float, key: str) -> bytes:
-        from demucs_core import run_demucs
+    def run(self, body: bytes, sr: int, n: int, plan: dict, scale: float, key: str) -> bytes:
+        from torch_core import run_torch
 
         def tick(d, t):
             try:
@@ -170,9 +192,9 @@ class DemucsSeparator:
             except Exception:
                 pass
         try:
-            out = run_demucs(body, sr, n, stems, scale, self.model, self.dev, tick)
+            out = run_torch(body, sr, n, plan, scale, self.get_model, self.dev, tick)
         except Exception as e:
-            print('Demucs failed:', repr(e))
+            print('PyTorch separation failed:', repr(e))
             raise RuntimeError(f'{type(e).__name__}: {e}'[:400]) from None
         finally:
             import torch
@@ -190,18 +212,37 @@ class DemucsSeparator:
 @modal.asgi_app()
 def web():
     from api import Running, build_api, new_key
+    from sep_core import merge_results
 
-    async def start(body, sr, n, stems, scale, model):
-        key = new_key()
-        worker = DemucsSeparator() if model == 'demucs' else Separator()
-        call = await worker.run.spawn.aio(body, sr, n, stems, scale, key)
-        return call.object_id + '.' + key
+    async def start(body, sr, n, plan, scale):
+        """Standard stems go to the ONNX GPU job, Demucs/RoFormer stems to the PyTorch one, in parallel."""
+        ids = []
+        mdx = [s for s, m in plan.items() if m == 'mdx']
+        other = {s: m for s, m in plan.items() if m != 'mdx'}
+        if mdx:
+            key = new_key()
+            call = await Separator().run.spawn.aio(body, sr, n, mdx, scale, key)
+            ids.append(call.object_id + '.' + key)
+        if other:
+            key = new_key()
+            call = await TorchSeparator().run.spawn.aio(body, sr, n, other, scale, key)
+            ids.append(call.object_id + '.' + key)
+        return '~'.join(ids)
 
     def poll(jid):
-        cid, _, key = jid.partition('.')
-        try:
-            return modal.FunctionCall.from_id(cid).get(timeout=0)
-        except (TimeoutError, modal.exception.TimeoutError):
-            raise Running(*progress.get(key, (0, 0)))
+        outs, d, t, running = [], 0, 0, False
+        for part in jid.split('~'):
+            cid, _, key = part.partition('.')
+            try:
+                outs.append(modal.FunctionCall.from_id(cid).get(timeout=0))
+                d, t = d + 100, t + 100
+            except (TimeoutError, modal.exception.TimeoutError):
+                running = True
+                pd, pt = progress.get(key, (0, 0))
+                d, t = d + (100 * pd // pt if pt else 0), t + 100
+        if running:
+            raise Running(d, t)
+        return outs[0] if len(outs) == 1 else merge_results(outs)
 
-    return build_api(os.environ.get('GPM_TOKEN', ''), start, poll, models=('mdx', 'demucs'))
+    offers = {'vocals': ['mdx', 'demucs', 'roformer'], 'drums': ['mdx', 'demucs'], 'bass': ['mdx', 'demucs']}
+    return build_api(os.environ.get('GPM_TOKEN', ''), start, poll, offers)

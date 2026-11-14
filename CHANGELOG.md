@@ -3,6 +3,12 @@
 All notable changes to GP Mastering, newest first. The version number is the small tag beside the app's title.
 This file mirrors `changelog.html`, which is the version shown in the app; keep the two in step.
 
+## v62 — Nov 14
+
+### Added
+
+- **Models** per stem for Separate on: My server: Vocals Standard / RoFormer / Demucs, Drums and Bass Standard / Demucs. RoFormer is BS-RoFormer, a newer vocal model that scores well above the others on public benchmarks. Standard stems and the others run at the same time. This replaces the single Model menu; your choice carries over.
+
 ## v61 — Nov 14
 
 ### Added

@@ -30,7 +30,8 @@ def worker(key, args):
         jobs[key]['err'] = e
 
 
-async def start(body, sr, n, stems, scale, model='mdx'):
+async def start(body, sr, n, plan, scale):
+    stems = list(plan)  # this server offers only the standard models; build_api checked the plan
     key = new_key()
     jobs[key] = {'p': (0, 0)}
     threading.Thread(target=worker, args=(key, (body, sr, n, stems, scale)), daemon=True).start()

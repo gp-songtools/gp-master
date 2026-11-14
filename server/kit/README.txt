@@ -47,13 +47,19 @@ The token is also saved in access-token.txt in this folder. Keep it private:
 anyone with the address and the token can use your server.
 
 
-Two models
-----------
-In GP Mastering you choose the server's Model:
-- Standard: the same three models as in the browser, so the same stems.
-- Demucs: Meta's Hybrid Transformer Demucs (htdemucs_ft, MIT licence). It often
-  gives cleaner drums and bass. Modal downloads it from Meta while it builds the
-  server; the first deploy takes a few minutes longer because of it.
+Models
+------
+In GP Mastering you choose the model for each stem:
+- Standard: the same models as in the browser, so the same stems.
+- Demucs (vocals, drums, bass): Meta's Hybrid Transformer Demucs (htdemucs_ft,
+  MIT licence). Often crisper drums.
+- RoFormer (vocals only): BS-RoFormer, viperx edition, a newer vocal model,
+  distributed by Ultimate Vocal Remover on the same terms as the standard
+  models (credit, free, never in anything paid). Its code is ZFTurbo's Music
+  Source Separation Training (MIT licence).
+Modal downloads Demucs and RoFormer (about 1 GB together) while it builds the
+server, so the first deploy takes a few minutes longer. The first song that
+uses one of them waits a little longer while it loads.
 
 
 The standard models
