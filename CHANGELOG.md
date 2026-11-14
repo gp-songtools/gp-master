@@ -3,6 +3,12 @@
 All notable changes to GP Mastering, newest first. The version number is the small tag beside the app's title.
 This file mirrors `changelog.html`, which is the version shown in the app; keep the two in step.
 
+## v65 — Nov 14
+
+### Changed
+
+- **Other: Demucs** is back in the server Models row. It was removed in v64 after a test run that turned out to have used the wrong file.
+
 ## v64 — Nov 14
 
 ### Changed

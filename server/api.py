@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 VERSION = 3
-STEMS = ('vocals', 'drums', 'bass')  # 'other' is the mix minus these, made by the page
+STEMS = ('vocals', 'drums', 'bass', 'other')  # 'other' only from models that make it (Demucs)
 
 
 class Running(Exception):
@@ -16,7 +16,7 @@ class Running(Exception):
         self.done, self.total, self.waiting = done, total, waiting
 
 
-MDX_ONLY = {s: ['mdx'] for s in STEMS}
+MDX_ONLY = {s: ['mdx'] for s in ('vocals', 'drums', 'bass')}  # Standard 'other' is the mix minus stems, made by the page
 
 
 def build_api(token, start, poll, offers=MDX_ONLY):

@@ -257,5 +257,5 @@ def web():
             raise Running(d, t, waiting)
         return outs[0] if len(outs) == 1 else merge_results(outs)
 
-    offers = {'vocals': ['mdx', 'demucs', 'roformer'], 'drums': ['mdx', 'demucs'], 'bass': ['mdx', 'demucs']}
+    offers = {'vocals': ['mdx', 'demucs', 'roformer'], 'drums': ['mdx', 'demucs'], 'bass': ['mdx', 'demucs'], 'other': ['demucs']}
     return build_api(os.environ.get('GPM_TOKEN', ''), start, poll, offers)
