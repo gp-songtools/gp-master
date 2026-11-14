@@ -169,7 +169,7 @@ class Separator:
         return out
 
 
-@app.cls(image=torch_image, gpu='T4', cpu=4.0, memory=16384, timeout=900, scaledown_window=120, max_containers=2)
+@app.cls(image=torch_image, gpu='L4', cpu=4.0, memory=16384, timeout=900, scaledown_window=120, max_containers=2)
 class TorchSeparator:
     @modal.enter()
     def load(self):

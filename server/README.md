@@ -12,7 +12,7 @@ minus the stems, worked out in the browser.
 | `roformer_core.py` | The optional BS-RoFormer vocal model (viperx ep_317; code from ZFTurbo, pinned) |
 | `torch_core.py` | Runs a job's Demucs and RoFormer stems in the PyTorch image (Modal only) |
 | `api.py` | The web front: access token, CORS, start a job, poll for the result |
-| `modal_app.py` | Deploys both to [Modal](https://modal.com) (GPU T4) |
+| `modal_app.py` | Deploys both to [Modal](https://modal.com) (Standard on a T4 GPU, Demucs and RoFormer on an L4) |
 | `local.py` | Runs the same server on your own computer or a Linux server |
 | `kit/` | Setup scripts and README for the **Server kit** the app zips up for users |
 
