@@ -45,7 +45,7 @@
   - "Apply to preview" buttons are attached by label text in the IIFE at the end of the script; add new setting labels to its `keys` list
 - **Settings, undo, storage**
   - Persist via `getCfg()`/`applyCfg()` (validate every field in `applyCfg`); `DEFCFG` is captured before `cfgLoad()`
-  - localStorage keys: `gpmaster.cfg.v1`, `gpmaster.refs.v1`, `gpmaster.setups.v1`, `gpmaster.workers.v1`, `gpmaster.sepsrv.v1` (Separate on, server URL, per-stem `models`; token only when Remember is ticked), `gpmaster.ai.v1`, `gpmaster.aikey.v1` (only when Remember is ticked), `gpmaster.ui.v1` (snap); never change a key's format without migration
+  - localStorage keys: `gpmaster.cfg.v1`, `gpmaster.refs.v1`, `gpmaster.setups.v1`, `gpmaster.workers.v1`, `gpmaster.sepsrv.v1` (Separate on, server URL, per-stem `models`, stem `ticks`; token only when Remember is ticked), `gpmaster.ai.v1`, `gpmaster.aikey.v1` (only when Remember is ticked), `gpmaster.ui.v1` (snap); never change a key's format without migration
   - Undo history (`H`) records on any document click/change/pointerup/keyup; non-user changes call `histAbsorb()`
   - IndexedDB `gpmaster` (stores `stems`, `songs`) keyed by SHA-256 of file bytes (`songFp`): 16-bit stems without `other` (unless it came from Demucs, `S.om`), plus regions/stem levels (`songSaveSoon`, `songRestore`); keep 5 songs' stems
 - **Tone EQ**

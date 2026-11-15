@@ -3,6 +3,12 @@
 All notable changes to GP Mastering, newest first. The version number is the small tag beside the app's title.
 This file mirrors `changelog.html`, which is the version shown in the app; keep the two in step.
 
+## v66 — Nov 15
+
+### Changed
+
+- Stem balance now remembers which stems you tick to separate (Vocals, Drums, Bass), along with Separate on, the server address and each stem's model, which it already kept. The address and token are saved as you type, not only when you leave the box. Settings are kept per browser and device, so a phone and a computer each keep their own.
+
 ## v65 — Nov 14
 
 ### Changed
