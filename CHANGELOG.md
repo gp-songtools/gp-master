@@ -3,6 +3,12 @@
 All notable changes to GP Mastering, newest first. The version number is the small tag beside the app's title.
 This file mirrors `changelog.html`, which is the version shown in the app; keep the two in step.
 
+## v67 — Nov 16
+
+### Added
+
+- **Leftovers in Other**, a slider under the stems when Other came from Demucs. A Demucs Other leaves out anything no model caught, such as a high falsetto line the vocal model missed; this adds that part back. 0% is the pure Demucs Other, 100% is the same as Standard Other (drum residue included). It works instantly, is part of undo, and is saved with the song.
+
 ## v66 — Nov 15
 
 ### Changed
