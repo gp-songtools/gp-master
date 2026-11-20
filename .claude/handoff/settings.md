@@ -1,0 +1,3 @@
+---
+archive-retention: 10
+---
