@@ -2,45 +2,69 @@
 <html lang="en"><head><meta charset="utf-8">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎚️</text></svg>">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#1b232c" media="(prefers-color-scheme: dark)">
 <title>GP Mastering — Help</title>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#e9edf0;--card:#f7f9fa;--ink:#11161b;--mut:#56626d;--ln:#c4ccd3;--ac:#00796b;--acf:#fff;--warn:#b3261e;
-box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1317;--card:#161d23;--ink:#e8edf1;--mut:#92a0ab;--ln:#2a343c;--ac:#3ccfbf;--acf:#06201d;--warn:#ff8a80}}
-:root[data-theme="dark"]{--bg:#0e1317;--card:#161d23;--ink:#e8edf1;--mut:#92a0ab;--ln:#2a343c;--ac:#3ccfbf;--acf:#06201d;--warn:#ff8a80}
+/* Design system: design-system/gp-mastering/MASTER.md (same tokens as index.html) */
+:root{--bg:#eceff2;--card:#fff;--raise:#f3f5f7;--sunk:#e3e8ed;--ln:#d6dde3;--ln2:#7a8793;--ink:#101820;--mut:#4b5864;--ac:#00766a;--acf:#fff;--warn:#b3261e;--vu:#a86400;
+--sans:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;--r1:6px;--r2:10px;--r3:14px;
+color-scheme:light dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141a21;--card:#1b232c;--raise:#222b35;--sunk:#0f141a;--ln:#2c3742;--ln2:#66788a;--ink:#eaf0f5;--mut:#a3b1bd;--ac:#45d3c1;--acf:#04221e;--warn:#ff8a7a;--vu:#e9a83a}}
+:root[data-theme="light"]{color-scheme:light}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#141a21;--card:#1b232c;--raise:#222b35;--sunk:#0f141a;--ln:#2c3742;--ln2:#66788a;--ink:#eaf0f5;--mut:#a3b1bd;--ac:#45d3c1;--acf:#04221e;--warn:#ff8a7a;--vu:#e9a83a}
 *,*::before,*::after{box-sizing:inherit}
-html{scroll-behavior:smooth}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
-main{max-width:680px;margin:0 auto;padding:20px 16px 60px}
-h1{font-size:30px;line-height:1.1;margin:8px 0 6px;letter-spacing:-.02em}
-h2{font-size:21px;margin:34px 0 10px;letter-spacing:-.01em;padding-top:12px;border-top:1px solid var(--ln)}
-h3{font-size:16.5px;margin:22px 0 6px}
-h4{font-size:15px;margin:16px 0 4px;color:var(--mut)}
-p,li{margin:0 0 10px}
-ul,ol{padding-left:22px;margin:0 0 12px}
-a{color:var(--ac)}
-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13.5px;background:var(--card);border:1px solid var(--ln);border-radius:4px;padding:1px 4px}
-.sub{color:var(--mut);margin:0 0 20px;font-size:15px}
-.toc{background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:14px 16px;margin-bottom:10px}
-.toc ol{margin:0;padding-left:20px;font-size:15px}
-.toc li{margin:0 0 3px}
-table{width:100%;border-collapse:collapse;margin:0 0 14px;font-size:14.5px}
-th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--ln);vertical-align:top}
-th{font-weight:600;color:var(--mut);font-size:13px}
+html{scroll-behavior:smooth;scroll-padding-top:16px}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 var(--sans);-webkit-text-size-adjust:100%}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.skip{position:absolute;left:12px;top:-60px;z-index:30;background:var(--ac);color:var(--acf);padding:10px 14px;border-radius:var(--r2);font-weight:600;text-decoration:none}
+.skip:focus{top:12px}
+.bar0{border-bottom:1px solid var(--ln);background:var(--card)}
+.bar0 .in{max-width:760px;margin:0 auto;padding:12px 16px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px}
+.brand{display:flex;align-items:center;gap:10px;margin-right:auto;color:var(--ink);text-decoration:none;font-weight:700;font-size:19px;letter-spacing:-.02em}
+.brand svg{color:var(--ac);flex:0 0 auto}
+.bar0 nav{display:flex;flex-wrap:wrap;gap:4px}
+.bar0 nav a{color:var(--ink);text-decoration:none;font-weight:600;font-size:15px;padding:7px 10px;border-radius:var(--r2);min-height:36px;display:inline-flex;align-items:center}
+.bar0 nav a:hover{background:var(--raise)}
+.bar0 nav a[aria-current=page]{background:var(--ac);color:var(--acf)}
+main{max-width:760px;margin:0 auto;padding:28px 16px 64px}
+h1{font-size:34px;line-height:1.1;margin:0 0 10px;letter-spacing:-.025em}
+h2{font-size:23px;line-height:1.25;margin:44px 0 12px;letter-spacing:-.015em;padding-top:20px;border-top:1px solid var(--ln)}
+h3{font-size:18px;line-height:1.3;margin:28px 0 8px}
+h4{font-size:16px;margin:20px 0 6px;color:var(--mut)}
+p,li{margin:0 0 12px;max-width:72ch}
+ul,ol{padding-left:22px;margin:0 0 14px}
+a{color:var(--ac);text-underline-offset:2px}
+b,strong{font-weight:600}
+code{font-family:var(--mono);font-size:14px;background:var(--raise);border:1px solid var(--ln);border-radius:4px;padding:1px 5px;overflow-wrap:anywhere}
+.sub{color:var(--mut);margin:0 0 24px;font-size:17px;max-width:64ch}
+.toc{background:var(--card);border:1px solid var(--ln);border-radius:var(--r3);padding:18px 20px;margin-bottom:12px}
+.toc ol{margin:0;padding-left:22px;font-size:16px}
+.toc li{margin:0 0 6px}
+.toc ol ul{margin:4px 0 0;padding-left:18px;list-style:disc}
+table{width:100%;border-collapse:collapse;margin:0 0 16px;font-size:15px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--ln);vertical-align:top}
+th{font-weight:600;color:var(--mut);font-size:14px;background:var(--raise)}
 td:first-child{white-space:nowrap;font-weight:600}
-@media(max-width:600px){td:first-child{white-space:normal}}
-.toc ol ul{margin:3px 0 0;padding-left:18px;list-style:disc}
-.tw{overflow-x:auto;margin:0 0 14px}
-.tw table{margin:0;min-width:480px}
-.note{background:var(--card);border:1px solid var(--ln);border-left:3px solid var(--ac);border-radius:8px;padding:12px 14px;margin:0 0 14px;font-size:15px}
+@media(max-width:600px){td:first-child{white-space:normal}th,td{padding:7px 6px}}
+.tw{overflow-x:auto;margin:0 0 16px;border:1px solid var(--ln);border-radius:var(--r2);background:var(--card)}
+.tw table{margin:0;min-width:520px}
+.tw0 table{min-width:0}
+.tw tr:last-child td{border-bottom:0}
+.note{background:var(--card);border:1px solid var(--ln);border-left:3px solid var(--ac);border-radius:var(--r2);padding:14px 16px;margin:0 0 16px;font-size:16px}
 .note.w{border-left-color:var(--warn)}
 .note p:last-child{margin:0}
-.top{display:inline-block;margin-top:6px;font-size:13.5px;color:var(--mut);text-decoration:none}
-.chain{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:12px 14px;margin:0 0 14px;font-size:14.5px;line-height:1.7}
-.chain b{display:inline-block;min-width:22px;color:var(--ac)}
+.top{display:inline-flex;align-items:center;min-height:32px;margin-top:6px;font-size:14px;color:var(--mut);text-decoration:none}
+.top:hover{color:var(--ac)}
+.chain{background:var(--card);border:1px solid var(--ln);border-radius:var(--r2);padding:14px 16px;margin:0 0 16px;font-size:15px;line-height:1.75}
+.chain b{display:inline-block;min-width:24px;color:var(--ac);font-family:var(--mono)}
+@media(max-width:480px){body{font-size:16px}h1{font-size:30px}.sub{font-size:16px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 </style></head>
-<body><main>
+<body><a class="skip" href="#main">Skip to content</a>
+<header class="bar0"><div class="in"><a class="brand" href="./"><svg width="26" height="26" viewBox="0 0 28 28" aria-hidden="true"><rect x="1" y="1" width="26" height="26" rx="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 18v-5M12 20V8M16 17v-6M20 19V10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>GP Mastering</a><nav aria-label="GP Mastering pages"><a href="./">App</a><a href="help.html" aria-current="page">Guide</a><a href="changelog.html">Changelog</a></nav></div></header>
+<main id="main">
 
 <h1>GP Mastering — Help</h1>
 <p class="sub">What every control does, the actual numbers behind it, and how to tell when it is working against you. <a href="./">Back to the app</a> &middot; <a href="changelog.html">Changelog</a></p>
@@ -94,6 +118,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 <a class="top" href="#">↑ top</a>
 
 <h2 id="workflow">2. A workflow that avoids the usual mistakes</h2>
+<p>New to the app? Press <b>Try the demo song</b> under Song first. It loads a 32-second track made in your browser, at 120 BPM, so every step below works without a file of your own, and puts sample AI suggestions under Paste suggestions.</p>
 <ol>
 <li><b>Load reference tracks first.</b> Without them the app aims at a hand-chosen curve that may not suit your material. With them it aims at something measured. This is the single biggest quality difference available to you.</li>
 <li><b>Use Preview 30 s, not Master full song.</b> It renders a 30-second section from the middle of the track in a fraction of the time, and the A/B player and spectrum view work identically on it.</li>
@@ -109,12 +134,12 @@ td:first-child{white-space:nowrap;font-weight:600}
 <p>Load up to five songs whose balance you like. The app measures each one and aims for the average of those measurements instead of its built-in target.</p>
 
 <h3>What it measures, and what it ignores</h3>
-<table>
+<div class="tw tw0"><table>
 <tr><th>Measured and copied</th><th>Not measured</th></tr>
 <tr><td>Octave-band tone curve, level-normalized</td><td>Arrangement and instrumentation</td></tr>
 <tr><td>Overall stereo width (side-to-mid ratio)</td><td>Loudness or dynamic range</td></tr>
 <tr><td>Low-mid side energy, 160–450 Hz</td><td>Anything time-varying</td></tr>
-</table>
+</table></div>
 <p>Only those measurements are kept. The reference audio is analyzed and immediately discarded, which is why stored references take about 300 bytes each and why nothing you load is retained or transmitted.</p>
 
 <h3>Choosing references</h3>
@@ -128,11 +153,11 @@ td:first-child{white-space:nowrap;font-weight:600}
 
 <h3>The agreement check</h3>
 <p>Averaging references that disagree produces a target matching none of them, so the app measures how far each reference sits from their average and reports it. Both curves are level-normalized first, so this is purely about tone shape.</p>
-<table>
+<div class="tw tw0"><table>
 <tr><th>Reading</th><th>Means</th></tr>
 <tr><td>Under 1.5 dB</td><td>They agree. Normal variation between well-mastered songs sits near 0.9 dB.</td></tr>
 <tr><td>Over 1.5 dB</td><td>They disagree. The app names the reference furthest from the rest and the frequency range where they diverge most. Remove the named one.</td></tr>
-</table>
+</table></div>
 <p>With three or more references the outlier is named explicitly and marked in the list. With two, both sit equally far from their average, so you compare the faint lines on the spectrum view instead.</p>
 <div class="note"><p>The 1.5 dB line is a judgment call, but it was calibrated against real files rather than guessed: two different but sanely mastered songs measured 0.9 dB apart, while a reference with a deliberate 9 dB tilt error measured 2.4–3.2 dB.</p></div>
 
@@ -156,7 +181,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 
 <h2 id="genre">5. Genre preset</h2>
 <p>A preset sets several things at once: a loudness target, a tilt applied to the tone curve, how hard the compression works, how much saturation, the de-esser ceiling, how much the auto width is allowed to move, and the target stem balance ranges.</p>
-<table>
+<div class="tw tw0"><table>
 <tr><th>Preset</th><th>Loudness</th><th>Character</th></tr>
 <tr><td>Auto</td><td>leaves your target alone</td><td>neutral; the built-in curve with no tilt</td></tr>
 <tr><td>Rock</td><td>−10 LUFS</td><td>neutral tilt, moderate compression</td></tr>
@@ -165,25 +190,25 @@ td:first-child{white-space:nowrap;font-weight:600}
 <tr><td>Electronic</td><td>−8.5 LUFS</td><td>low and high lift, most saturation, widest auto width</td></tr>
 <tr><td>Acoustic</td><td>−14 LUFS</td><td>gentlest compression, almost no saturation</td></tr>
 <tr><td>Voice</td><td>−16 LUFS</td><td>−2 dB low tilt, strongest de-essing, no width change</td></tr>
-</table>
+</table></div>
 <p>Selecting a preset other than Auto moves the loudness slider to that preset's target. You can then move it back; the preset's other behaviour is unaffected.</p>
 <div class="note"><p>When reference tracks are active they replace the preset's tone curve and tilt entirely. The preset still controls compression, saturation, de-essing and the stem balance targets.</p></div>
 <a class="top" href="#">↑ top</a>
 
 <h2 id="loud">6. Target loudness</h2>
 <p>Integrated loudness in LUFS, measured per ITU-R BS.1770 with K-weighting and gating — the same standard streaming services use. The app iterates gain and limiting until the measured output lands within 0.1 LU of your target.</p>
-<table>
+<div class="tw tw0"><table>
 <tr><th>Target</th><th>Use</th></tr>
 <tr><td>−16</td><td>podcasts, spoken word</td></tr>
 <tr><td>−14</td><td>streaming reference point; preserves the most dynamics</td></tr>
 <tr><td>−11 to −9</td><td>competitively loud; what most modern releases measure</td></tr>
 <tr><td>−8 and above</td><td>very loud; expect audible limiting on most material</td></tr>
-</table>
+</table></div>
 <p>Streaming services turn loud masters down rather than rewarding them, so a −9 LUFS master played on Spotify is quieter and more squashed than a −14 LUFS one. Loud masters are worth making for download, local playback, and because quiet masters sound weak when a listener compares them manually.</p>
 <p>If the target is unreachable without extreme limiting the app stops at the closest achievable value and says so in the results.</p>
 <h3 id="eq">Tone EQ</h3>
 <p>Nine vertical sliders under the loudness target, one per octave from 63 Hz to 16 kHz, each ±15 dB in 0.5 dB steps, with the setting shown above each slider and its frequency below. The curve drawn behind them is the combined response of all nine filters, which is what you actually hear: neighbouring bands overlap, so the curve does not always pass exactly through each slider. Double-click a slider to zero it; <b>Reset</b> zeroes all nine. Hover over the <b>i</b> under a slider, or tap it on a phone, for a short note on what that band does.</p>
-<table>
+<div class="tw tw0"><table>
 <tr><th>Band</th><th>Filter</th><th>Typical use</th></tr>
 <tr><td>63 Hz</td><td>low shelf</td><td>sub-bass weight; big boosts make the limiter work much harder</td></tr>
 <tr><td>125 Hz</td><td>bell, 1 octave</td><td>punch of kick and bass; cut if boomy</td></tr>
@@ -194,7 +219,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 <tr><td>4 kHz</td><td>bell, 1 octave</td><td>presence and vocal clarity; harshness if pushed</td></tr>
 <tr><td>8 kHz</td><td>bell, 1 octave</td><td>brilliance and cymbals; sibilance if pushed</td></tr>
 <tr><td>16 kHz</td><td>high shelf</td><td>air and sparkle; hiss if pushed</td></tr>
-</table>
+</table></div>
 <p>±15 dB is a wide range. On a finished master, moves of 1 to 3 dB are typical; anything much past 6 dB usually means the mix itself needs fixing, and large low-end boosts mostly turn into extra limiting rather than extra bass.</p>
 <p><b>You hear it while you move it.</b> It runs live on the top player (on top of the mastered preview, and on the original until you first switch to Mastered), on Play all stems (not on the single-stem ▶ buttons), and on the B: Master side of the results player. A: Original is never EQ'd, so A/B still compares against the untouched song. <b>Bypass</b> switches it off while you listen; renders always use the sliders.</p>
 <p>In a render it sits after the whole mastering chain and <b>before loudness matching and the limiter</b>, so the result still hits your target and ceiling. A low boost therefore does not make the song louder; it gives the limiter more to do. Watch the true peak and listen for pumping if you push Low.</p>
@@ -202,12 +227,12 @@ td:first-child{white-space:nowrap;font-weight:600}
 <a class="top" href="#">↑ top</a>
 
 <h2 id="fmt">7. Output format</h2>
-<table>
+<div class="tw tw0"><table>
 <tr><th>Format</th><th>Detail</th><th>Ceiling</th></tr>
 <tr><td>WAV</td><td>24-bit PCM, triangular dither</td><td>−1.0 dBTP</td></tr>
 <tr><td>MP3</td><td>320 kbps</td><td>−1.5 dBTP</td></tr>
 <tr><td>M4A</td><td>AAC 256 kbps</td><td>−1.5 dBTP</td></tr>
-</table>
+</table></div>
 <p>The lossy formats get 0.5 dB more headroom because encoders overshoot: the decoded file can peak higher than the file you fed in. Use WAV for anything you will distribute or process further, and the lossy formats for sharing and listening.</p>
 <p>Peak levels are measured as true peak with 4× sinc oversampling, so the number reported accounts for inter-sample peaks that a simple sample-peak meter misses.</p>
 <a class="top" href="#">↑ top</a>
@@ -263,7 +288,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 <p>Mastering normally applies one setting to the whole song, but problems are usually local: one chorus that jumps forward, a verse sitting too low, an intro you want left alone. This is where you ride the fader instead.</p>
 <p><b>Zoom and exact times.</b> Under the waveform, <b>+</b> and <b>&minus;</b> zoom in and out (Ctrl or Cmd with the mouse wheel zooms at the pointer), <b>Fit</b> shows the whole song and <b>Zoom to region</b> frames the selected region. A slider moves along the zoomed song, and the view follows the playhead while it plays. Each region's start and end are editable in minutes and seconds, such as <code>1:23.5</code>, or plain seconds. <b>Add by time</b> creates a region from a typed start and end, and <b>Now</b> copies the playhead position.</p>
 <p>Drag across the waveform to select a part of the song. Each region gets one of three modes:</p>
-<table>
+<div class="tw tw0"><table>
 <tr><th>Mode</th><th>What it does</th></tr>
 <tr><td>Level</td><td>Changes the level by up to &plusmn;12 dB <b>before</b> the mastering chain, so the compressors respond to the corrected balance instead of fighting it. This is what fader riding means.</td></tr>
 <tr><td>EQ</td><td>Boosts or cuts one frequency by up to &plusmn;12 dB inside the region only, with a bell (about one octave), narrow, wide, low-shelf or high-shelf shape. Like Level, it works <b>before</b> the mastering chain. Use it for a local problem, such as pads masking the vocal in one chorus; for the whole song, use the Tone EQ instead.</td></tr>
@@ -283,7 +308,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 <tr><td>Downlifter</td><td>Adds a falling sound that <b>starts at the start of the region</b> &mdash; put it on the drop; 1 to 4 bars is typical. Noise sweep down, sub drop (a sub-bass sine falling from 90 to 30 Hz), or both, with an optional <b>impact hit</b> at the start.</td></tr>
 <tr><td>Applies to</td><td>Level, EQ, Tame dynamics and the effects can work on the <b>whole mix</b> or on one stem: vocals, drums, bass or other. A stem edit changes only that instrument in the region, before the stems are mixed back together and mastered; a stem level of &minus;60 dB mutes it there. <b>It needs the song separated into stems first</b> (Stem balance &rsaquo; Separate whole song, with Master the rebalanced mix on); until then the row says it is waiting and nothing changes.</td></tr>
 <tr><td>No tone processing</td><td>Keeps the original tone there &mdash; no EQ, no compression, no saturation &mdash; but still applies the final loudness match and limiting, so the level matches the rest of the song and there is no jump at the boundary.</td></tr>
-</table>
+</table></div>
 
 <h3>Things worth knowing</h3>
 <ul>
@@ -313,7 +338,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 <h4>Pasting suggestions from another tool</h4>
 <p><b>Paste suggestions from another tool</b> imports the same format without a key, so another analyzer can feed this app. <a href="https://github.com/gp-songtools/earprint">Earprint</a> produces it directly: after a review in which Gemini listened to your file, press <b>Copy for GP Mastering</b> there and paste here, with the same file loaded. A whole Earprint review can also be pasted as it is; its <code>mastering</code> part is used. Times are seconds from the start of the song. Only <code>start</code>, <code>end</code>, <code>action</code> and <code>reason</code> are required; anything outside the song, too short, or with an unknown action is left out and counted.</p>
 <div class="chain">{<br>&nbsp;"summary": "Two or three sentences.",<br>&nbsp;"edits": [<br>&nbsp;&nbsp;{"start": 62.4, "end": 70.1, "section": "Chorus 1", "target": "other",<br>&nbsp;&nbsp;&nbsp;"action": "eq", "freq_hz": 1500, "gain_db": -3, "shape": "wide",<br>&nbsp;&nbsp;&nbsp;"reason": "Pads mask the vocal."},<br>&nbsp;&nbsp;{"start": 80, "end": 88, "action": "level", "gain_db": -2, "reason": "&hellip;"},<br>&nbsp;&nbsp;{"start": 96, "end": 99, "action": "tame", "strength": "medium", "reason": "&hellip;"},<br>&nbsp;&nbsp;{"start": 0, "end": 8, "action": "bypass", "reason": "&hellip;"}<br>&nbsp;],<br>&nbsp;"advice": [{"start": 120, "end": 122, "section": "Pre-chorus", "text": "Add a riser."}]<br>}</div>
-<table>
+<div class="tw tw0"><table>
 <tr><th>Field</th><th>Values</th></tr>
 <tr><td>action</td><td><code>level</code>, <code>eq</code>, <code>tame</code>, <code>bypass</code> (no tone processing), <code>filter</code>, <code>reverb</code>, <code>delay</code>, <code>pan</code>, <code>riser</code>, <code>downlifter</code>, <code>pitch_shift</code>, <code>repeat</code>, <code>cut</code> (whole bars; repeat plays the range again right after itself)</td></tr>
 <tr><td>filter_type, from_hz, to_hz, resonance</td><td><code>low_pass</code> or <code>high_pass</code>; sweep start and end 20 to 20000 Hz; resonance 0.5 to 8 (filter only)</td></tr>
@@ -328,18 +353,18 @@ td:first-child{white-space:nowrap;font-weight:600}
 <tr><td>freq_hz, shape</td><td>20 to 20000; <code>bell</code>, <code>narrow</code>, <code>wide</code>, <code>low_shelf</code>, <code>high_shelf</code> (eq only)</td></tr>
 <tr><td>strength</td><td><code>light</code>, <code>medium</code>, <code>strong</code> (tame only)</td></tr>
 <tr><td>target</td><td><code>mix</code>, <code>vocals</code>, <code>drums</code>, <code>bass</code>, <code>other</code>. A stem applies level, eq and tame to that instrument only, once the song is separated into stems; <code>bypass</code> always applies to the whole mix</td></tr>
-</table>
+</table></div>
 <a class="top" href="#">↑ top</a>
 
 <h2 id="noise">9. Noise reduction</h2>
 <p>Removes steady background noise: hiss, hum, room tone, and the warble AI generators sometimes leave behind. It measures the noise floor in each frequency band, then attenuates each band as it drops toward that floor.</p>
 <p>It runs <b>first</b>, before any EQ or compression, so the rest of the chain never amplifies noise.</p>
-<table>
+<div class="tw tw0"><table>
 <tr><th>Setting</th><th>Maximum reduction</th></tr>
 <tr><td>Light</td><td>6 dB</td></tr>
 <tr><td>Medium</td><td>12 dB</td></tr>
 <tr><td>Strong</td><td>20 dB</td></tr>
-</table>
+</table></div>
 
 <h3>Where the noise profile comes from</h3>
 <p>Mark a quiet passage &mdash; an intro, a gap, a tail &mdash; with a <b>Noise profile</b> region on the waveform. That measures the actual noise instead of inferring it. A noise region is a measurement marker only: it does not change how that part is processed.</p>
@@ -347,12 +372,12 @@ td:first-child{white-space:nowrap;font-weight:600}
 
 <h3>Measured on a file with known added noise</h3>
 <p>White noise at &minus;48 dBFS was added to a clean excerpt, with three seconds of noise alone at the start, then Medium (12 dB) was applied:</p>
-<table>
+<div class="tw tw0"><table>
 <tr><th>Profile source</th><th>Noise removed</th><th>Music lost</th></tr>
 <tr><td>Marked region</td><td>12.0 dB</td><td>0.45 dB</td></tr>
 <tr><td>Automatic (5th percentile)</td><td>11.5 dB</td><td>0.43 dB</td></tr>
 <tr><td>Automatic (15th percentile)</td><td>11.9 dB</td><td>3.34 dB</td></tr>
-</table>
+</table></div>
 <p>The third row is why the automatic estimate uses the 5th percentile: the 15th removed only 0.4 dB more noise while costing nearly 3 dB of music. A marked region remains the more reliable choice, because it measures the noise rather than inferring it from statistics, but the gap is small on material like this.</p>
 
 <h3>Limits</h3>
@@ -365,12 +390,12 @@ td:first-child{white-space:nowrap;font-weight:600}
 
 <h2 id="trans">10. Transients</h2>
 <p>Two envelope followers run on the signal, one fast and one slow. Where the fast one runs ahead of the slow one, an attack is happening. The drive is that gap&rsquo;s excess over its own one-second running average, which self-calibrates per track rather than using a fixed threshold &mdash; measured on real material, the gap sits near 2.1 dB in steady passages and 3.5 dB at onsets, so any fixed threshold would be wrong for the next track.</p>
-<table>
+<div class="tw tw0"><table>
 <tr><th>Setting</th><th>Effect on attacks</th></tr>
 <tr><td>Soften</td><td>up to &minus;3 dB</td></tr>
 <tr><td>Punchy</td><td>up to +3 dB</td></tr>
 <tr><td>Very punchy</td><td>up to +6 dB</td></tr>
-</table>
+</table></div>
 <p>It runs after saturation and before the limiter. That ordering matters: placed before saturation, the soft-clipping stage squashed exactly the peaks the shaper had just raised, which inverted the control entirely.</p>
 
 <h3>What it actually does, measured</h3>
@@ -404,7 +429,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 <p><b>Choosing and saving stems.</b> Tick which of vocals, drums and bass to separate; anything you skip stays in Other, and fewer stems finish sooner. These ticks, Separate on, the server address and each stem&rsquo;s model are remembered in this browser on this device (the token too, if you tick Remember). Each separated stem shows its own waveform, normalized to that stem's peak with the peak level printed in the corner, so even a quiet stem is readable. Click a waveform to jump there. The <b>⬇ WAV</b> button beside it saves that stem as a 24-bit stereo WAV named after your song, with <code>_section</code> added if you separated only the 30-second section. The separate Stem Splitter page has been folded into this section.</p>
 <p><b>Listening to the stems.</b> Each stem row has a round ▶ button that plays that stem alone, leveled up toward a common loudness (capped at +18 dB) so a quiet stem such as bass is audible. That is for judging how clean the separation is, not how loud the stem is in the mix. <b>Play all stems</b> mixes them at the levels and mute/solo settings you have set, and follows the sliders live while it plays, so you can hear a rebalance before you master it. This is the stems summed, not the mastered result. A shared position bar lets you scrub, and switching between buttons keeps your place, which makes it easy to compare a stem against the full mix at the same moment. Only the separated section plays, and starting the waveform player or the A/B player stops it.</p>
 <p>When separation finishes the app measures each stem against the full mix and suggests moves, with one button to apply them all. The targets per genre:</p>
-<table>
+<div class="tw tw0"><table>
 <tr><th>Preset</th><th>Vocals</th><th>Drums</th><th>Bass</th><th>Other</th></tr>
 <tr><td>Rock</td><td>−9 to −5</td><td>−7 to −3</td><td>−13 to −8</td><td>−8 to −3</td></tr>
 <tr><td>Pop</td><td>−8 to −4</td><td>−8 to −4</td><td>−12 to −7</td><td>−10 to −5</td></tr>
@@ -412,18 +437,18 @@ td:first-child{white-space:nowrap;font-weight:600}
 <tr><td>Electronic</td><td>−10 to −5</td><td>−6 to −2</td><td>−9 to −4</td><td>−8 to −3</td></tr>
 <tr><td>Acoustic</td><td>−7 to −3</td><td>−9 to −5</td><td>−14 to −9</td><td>−8 to −3</td></tr>
 <tr><td>Voice</td><td>−5 to −1</td><td>−14 to −8</td><td>−18 to −11</td><td>−14 to −8</td></tr>
-</table>
+</table></div>
 <div class="note w"><p>These ranges are rules of thumb I chose, not measurements taken from reference recordings, and they take no account of your arrangement. A deliberately buried vocal will be flagged as wrong when it is not. Suggested moves are capped at 6 dB.</p></div>
 
 <h3>Mastering each stem separately</h3>
 <p>With this on, each stem gets its own chain before the stems are summed:</p>
-<table>
+<div class="tw tw0"><table>
 <tr><th>Stem</th><th>EQ</th><th>Dynamics</th></tr>
 <tr><td>Vocals</td><td>90 Hz high-pass, +1.5 dB at 3 kHz, +1 dB above 11 kHz</td><td>2.5:1, max 4 dB, de-esser up to 5 dB</td></tr>
 <tr><td>Drums</td><td>30 Hz high-pass, +1 dB at 65 Hz, +1 dB above 9 kHz</td><td>2:1, fast 4 ms attack, max 4 dB</td></tr>
 <tr><td>Bass</td><td>28 Hz high-pass, +0.8 dB at 90 Hz, mono below 150 Hz</td><td>3:1, slow 20 ms attack, max 5 dB</td></tr>
 <tr><td>Other</td><td>40 Hz high-pass, −1 dB at 320 Hz</td><td>1.8:1, max 3 dB</td></tr>
-</table>
+</table></div>
 <p>Each compressor works against that stem's own running average rather than a fixed threshold, so it adapts to the material.</p>
 <p>The limiter deliberately stays on the summed mix rather than running per stem. Limiting each stem to full loudness and then summing them would clip, and would undo the balance you just set.</p>
 
@@ -437,12 +462,12 @@ td:first-child{white-space:nowrap;font-weight:600}
 <a class="top" href="#">↑ top</a>
 
 <h2 id="mode">12. Processing mode</h2>
-<table>
+<div class="tw tw0"><table>
 <tr><th>Mode</th><th>What runs</th></tr>
 <tr><td>Full master</td><td>Everything in the chain above. Analyzes the song and adapts.</td></tr>
 <tr><td>Light polish</td><td>Fixed EQ — 28 Hz high-pass, −1.5 dB at 60 Hz, +0.8 dB at 3.5 kHz, +2 dB above 10 kHz — plus one gentle compressor. Identical for every song.</td></tr>
 <tr><td>Loudness only</td><td>No tone changes at all. Just loudness matching and limiting.</td></tr>
-</table>
+</table></div>
 <p>Loudness only is the honest choice when you trust your mix and want nothing but a level change. It is also the right mode for checking what the other modes are actually doing to you: master once in Loudness only, once in Full master, and compare.</p>
 <p>Clarity, stereo width, the vocal enhancer, the pumper and the processing amount all apply to Full master only.</p>
 <a class="top" href="#">↑ top</a>
@@ -459,22 +484,22 @@ td:first-child{white-space:nowrap;font-weight:600}
 <p>Gentle is the default because over-processing is harder to hear than under-processing, and much harder to undo. Start there.</p>
 <h3>Saturation setting and character</h3>
 <p>The Saturation control sits separately from the amount. <b>Auto</b> is the gentle peak soft-clip in the table above. <b>Off</b> bypasses it. <b>Light</b>, <b>Medium</b> and <b>Heavy</b> add real harmonic saturation on top, in one of three characters:</p>
-<table>
+<div class="tw tw0"><table>
 <tr><th>Character</th><th>Shape</th><th>Sounds like</th><th>Range</th></tr>
 <tr><td>Tape</td><td>Symmetric, soft</td><td>Smooth density, mostly odd harmonics, highs rolled off above 12 kHz</td><td>Above 120 Hz</td></tr>
 <tr><td>Tube</td><td>Lopsided</td><td>Warmth from even harmonics, including an octave above</td><td>Above 120 Hz</td></tr>
 <tr><td>Crunch</td><td>Blunt, reacts to quiet material too</td><td>Grit and bite</td><td>Above 250 Hz</td></tr>
-</table>
+</table></div>
 <p>The three levels are calibrated to add about −36, −28 and −21 dB of nonlinear content relative to the signal, measured on a real 40-second track and reproduced within 1 dB in the full chain. Only the harmonics and peak rounding are added back, so the fundamentals keep their level, and the results panel reports the figure for your song. Aliasing is controlled with anti-aliased waveshaping, which measured 15 to 19 dB lower aliasing than a plain shaper on a 10 kHz test tone.</p>
 <div class="note w"><p>The loudness stage still lands on your target, so heavier saturation changes density and tone, not volume. It applies to Full master only. Heavy Crunch is a deliberate effect; for a clean master, stay on Auto or Light.</p></div>
 <h3>Distortion</h3>
 <p>Distortion is deliberate grit, separate from Saturation. It builds a distorted copy of the signal (kept above 100–200 Hz so the bass stays clean), level-matches that copy to its dry counterpart by measuring your song, and blends it underneath at −24, −17 or −11 dB for Light, Medium and Heavy. Measured on a real track the finished result adds about −26, −19 and −13 dB relative to the signal, and the three types agree within 1.5 dB, so the levels mean the same whichever you choose.</p>
-<table>
+<div class="tw tw0"><table>
 <tr><th>Type</th><th>What it does</th><th>Sounds like</th></tr>
 <tr><td>Overdrive</td><td>Soft, lopsided clip at 3, 6 or 12× drive</td><td>Guitar-pedal warmth, fairly musical</td></tr>
 <tr><td>Fuzz</td><td>Hard clip at 12, 30 or 80× drive</td><td>Buzzy, aggressive, every harmonic at once</td></tr>
 <tr><td>Crush</td><td>10, 8 or 6 bits, held for 2, 3 or 4 samples</td><td>Digital, lo-fi, aliasing on purpose</td></tr>
-</table>
+</table></div>
 <p>Overdrive and Fuzz use anti-aliased waveshaping, which measured 10 to 14 dB lower aliasing than a plain shaper on a 10 kHz tone. Fuzz is still raw by design. Crush aliases deliberately.</p>
 <div class="note w"><p>On a whole mix this adds noise-like content in the mids, so keep it to Light there. It is usually better on single stems: with stems separated, the stem panel has a <b>Stem distortion</b> selector for each of vocals, drums, bass and other, using the type chosen under Distortion. The stem is distorted after its own EQ and compression and before its level fader, and the results panel lists what each stem received.</p></div>
 <a class="top" href="#">↑ top</a>
@@ -482,14 +507,14 @@ td:first-child{white-space:nowrap;font-weight:600}
 <h2 id="clarity">14. Clarity</h2>
 <p>This addresses one specific problem: wide low-mid content making a mix sound muddy. When reverb, wide guitars or pads spread energy between roughly 150 and 500 Hz across the stereo field, the result is congestion that a plain EQ cut cannot fix without thinning the whole track.</p>
 <p>Clarity high-passes the <i>side</i> signal only, pulling wide low-mid content toward the centre while leaving the centre's weight alone. At stronger settings it also applies a small cut at 140 Hz on the centre.</p>
-<table>
+<div class="tw tw0"><table>
 <tr><th>Setting</th><th>Side high-pass</th><th>Centre cut</th></tr>
 <tr><td>Off</td><td>—</td><td>—</td></tr>
 <tr><td>Light</td><td>160 Hz</td><td>—</td></tr>
 <tr><td>Medium</td><td>200 Hz</td><td>—</td></tr>
 <tr><td>Strong</td><td>320 Hz</td><td>−1.5 dB at 140 Hz</td></tr>
 <tr><td>Auto</td><td colspan="2">measures your low-mid side energy and chooses, scaled by the processing amount</td></tr>
-</table>
+</table></div>
 <p>With references loaded, Auto compares your song to them instead of to a fixed threshold, and does nothing if your song is already tighter than the references.</p>
 <div class="note"><p>Clarity <i>improves</i> mono compatibility, since it removes side content that would cancel on mono playback. If the mono fold figure concerns you, this is a safe control to push, unlike stereo width.</p></div>
 <p>If a mix is muddy because several instruments occupy the same frequencies in the <i>centre</i>, Clarity will not help. That is a mix problem; fix it in the arrangement or with stem balance.</p>
@@ -497,25 +522,25 @@ td:first-child{white-space:nowrap;font-weight:600}
 
 <h2 id="width">15. Stereo width</h2>
 <p>Scales the side signal of the mid and high bands. Bass below 150 Hz is summed to mono at every setting, which keeps the low end solid and is standard mastering practice.</p>
-<table>
+<div class="tw tw0"><table>
 <tr><th>Setting</th><th>Side level</th><th>Mono risk</th></tr>
 <tr><td>Narrow</td><td>0.7×</td><td>none; improves mono</td></tr>
 <tr><td>Normal</td><td>1.0×, unchanged</td><td>none</td></tr>
 <tr><td>Wide</td><td>1.2×</td><td>some</td></tr>
 <tr><td>Extra wide</td><td>1.4×</td><td>real</td></tr>
 <tr><td>Auto</td><td colspan="2">from the references' measured width if loaded, otherwise 1.0–1.25× from your song's own width</td></tr>
-</table>
+</table></div>
 <div class="note w"><p><b>This is the control most likely to ruin your master on a phone.</b> The side signal is L−R, and on a mono device it cancels completely. Anything you widen gets quieter or disappears in mono. Measured on a real track, the mono fold loss went from 0.31 dB at Narrow to 1.12 dB at Extra wide. Always check the Mono fold figure and the "Listen in mono" button after raising width.</p></div>
 <a class="top" href="#">↑ top</a>
 
 <h2 id="vocal">16. Vocal enhancer</h2>
 <p>Works on the centre channel only, so it does not brighten what sits in the stereo sides.</p>
-<table>
+<div class="tw tw0"><table>
 <tr><th>Setting</th><th>Presence at 3 kHz</th><th>Air above 11 kHz</th><th>Leveling</th></tr>
 <tr><td>Light</td><td>+1 dB</td><td>+0.5 dB</td><td>up to 1.5 dB</td></tr>
 <tr><td>Medium</td><td>+2 dB</td><td>+1 dB</td><td>up to 2.5 dB</td></tr>
 <tr><td>Strong</td><td>+3 dB</td><td>+1.5 dB</td><td>up to 3.5 dB</td></tr>
-</table>
+</table></div>
 <p>The leveling stage runs first, trimming the 1–4 kHz range when it jumps well above its own average, which evens out a vocal that lunges forward on loud phrases.</p>
 <div class="note w"><p>Without separated stems the app cannot distinguish a vocal from anything else in the centre, so this also lifts the snare crack, the kick click, and centred guitars. If it turns harsh, drop a level or raise the de-essing. For real vocal-only processing, use Stem balance with per-stem mastering instead.</p></div>
 <p>On an instrumental this control just brightens the centre. It is not useful there.</p>
@@ -523,18 +548,18 @@ td:first-child{white-space:nowrap;font-weight:600}
 
 <h2 id="pump">17. Pumper</h2>
 <p>Ducks the mid and high bands each time the kick hits, producing the rhythmic pumping common in dance and electronic music. Bass and kick are left at full level, so the low end stays solid.</p>
-<table>
+<div class="tw tw0"><table>
 <tr><th>Setting</th><th>Maximum duck</th></tr>
 <tr><td>Light</td><td>2 dB</td></tr>
 <tr><td>Medium</td><td>4 dB</td></tr>
 <tr><td>Heavy</td><td>6 dB</td></tr>
-</table>
+</table></div>
 <p>It follows the kick itself rather than a tempo grid, using the low band's own level as the trigger, so it needs no BPM setting and does not drift on music with a loose tempo. The attack is 3 ms and the release 150 ms.</p>
 <p>This is a creative effect, not a corrective one. Light is audible; Heavy is a production choice. Measured on real material, Medium averaged 0.7 dB of ducking with a 4 dB peak — the average is low because it only acts on kick transients.</p>
 <a class="top" href="#">↑ top</a>
 
 <h2 id="results">18. Reading the results panel</h2>
-<table>
+<div class="tw tw0"><table>
 <tr><th>Row</th><th>Meaning</th></tr>
 <tr><td>Loudness before / after</td><td>Integrated LUFS of the source and the master. "After" should land within 0.1 of your target.</td></tr>
 <tr><td>True peak</td><td>Measured with 4× oversampling, so it accounts for inter-sample peaks.</td></tr>
@@ -550,7 +575,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 <tr><td>Pumper / Vocal enhancer</td><td>Only shown when active, with the amounts applied.</td></tr>
 <tr><td>Stem balance / Stem chain</td><td>Only shown when stems were used; the levels you set and what each stem's chain did.</td></tr>
 <tr><td>File size</td><td>Of the encoded output. Not shown for previews.</td></tr>
-</table>
+</table></div>
 <p>The pattern worth learning: compare the average against the maximum. A processor with a 0.2 dB average and a 3 dB maximum is doing precise, occasional work. One with a 2 dB average is reshaping the whole song, which may not be what you want.</p>
 <a class="top" href="#">↑ top</a>
 
@@ -583,7 +608,7 @@ td:first-child{white-space:nowrap;font-weight:600}
 
 <h2 id="trouble">22. Troubleshooting</h2>
 <h3>Stem separation fails or says it cannot run</h3><ul><li><b>Opened from a folder (the address starts with file://).</b> Browsers block the background workers separation needs. Use the hosted copy, or run <code>python3 -m http.server</code> in the project folder and open <code>http://localhost:8000</code>.</li><li><b>&ldquo;Runtime could not be loaded.&rdquo;</b> The app ships its own copy, so this means the files in <code>ort/</code> are missing and the backup CDN is blocked too. Re-download the project, or check ad blockers and firewalls.</li><li><b>&ldquo;Ran out of memory.&rdquo;</b> Pick fewer workers, close other tabs, or separate only the 30-second section.</li></ul>
-<table>
+<div class="tw tw0"><table>
 <tr><th>Problem</th><th>Cause and fix</th></tr>
 <tr><td>Nothing happens on tapping the upload box</td><td>Some in-app browsers block file pickers. Use the plain picker underneath, or open the site in Safari or Chrome.</td></tr>
 <tr><td>Master sounds dull</td><td>The tone target may not suit your material. Load references, or drop to Gentle, or use Loudness only.</td></tr>
@@ -595,26 +620,26 @@ td:first-child{white-space:nowrap;font-weight:600}
 <tr><td>Bass stem sounds empty</td><td>The song's low end may be carried by the kick and synths rather than a bass instrument. Check the drums and other stems.</td></tr>
 <tr><td>References vanished</td><td>Site data was cleared, or you are on a different browser or device. Use Export to keep a durable copy.</td></tr>
 <tr><td>Full master ignored my stem balance</td><td>You separated only 30 seconds. Separate the whole song.</td></tr>
-</table>
+</table></div>
 <a class="top" href="#">↑ top</a>
 
 <h2 id="credits">23. Credits and licences</h2>
 <p>GP Mastering is free. It builds on other people's work, credited here with thanks. Credits for all the GP Song Tools, and what each one sends where, are on the <a href="https://gp-songtools.github.io/toolsmenu/privacy.html">Privacy &amp; credits</a> page.</p>
 <h3>Stem separation models</h3>
-<table>
+<div class="tw tw0"><table>
 <tr><th>Stem</th><th>Model and credit</th></tr>
 <tr><td>Vocals</td><td><code>Kim_Vocal_2</code>, an MDX-Net model trained by <a href="https://github.com/KimberleyJensen">Kimberley Jensen</a>.</td></tr>
 <tr><td>Drums, bass</td><td><code>kuielab_a_drums</code> and <code>kuielab_a_bass</code>, from <a href="https://github.com/kuielab/mdx-net">KUIELab-MDX-Net</a> by KUIELab (Minseok Kim, Woosung Choi and colleagues), trained on the <a href="https://sigsep.github.io/datasets/musdb.html">MUSDB18-HQ</a> research dataset.</td></tr>
 <tr><td>All (Demucs, on your server)</td><td><code>htdemucs_ft</code>, Hybrid Transformer Demucs by Simon Rouard, Francisco Massa and Alexandre D&eacute;fossez of <a href="https://github.com/facebookresearch/demucs">Meta AI Research</a> (MIT licence). Only used when you pick Demucs for a stem on your own separation server, which downloads it from Meta.</td></tr>
 <tr><td>Vocals (RoFormer, on your server)</td><td>BS-RoFormer &ldquo;viperx edition&rdquo; (<code>model_bs_roformer_ep_317_sdr_12.9755</code>), trained by viperx and distributed by Ultimate Vocal Remover, on the same terms as the models above. It runs with the BS-RoFormer code from <a href="https://github.com/ZFTurbo/Music-Source-Separation-Training">ZFTurbo&rsquo;s Music Source Separation Training</a> (MIT licence), based on Phil Wang&rsquo;s (lucidrains) implementation of the paper by Wei-Tsung Lu and colleagues at ByteDance.</td></tr>
-</table>
+</table></div>
 <p>The models are distributed by <a href="https://github.com/Anjok07/ultimatevocalremovergui">Ultimate Vocal Remover</a> (UVR, by Anjok07 and aufr33), whose MDX-Net settings GP Mastering follows. The model files carry no licence of their own, so GP Mastering uses them with credit, free of charge, and never as part of anything paid. If you are an author and want them used differently or removed, please <a href="https://github.com/gp-songtools/gp-master/issues">open an issue</a>.</p>
 <h3>Software</h3>
 <ul>
 <li><a href="https://github.com/microsoft/onnxruntime">ONNX Runtime Web</a> 1.20.1 by Microsoft (MIT licence) runs the models. It is bundled unmodified in <code>ort/</code>.</li>
 <li><a href="https://github.com/zhuker/lamejs">lamejs</a> 1.2.1 (LGPL-3.0) encodes MP3, loaded unmodified from cdnjs.</li>
 <li><a href="https://github.com/Vanilagy/mp4-muxer">mp4-muxer</a> 5.1.3 by Vanilagy (MIT licence) writes M4A files, loaded from jsDelivr.</li>
-<li><a href="https://fonts.google.com/specimen/Instrument+Sans">Instrument Sans</a> (SIL Open Font License), served by Google Fonts.</li>
+<li><a href="https://fonts.google.com/specimen/Instrument+Sans">Instrument Sans</a> and <a href="https://fonts.google.com/specimen/JetBrains+Mono">JetBrains Mono</a> (both SIL Open Font License), served by Google Fonts.</li>
 </ul>
 <a class="top" href="#">↑ top</a>
 

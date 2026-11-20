@@ -2,279 +2,360 @@
 <html lang="en"><head><meta charset="utf-8">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎚️</text></svg>">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#1b232c" media="(prefers-color-scheme: dark)">
 <title>GP Mastering</title>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.3/build/mp4-muxer.js"></script>
 <style>
-:root{--bg:#e9edf0;--card:#f7f9fa;--ink:#11161b;--mut:#56626d;--ln:#c4ccd3;--ac:#00796b;--acf:#fff;--warn:#b3261e;
-box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1317;--card:#161d23;--ink:#e8edf1;--mut:#92a0ab;--ln:#2a343c;--ac:#3ccfbf;--acf:#06201d;--warn:#ff8a80}}
-:root[data-theme="dark"]{--bg:#0e1317;--card:#161d23;--ink:#e8edf1;--mut:#92a0ab;--ln:#2a343c;--ac:#3ccfbf;--acf:#06201d;--warn:#ff8a80}
+/* Design system: design-system/gp-mastering/MASTER.md + pages/plan.md */
+:root{--bg:#eceff2;--card:#fff;--raise:#f3f5f7;--sunk:#e3e8ed;--ln:#d6dde3;--ln2:#7a8793;--ink:#101820;--mut:#4b5864;--ac:#00766a;--acf:#fff;--warn:#b3261e;--vu:#a86400;--mute:#c0392b;--solo:#c98a00;--face:#f3ecd6;--faceink:#2b2418;--facemut:#6b5d44;
+--acw:color-mix(in srgb,var(--ac) 11%,transparent);--shadow:0 1px 2px rgb(16 24 32/.05),0 6px 20px rgb(16 24 32/.05);--pop:0 10px 30px rgb(16 24 32/.18);
+--sans:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;--r1:6px;--r2:10px;--r3:14px;
+color-scheme:light dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141a21;--card:#1b232c;--raise:#222b35;--sunk:#0f141a;--ln:#2c3742;--ln2:#66788a;--ink:#eaf0f5;--mut:#a3b1bd;--ac:#45d3c1;--acf:#04221e;--warn:#ff8a7a;--vu:#e9a83a;--mute:#ff6b5e;--solo:#f2b84b;--face:#efe6cc;--shadow:none;--pop:0 12px 32px rgb(0 0 0/.45)}}
+:root[data-theme="light"]{color-scheme:light}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#141a21;--card:#1b232c;--raise:#222b35;--sunk:#0f141a;--ln:#2c3742;--ln2:#66788a;--ink:#eaf0f5;--mut:#a3b1bd;--ac:#45d3c1;--acf:#04221e;--warn:#ff8a7a;--vu:#e9a83a;--mute:#ff6b5e;--solo:#f2b84b;--face:#efe6cc;--shadow:none;--pop:0 12px 32px rgb(0 0 0/.45)}
 *,*::before,*::after{box-sizing:inherit}
-html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 "Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
-main{max-width:520px;margin:0 auto;padding:20px 16px 40px}
-/* One column on phones and tablets. Two on wide screens: the file and the
-   Listen player on the left, held in view, while the settings, the Master
-   buttons and the results scroll on the right. */
-.colL,.colR{display:contents}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--sans);-webkit-text-size-adjust:100%;text-rendering:optimizeLegibility}
+button,input,select,textarea{font:inherit;color:inherit}
+button{touch-action:manipulation}
+a{color:var(--ac);text-underline-offset:2px}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.skip{position:absolute;left:12px;top:-60px;z-index:30;background:var(--ac);color:var(--acf);padding:10px 14px;border-radius:var(--r2);font-weight:600;text-decoration:none}
+.skip:focus{top:12px}
+.num,output,#tm,#wpTime,#mTime,#spTime,.ti,.rr .tm,.rr .val,.arrl span,#leftV,.prow span,.srow span{font-family:var(--mono);font-variant-numeric:tabular-nums;font-feature-settings:"zero" 0}
+/* App bar */
+.bar0{border-bottom:1px solid var(--ln);background:var(--card)}
+.bar0 .in{max-width:560px;margin:0 auto;padding:12px 16px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px}
+.brand{display:flex;align-items:center;gap:10px;margin-right:auto;min-width:0}
+.brand svg{flex:0 0 auto;color:var(--ac)}
+h1{font-size:22px;line-height:1.1;margin:0;letter-spacing:-.02em;font-weight:700;white-space:nowrap}
+h1 small{font:500 13px/1 var(--mono);color:var(--mut);margin-left:6px;letter-spacing:0}
+#helpTop{display:flex;flex-wrap:wrap;gap:4px;margin:0}
+#helpTop a,#helpTop button{border:1px solid transparent;background:transparent;color:var(--ink);border-radius:var(--r2);padding:7px 10px;font-weight:600;font-size:14px;cursor:pointer;text-decoration:none;min-height:36px;transition:background .14s,border-color .14s}
+#helpTop a:hover,#helpTop button:hover{background:var(--raise)}
+#helpTop button{border-color:var(--ln2)}
+main{max-width:560px;margin:0 auto;padding:16px 16px 48px}
+.intro{margin:4px 0 16px}
+.sub{color:var(--mut);margin:0 0 6px;font-size:15px;max-width:70ch}
+.colL,.colR,#topRow{display:contents}
 @media(min-width:1080px){
- main{max-width:1200px;padding:20px 24px 40px}
- .sub{max-width:760px}
- #helpTop{max-width:560px}
- .cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 28px;align-items:start}
+ .bar0 .in{max-width:1280px;padding:12px 24px}
+ main{max-width:1280px;padding:20px 24px 48px}
+ .cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.08fr);gap:0 24px;align-items:start}
  .colL,.colR{display:block;min-width:0}
- .colL{position:sticky;top:12px;max-height:calc(100vh - 12px);overflow-y:auto;overscroll-behavior:contain;padding:0 8px 24px 0;scrollbar-width:thin}
+ .colL{position:sticky;top:12px;max-height:calc(100vh - 12px);overflow-y:auto;overscroll-behavior:contain;padding:0 6px 24px 0;scrollbar-width:thin}
  .colR{padding-bottom:24px}
- .colR>.card:first-child{margin-top:0}
- main>#lisCard #wav{height:170px}
- main>#lisCard{margin:0 0 14px}
- main>#lisCard>.hint:first-of-type{max-width:900px}
+ .colR>.card:first-child,.colL>.card:first-child{margin-top:0}
+ #topRow{display:grid;grid-template-columns:minmax(300px,360px) minmax(0,1fr);gap:20px;align-items:stretch;margin:0 0 20px}
+ #topRow:has(#lisCard[hidden]){grid-template-columns:minmax(0,1fr)}
+ #topRow>.card{margin:0}
+ #topRow:has(#lisCard[hidden]) #songCard{padding:28px}
+ #topRow:has(#lisCard[hidden]) .drop{padding:48px 16px}
+ #topRow #wav{height:180px}
+ #topRow #lisCard>.hint:first-of-type{max-width:90ch}
 }
-h1{font-size:28px;line-height:1.1;margin:8px 0 4px;letter-spacing:-.02em}
-.sub{color:var(--mut);margin:0 0 18px;font-size:14px}
-.card{background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:16px;margin-top:14px}
-.drop{position:relative;display:block;border:1.5px dashed var(--ln);border-radius:12px;padding:22px 16px;text-align:center;cursor:pointer;background:var(--card);font-weight:600;word-break:break-all}
+/* Cards and step headers */
+.card{background:var(--card);border:1px solid var(--ln);border-radius:var(--r3);padding:20px;margin-top:16px;box-shadow:var(--shadow)}
+@media(max-width:480px){.card{padding:16px}}
+.lbl{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 8px;font-weight:600;font-size:15px;line-height:1.3;margin:0 0 8px}
+.lbl .opt{font-weight:400;color:var(--mut);font-size:14px}
+h2.lbl{font-size:18px;letter-spacing:-.01em;margin:0 0 6px}
+h2.lbl[data-n]::before{content:attr(data-n);display:inline-grid;place-items:center;align-self:center;width:24px;height:24px;border-radius:50%;background:var(--ac);color:var(--acf);font:600 13px/1 var(--mono);flex:0 0 auto}
+.card>.hint:first-of-type{margin-top:0}
+.grp{border-top:1px solid var(--ln);margin:22px -20px 0;padding:20px 20px 0}
+@media(max-width:480px){.grp{margin:20px -16px 0;padding:18px 16px 0}}
+.grp>.lbl:first-child{margin-top:0}
+.hint{color:var(--mut);font-size:14px;line-height:1.5;margin:10px 0 0;max-width:72ch}
+.hint b{color:var(--ink);font-weight:600}
+hr{border:0;border-top:1px solid var(--ln);margin:20px 0}
+/* Song (drop zone) */
+.drop{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;border:1.5px dashed var(--ln2);border-radius:var(--r3);padding:24px 16px;text-align:center;cursor:pointer;background:var(--card);font-weight:600;overflow-wrap:anywhere;transition:border-color .14s,background .14s}
+.drop small{font-weight:400;color:var(--mut);font-size:14px}
 .drop input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0}
-.drop:hover,.drop:focus-within{border-color:var(--ac)}
-#inStats{color:var(--mut);font-size:14px;margin-top:8px;min-height:20px}
-.row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-output{font-weight:700;font-size:22px;letter-spacing:-.01em;white-space:nowrap}
-input[type=range]{width:100%;margin:12px 0 8px;accent-color:var(--ac);height:28px}
-.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
-.chips button{border:1px solid var(--ln);background:transparent;color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:14px;cursor:pointer}
-.chips button:hover{border-color:var(--ac)}
-.lbl{font-weight:600;font-size:14px;margin:0 0 8px;display:block}
-.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:18px}
-.seg label{border:1px solid var(--ln);border-radius:8px;padding:9px 6px;text-align:center;font-size:14px;cursor:pointer;line-height:1.25}
+.drop:hover,.drop:focus-within{border-color:var(--ac);background:var(--acw)}
+.drop:focus-within{outline:2px solid var(--ac);outline-offset:2px}
+.drop.has{border-style:solid;border-color:var(--ln)}
+#songCard .drop{background:var(--raise)}
+.songAlt{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:12px}
+.songAlt .hint{margin:0}
+#inStats{color:var(--ink);font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:10px;min-height:20px;overflow-wrap:anywhere}
+#inStats:empty{display:none}
+.demoTag{display:inline-block;font:600 12px/1 var(--sans);color:var(--vu);border:1px solid currentColor;border-radius:999px;padding:3px 8px;margin-left:6px;vertical-align:2px}
+/* Values and sliders */
+.row{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 8px}
+.row>.lbl{flex:1 1 180px;min-width:0}.row>output{margin-left:auto}.row>.hx{flex-basis:100%;order:3;margin-top:8px}
+output{font-weight:600;font-size:26px;letter-spacing:-.02em;white-space:nowrap;color:var(--ink)}
+input[type=range]{width:100%;margin:12px 0 8px;accent-color:var(--ac);height:28px;cursor:pointer}
+/* Shared control look: chips, segmented, toggles */
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.chips button,.seg label,.om button,.abb,.ppb,.eqb button,.zbar button,.rform button,.hrow button,#aiCard .btn,.btn,.sdl,.gmk button,.aic .ab button,#applyS{min-height:36px;border:1px solid var(--ln2);background:var(--card);color:var(--ink);border-radius:var(--r2);padding:7px 12px;font-size:14px;font-weight:600;line-height:1.2;cursor:pointer;transition:background .14s,border-color .14s,color .14s}
+.chips button{border-radius:999px;padding:7px 14px}
+.chips button:hover,.seg label:hover,.om button:hover,.abb:hover,.ppb:hover,.eqb button:hover,.zbar button:hover:not(:disabled),.rform button:hover,.hrow button:hover:not(:disabled),.btn:hover:not(:disabled),.sdl:hover,.gmk button:hover,.aic .ab button:hover{border-color:var(--ac);color:var(--ink)}
+.chips button[aria-pressed=true],.om button[aria-pressed=true],.ppb[aria-pressed=true],.abb[aria-pressed=true],.eqb button[aria-pressed=true],.seg label:has(input:checked){background:var(--ac);color:var(--acf);border-color:var(--ac)}
+@media(max-width:560px){.chips button,.seg label,.om button,.abb,.ppb,.zbar button,.rform button,.hrow button,.btn,.eqb button{min-height:40px}}
+.lbl{display:flex}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:16px}
+.seg label{display:block;padding:9px 6px;text-align:center;line-height:1.25}
 .seg input{position:absolute;opacity:0;pointer-events:none}
-.seg label:has(input:checked){background:var(--ac);color:var(--acf);border-color:var(--ac);font-weight:600}
-.seg label:has(input:focus-visible),button:focus-visible,input[type=range]:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
-.seg small{display:block;opacity:.8;font-size:12px}
-.chk{display:flex;gap:10px;align-items:flex-start;font-size:14px;margin-bottom:18px;cursor:pointer}
-.chk input{margin-top:3px;accent-color:var(--ac);width:18px;height:18px}
-.chk span small{display:block;color:var(--mut)}
-.go,.save{width:100%;border:0;border-radius:10px;background:var(--ac);color:var(--acf);font:inherit;font-weight:700;font-size:17px;padding:14px;cursor:pointer}
+.seg label:has(input:focus-visible){outline:2px solid var(--ac);outline-offset:2px}
+.seg small{display:block;font-weight:500;font-size:13px;opacity:.85;margin-top:2px}
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:15px;margin-bottom:16px;cursor:pointer;line-height:1.4}
+.chk input{margin-top:2px;accent-color:var(--ac);width:18px;height:18px;flex:0 0 auto}
+.chk span small{display:block;color:var(--mut);font-size:14px;margin-top:2px}
+/* Buttons */
+.go,.save{width:100%;min-height:48px;border:1px solid var(--ac);border-radius:var(--r2);background:var(--ac);color:var(--acf);font-weight:700;font-size:16px;padding:12px 14px;cursor:pointer;transition:filter .14s,background .14s}
+.go:hover:not(:disabled),.save:hover{filter:brightness(1.08)}
 .go:disabled{opacity:.4;cursor:not-allowed}
-.save{margin-top:14px}
-#st{margin-top:12px;font-size:14px;color:var(--mut);min-height:20px}
-#st.err{color:var(--warn)}
-.meter{position:relative;height:56px;margin:6px 4px 26px}
-.meter .tr{position:absolute;left:0;right:0;top:26px;height:4px;background:var(--ln);border-radius:2px}
-.meter .tk{position:absolute;top:36px;font-size:11px;color:var(--mut);transform:translateX(-50%)}
-.meter .m{position:absolute;transform:translateX(-50%);text-align:center;font-size:12px;font-weight:600;white-space:nowrap}
-.meter .m i{display:block;width:14px;height:14px;border-radius:50%;margin:0 auto;border:2px solid var(--ink);background:var(--card)}
-.meter .m.o i{background:var(--ac);border-color:var(--ac)}
-.meter .m.t i{width:2px;height:20px;border:0;border-radius:0;background:var(--ink)}
-.meter .m.t{top:16px}
-.meter .m.in{top:-4px}.meter .m.o{top:-4px}
-.meter .m.in i,.meter .m.o i{margin-top:4px}
-dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0;font-size:14px}
-dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
+.go.alt{background:var(--card);color:var(--ink);border:1px solid var(--ln2)}
+.go.alt:hover:not(:disabled){border-color:var(--ac);filter:none}
+.go.alt[aria-pressed=true]{border-color:var(--ac);background:var(--acw)}
+.save{margin-top:16px}
+.btn{color:var(--ink);white-space:nowrap}
+.btn:disabled,.zbar button:disabled,.hrow button:disabled,#applyS:disabled{opacity:.4;cursor:not-allowed}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.go.alt{background:transparent;color:var(--ink);border:1.5px solid var(--ac)}
-.chips button[aria-pressed=true]{background:var(--ac);color:var(--acf);border-color:var(--ac)}
-.pl{margin-top:16px;border-top:1px solid var(--ln);padding-top:14px}
+@media(max-width:380px){.two{grid-template-columns:1fr}}
+/* Inputs */
+select,input[type=text],input[type=url],input[type=password],textarea{font-size:15px;min-height:40px;padding:8px 10px;border:1px solid var(--ln2);border-radius:var(--r2);background:var(--card);color:var(--ink)}
+select{padding-right:28px;cursor:pointer}
+input::placeholder,textarea::placeholder{color:var(--mut);opacity:1}
+/* Status lines */
+#st{margin-top:12px;font-size:14px;color:var(--mut);min-height:20px}
+#st.err,#sst.err,#ioMsg.err{color:var(--warn)}
+/* Results: VU-style loudness scale */
+.meter{position:relative;height:96px;margin:0 0 18px;background:var(--face);color:var(--faceink);border-radius:var(--r2);border:1px solid color-mix(in srgb,var(--faceink) 18%,transparent);box-shadow:inset 0 1px 0 rgb(255 255 255/.5),inset 0 -10px 24px rgb(80 60 20/.08)}
+.meter .sc0{position:absolute;left:16px;right:16px;top:0;bottom:0}
+.meter .zn{position:absolute;top:44px;height:6px;background:color-mix(in srgb,#c0392b 55%,var(--face));border-radius:0 3px 3px 0}
+.meter .tr{position:absolute;left:0;right:0;top:44px;height:2px;background:var(--faceink);opacity:.75}
+.meter .tk{position:absolute;top:56px;font:500 12px/1 var(--mono);color:var(--facemut);transform:translateX(-50%)}
+.meter .tk::before{content:'';position:absolute;left:50%;top:-10px;width:1px;height:6px;background:var(--faceink);opacity:.6}
+.meter .un{position:absolute;right:12px;bottom:8px;font:600 12px/1 var(--mono);color:var(--facemut)}
+.meter .m{position:absolute;transform:translateX(-50%);text-align:center;font:600 12px/1.1 var(--sans);white-space:nowrap;color:var(--faceink)}
+.meter .m i{display:block;width:14px;height:14px;border-radius:50%;margin:3px auto 0;border:2px solid var(--faceink);background:var(--face)}
+.meter .m.o i{background:#00766a;border-color:#00766a}
+.meter .m.o{color:#005e54}
+.meter .m.t{top:30px}
+.meter .m.t i{width:3px;height:36px;border:0;border-radius:2px;background:#a86400;margin:0 auto}
+.meter .m.t b{position:absolute;top:40px;left:50%;transform:translateX(-50%);font:600 12px/1 var(--sans);color:#8a5200}
+.meter .m.in,.meter .m.o{top:10px}
+dl{display:grid;grid-template-columns:auto 1fr;gap:0;margin:0;font-size:15px}
+dt,dd{padding:9px 0;border-bottom:1px solid var(--ln)}
+dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right;padding-left:16px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.pl{margin-top:18px;border-top:1px solid var(--ln);padding-top:16px}
 .abrow{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
-.abb,.ppb{border:1px solid var(--ln);background:transparent;color:var(--ink);border-radius:8px;padding:10px;font:inherit;font-weight:600;cursor:pointer}
-.abb[aria-pressed=true]{background:var(--ac);color:var(--acf);border-color:var(--ac)}
+.abb,.ppb{padding:10px}
 .prow{display:flex;gap:10px;align-items:center}
 .wprow{flex-wrap:wrap}
-.om{display:flex;border:1px solid var(--ln);border-radius:8px;overflow:hidden}
-.om button{border:0;background:transparent;color:var(--ink);font:inherit;font-size:14px;font-weight:600;padding:10px 12px;cursor:pointer}
-.om button+button{border-left:1px solid var(--ln)}
-.om button[aria-pressed=true],.ppb[aria-pressed=true]{background:var(--ac);color:var(--acf);border-color:var(--ac)}
-.hrow{display:flex;gap:8px;margin-top:12px}
-.arrl{display:flex;flex-wrap:wrap;gap:6px;font-size:13px}
-.arrl span{border:1px solid var(--ln);border-radius:6px;padding:3px 8px;font-variant-numeric:tabular-nums}
-.arrl span.rp{border-color:var(--ac);color:var(--ac)}
-.arrl span.mv{border-style:dashed}
-.airow{display:flex;gap:8px;align-items:center}
-.airow input,.airow select,#aiCard textarea{flex:1;min-width:0;font:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--ln);border-radius:8px;background:var(--card);color:var(--ink)}
-#aiCard textarea{width:100%;box-sizing:border-box;margin:10px 0;resize:vertical;font-size:13.5px}
-#aiCard .btn,#aiCard details .btn{border:1px solid var(--ln);background:transparent;color:var(--ink);border-radius:8px;padding:8px 12px;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;white-space:nowrap}
-#aiCard details{margin-top:12px;font-size:14px}#aiCard summary{cursor:pointer;color:var(--mut)}
-.aisum{font-size:14px;margin:12px 0 8px}
-.aic{border:1px solid var(--ln);border-left:3px solid var(--ac);border-radius:8px;padding:9px 11px;margin:0 0 8px;font-size:13.5px}
-.aic .ah{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;font-variant-numeric:tabular-nums}
-.aic .ah b{font-size:14px}.aic .ah span{color:var(--mut)}
-.aic .aw{color:var(--mut);margin:4px 0 0}
-.aic .ab{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
-.aic .ab button{border:1px solid var(--ln);background:transparent;color:var(--ink);border-radius:7px;padding:5px 10px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
-.aic .ab .ok{border-color:var(--ac);color:var(--ac)}
-.aic.done{opacity:.6;border-left-color:var(--ln)}
-.aiwarn{font-size:13.5px;border:1px solid var(--warn);border-radius:8px;padding:9px 11px;margin:0 0 10px}.aic .rw{color:var(--warn)}
-.aiadv{font-size:13.5px;margin:10px 0 0;padding-left:18px}.aiadv li{margin:0 0 6px}
-#aiAll{margin:0 0 10px}
-.hrow button{border:1px solid var(--ln);background:transparent;color:var(--ink);border-radius:8px;padding:7px 12px;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
-.hrow button:disabled{opacity:.4;cursor:default}
+.om{display:flex;border:1px solid var(--ln2);border-radius:var(--r2);overflow:hidden;background:var(--card)}
+.om button{border:0;border-radius:0;padding:8px 14px}
+.om button+button{border-left:1px solid var(--ln2)}
+/* Listen: transport */
+#lisCard{padding-bottom:16px}
+#wav{width:100%;height:120px;display:block;border:1px solid var(--ln);border-radius:var(--r2);background:var(--sunk);touch-action:none;cursor:crosshair}
+.zbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
+.zbar button{min-width:36px;padding:6px 10px}
+#zInfo{font-size:13px;color:var(--mut);margin-left:auto}
+#zPan{width:100%;margin:8px 0 0}
+.wprow{margin-top:12px!important;gap:8px}
+#wpBtn,#pp{min-width:84px;background:var(--ac);color:var(--acf);border-color:var(--ac);font-size:15px}
+#wpTime{font-size:14px!important;color:var(--ink)!important;text-align:right}
+.hrow{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 .hrow #rsBtn{margin-left:auto}
-#mini{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--card);border-top:1px solid var(--ln);box-shadow:0 -4px 18px rgba(0,0,0,.14);padding:8px 16px calc(8px + env(safe-area-inset-bottom,0px))}
+/* Mini player */
+#mini{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--card);border-top:1px solid var(--ln);box-shadow:var(--pop);padding:8px 16px calc(8px + env(safe-area-inset-bottom,0px))}
 #mini[hidden]{display:none}
-#mini .mi{max-width:520px;margin:0 auto;display:flex;gap:6px;align-items:center}
-#mini .ppb{padding:8px 10px;font-size:14px;flex:0 0 auto;min-width:40px}
-#mini #mPlay{min-width:64px}
+#mini .mi{max-width:560px;margin:0 auto;display:flex;gap:6px;align-items:center}
+#mini .ppb{padding:8px 10px;font-size:15px;flex:0 0 auto;min-width:44px;min-height:44px}
+#mini #mPlay{min-width:68px;background:var(--ac);color:var(--acf);border-color:var(--ac)}
 #mini .om{flex:0 0 auto}
-#mini .ppb:disabled{opacity:.4;cursor:default}
-#mini .om button{padding:8px 9px;font-size:13.5px}
-#mTime{flex:1;text-align:center;font-size:13px;color:var(--mut);font-variant-numeric:tabular-nums;min-width:0}
-@media(max-width:400px){#mTime{display:none}#mini .mi{justify-content:space-between;gap:4px}#mini .ppb{padding:8px 8px}#mini .om button{padding:8px 7px;font-size:13px}}
-body.mini main{padding-bottom:84px}
+#mini .ppb:disabled{opacity:.4;cursor:not-allowed}
+#mini .om button{padding:8px 10px;min-height:44px}
+#mTime{flex:1;text-align:center;font-size:14px;color:var(--ink);min-width:0}
+@media(max-width:400px){#mTime{display:none}#mini .mi{justify-content:space-between;gap:4px}#mini .ppb{padding:8px 8px}#mini .om button{padding:8px 8px;font-size:13px}}
+body.mini main{padding-bottom:92px}
+/* Apply to preview */
 .pvw{margin-left:auto}
-@media(max-width:480px){.lbl{flex-wrap:wrap}.pvw{flex-basis:100%;margin:4px 0 2px}}
-.pvb{border:1px solid var(--ac);background:transparent;color:var(--ac);border-radius:999px;padding:2px 10px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+
+.pvb{border:1px solid var(--ac);background:transparent;color:var(--ac);border-radius:999px;padding:4px 12px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;min-height:30px;transition:background .14s,color .14s}
 .pvb:hover:not(:disabled){background:var(--ac);color:var(--acf)}
-.pvb:disabled{opacity:.4;cursor:default}
-.prow input{flex:1;margin:0}.prow span{font-size:13px;color:var(--mut);min-width:84px;text-align:right}
+.pvb:disabled{opacity:.4;cursor:not-allowed}
+.prow input{flex:1;margin:0}.prow span{font-size:14px;color:var(--ink);min-width:96px;text-align:right}
 .ppb{min-width:76px}
-.bar{height:6px;background:var(--ln);border-radius:3px;overflow:hidden;margin:8px 0}
+.bar{height:6px;background:var(--sunk);border-radius:3px;overflow:hidden;margin:10px 0}
 .bar i{display:block;height:100%;width:0;background:var(--ac);transition:width .2s}
-#sst{font-size:14px;color:var(--mut);min-height:20px;word-break:break-word}
-#sst.err{color:var(--warn)}
-#sugg{margin-top:12px;font-size:13.5px;color:var(--mut);border-top:1px solid var(--ln);padding-top:10px}
-#sugg table{width:100%;border-collapse:collapse;margin-bottom:8px}
-#sugg td{padding:2px 0}
-#sugg td:nth-child(2),#sugg td:nth-child(3){text-align:right;font-variant-numeric:tabular-nums}
+#sst{font-size:14px;color:var(--mut);min-height:20px;overflow-wrap:anywhere}
+/* Stem suggestions table */
+#sugg{margin-top:14px;font-size:14px;color:var(--mut);border-top:1px solid var(--ln);padding-top:12px}
+#sugg table{width:100%;border-collapse:collapse;margin-bottom:10px}
+#sugg td{padding:5px 0;border-bottom:1px solid var(--ln)}
+#sugg td:nth-child(2),#sugg td:nth-child(3){text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
 #sugg td:nth-child(3){font-weight:600;color:var(--ink)}
 #sugg .ok{color:var(--mut);font-weight:400}
-#applyS{border:1px solid var(--ac);background:transparent;color:var(--ac);border-radius:8px;padding:8px 12px;font:inherit;font-weight:600;font-size:14px;cursor:pointer}
-#applyS:disabled{opacity:.45;cursor:not-allowed}
+#applyS{border-color:var(--ac);color:var(--ink)}
+/* Spectrum */
 .sr{stroke:var(--ink);stroke-width:1.5;stroke-dasharray:4 3;fill:none;opacity:.65}
 .sri{stroke:var(--ink);stroke-width:1;fill:none;opacity:.22}
-#refAgree{font-size:13px;margin-top:8px;line-height:1.4}
+.spw{margin-top:18px;border-top:1px solid var(--ln);padding-top:16px}
+.spw svg{width:100%;height:auto;display:block;background:var(--sunk);border-radius:var(--r2)}
+.sg{stroke:var(--ln);stroke-width:1}.sb{fill:none;stroke:var(--mut);stroke-width:2}.sa{fill:none;stroke:var(--ac);stroke-width:2.5}
+.st{fill:var(--mut);font-size:12px;font-family:var(--mono)}.up{fill:var(--ac)}.dn{fill:var(--warn)}
+/* References and setups */
+#refAgree{font-size:14px;margin-top:8px;line-height:1.45}
 #refAgree.warn{color:var(--warn)}
 #refAgree.ok{color:var(--mut)}
-#refSaved{font-size:12.5px;color:var(--mut);margin-top:8px;display:flex;justify-content:space-between;gap:8px;align-items:center}
-#refSaved button{border:0;background:transparent;color:var(--warn);font:inherit;font-size:12.5px;cursor:pointer;padding:2px 4px}
-.setRow{display:flex;gap:8px;margin-bottom:8px}
-.setRow input[type=text]{flex:1;min-width:0;font:inherit;font-size:14px;padding:8px;background:var(--card);color:var(--ink);border:1px solid var(--ln);border-radius:8px}
-.btn{border:1px solid var(--ac);background:transparent;color:var(--ac);border-radius:8px;padding:8px 12px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap}
-.btn:disabled{opacity:.45;cursor:not-allowed}
-#setList{font-size:14px;margin-bottom:10px}
-#setList div{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--ln)}
+#refSaved{font-size:14px;color:var(--mut);margin-top:8px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+#refSaved:empty,#refAgree:empty,#ioMsg:empty{display:none}
+#refSaved button,#refList button,#setList button,.rr .x{border:0;background:transparent;color:var(--warn);font-size:14px;font-weight:600;cursor:pointer;padding:6px 8px;border-radius:var(--r1);min-height:32px}
+#refSaved button:hover,#refList button:hover,#setList button:hover,.rr .x:hover{background:var(--raise)}
+.setRow{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.setRow input[type=text]{flex:1;min-width:160px}
+#setList{font-size:15px;margin-bottom:10px}
+#setList div{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--ln)}
 #setList .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
-#setList .mt{color:var(--mut);font-size:12.5px;white-space:nowrap}
-#setList button{border:0;background:transparent;font:inherit;font-size:13px;cursor:pointer;padding:2px 4px;color:var(--ac)}
+#setList .mt{color:var(--mut);font-size:14px;white-space:nowrap}
+#setList button{color:var(--ac)}
 #setList button.del{color:var(--warn)}
-#ioMsg{font-size:13px;color:var(--mut);margin-top:8px;min-height:18px}
-#ioMsg.err{color:var(--warn)}
-#wav{width:100%;height:104px;display:block;border:1px solid var(--ln);border-radius:8px;background:var(--card);touch-action:none;cursor:crosshair}
-#regList{font-size:14px;margin-top:10px}
-.rr{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--ln)}
-.rr.sel{background:color-mix(in srgb,var(--ac) 10%,transparent)}
-.rr .tm{font-variant-numeric:tabular-nums;color:var(--mut);font-size:13px;white-space:nowrap;cursor:pointer}
-.rr select{min-width:0;max-width:100%;font:inherit;font-size:13.5px;padding:4px;background:var(--card);color:var(--ink);border:1px solid var(--ln);border-radius:6px}
-.rr .amt{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--mut)}
-.rr input[type=range]{width:88px;margin:0}
-.rr .x{border:0;background:transparent;color:var(--warn);font:inherit;font-size:13px;cursor:pointer;padding:2px 4px}
-.zbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
-.zbar button,.rform button{border:1px solid var(--ln);background:transparent;color:var(--ink);border-radius:8px;padding:6px 10px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
-.zbar button:disabled{opacity:.45;cursor:default}
-#zInfo{font-size:13px;color:var(--mut);margin-left:auto;font-variant-numeric:tabular-nums}
-#zPan{width:100%;margin:8px 0 0}
-.rform{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px;font-size:13px;color:var(--mut)}
-.rform label{display:flex;align-items:center;gap:5px}
-.ti{width:70px;font:inherit;font-size:13px;padding:4px;border:1px solid var(--ln);border-radius:6px;background:var(--card);color:var(--ink);font-variant-numeric:tabular-nums;text-align:center}
-.ti.bad{border-color:var(--warn)}
-.rr .tm{display:flex;align-items:center;gap:4px}
-.rr .rp{border:1px solid var(--ln);background:transparent;color:var(--ink);border-radius:50%;width:24px;height:24px;padding:0;font-size:10px;cursor:pointer}
-@media(max-width:560px){.rr{grid-template-columns:1fr auto auto}.rr .tm{grid-column:1/-1}}
-.gmk{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px;color:var(--mut);margin-top:6px}
-.gmk button{border:1px solid var(--ln);background:transparent;color:var(--ink);border-radius:6px;padding:3px 8px;font:inherit;font-size:12.5px;cursor:pointer}.gmk .x{border:0;color:var(--warn)}
-.rr .val{min-width:46px;text-align:right;font-variant-numeric:tabular-nums}
-.rr .req{grid-column:1/-1;order:5;flex-wrap:wrap;padding-left:2px}.rr .req select{font-size:12.5px;padding:3px}.rr .req input[type=range]{flex:1;min-width:90px;max-width:200px}
-.rr .rst{grid-column:1/-1;order:6;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--mut)}
-.rr .rst select{font-size:12.5px;padding:3px}.rr .rw{color:var(--warn)}.rr .rst .ok{color:var(--ac)}
-.rr.ai .tm::before{content:'AI';font-size:10px;font-weight:700;color:var(--ac);border:1px solid var(--ac);border-radius:4px;padding:0 3px;margin-right:2px}
-.lbl{display:flex;align-items:baseline;gap:6px}
-.q{border:1px solid var(--ln);background:transparent;color:var(--mut);border-radius:50%;width:17px;height:17px;min-width:17px;padding:0;font:inherit;font-size:11px;font-weight:700;line-height:15px;cursor:pointer;text-align:center}
+#ioMsg{font-size:14px;color:var(--mut);margin-top:8px;min-height:18px}
+#refList div.out #refName::after{content:' (outlier)';color:var(--warn)}
+#refList{font-size:15px;margin:10px 0 0}
+#refList div{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--ln)}
+#refList span{color:var(--mut);font-size:14px;white-space:nowrap;font-family:var(--mono)}
+#refName{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--sans)!important;color:var(--ink)!important}
+/* Regions */
+#regList{font-size:15px;margin-top:10px}
+.rr{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:8px 6px;border-bottom:1px solid var(--ln);border-radius:var(--r1)}
+.rr.sel{background:var(--acw)}
+.rr .tm{color:var(--ink);font-size:13px;white-space:nowrap;cursor:pointer;display:flex;align-items:center;gap:6px}
+.rr select{min-width:0;max-width:100%;font-size:14px;min-height:34px;padding:4px 26px 4px 8px}
+.rr .amt{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--mut)}
+.rr input[type=range]{width:96px;margin:0}
+.rr .rp{border:1px solid var(--ln2);background:var(--card);color:var(--ink);border-radius:50%;width:28px;height:28px;padding:0;font-size:11px;cursor:pointer}
+.rr .rp:hover{border-color:var(--ac)}
+@media(max-width:560px){.rr{grid-template-columns:minmax(0,1fr) auto}.rr .tm{grid-column:1/-1}.rr select{width:100%}.rr .amt{grid-column:1/-1;order:4}.rr .amt input[type=range]{flex:1;width:auto;max-width:none}}
+.rr .val{min-width:52px;text-align:right;color:var(--ink);font-size:13px}
+.rr .req{grid-column:1/-1;order:5;flex-wrap:wrap;padding-left:2px}.rr .req select{font-size:13px;min-height:32px}.rr .req input[type=range]{flex:1;min-width:90px;max-width:220px}
+.rr .rst{grid-column:1/-1;order:6;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px;color:var(--mut)}
+.rr .rst select{font-size:13px;min-height:32px}.rr .rw{color:var(--warn)}.rr .rst .ok{color:var(--ac)}
+.rr.ai .tm::before{content:'AI';font:700 11px/1 var(--sans);color:var(--ac);border:1px solid var(--ac);border-radius:4px;padding:2px 4px}
+.rform{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px;font-size:14px;color:var(--mut)}
+.rform label{display:flex;align-items:center;gap:6px}
+.rform input[type=checkbox]{accent-color:var(--ac);width:18px;height:18px}
+.ti{width:76px;font-size:14px;min-height:36px;padding:4px 6px;border:1px solid var(--ln2);border-radius:var(--r1);background:var(--card);color:var(--ink);text-align:center}
+.ti.bad{border-color:var(--warn);box-shadow:0 0 0 1px var(--warn)}
+.gmk{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:14px;color:var(--mut);margin-top:8px}
+.gmk button{min-height:32px;padding:4px 10px;font-size:13px;font-family:var(--mono)}.gmk .x{border:0;color:var(--warn);background:transparent}
+/* Arrangement */
+.arrl{display:flex;flex-wrap:wrap;gap:6px;font-size:13px}
+.arrl span{border:1px solid var(--ln2);border-radius:var(--r1);padding:4px 8px;background:var(--raise)}
+.arrl span.rp{border-color:var(--ac);color:var(--ac)}
+.arrl span.mv{border-style:dashed}
+/* AI suggestions */
+.airow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.airow input,.airow select{flex:1;min-width:0}
+.airow input{min-width:180px}
+#aiCard textarea{width:100%;margin:12px 0;resize:vertical;font-size:15px;line-height:1.45}
+#aiCard details{margin-top:14px;font-size:15px}#aiCard summary{cursor:pointer;color:var(--ink);font-weight:600;padding:6px 0}
+.aisum{font-size:15px;margin:14px 0 10px}
+.aic{border:1px solid var(--ln);border-left:3px solid var(--ac);border-radius:var(--r2);padding:12px 14px;margin:0 0 10px;font-size:15px;background:var(--card)}
+.aic .ah{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.aic .ah b{font-size:15px}.aic .ah span{color:var(--ink);font-family:var(--mono);font-size:13px}
+.aic .aw{color:var(--mut);margin:6px 0 0;font-size:14px}
+.aic .ab{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.aic .ab .ok{border-color:var(--ac);background:var(--ac);color:var(--acf)}
+.aic.done{opacity:.6;border-left-color:var(--ln)}
+.aiwarn{font-size:14px;border:1px solid var(--warn);border-radius:var(--r2);padding:10px 12px;margin:0 0 10px}.aic .rw{color:var(--warn)}
+.aiadv{font-size:15px;margin:10px 0 0;padding-left:20px}.aiadv li{margin:0 0 6px}
+#aiAll{margin:0 0 10px}
+/* Help bubbles */
+.q{border:1px solid var(--ln2);background:transparent;color:var(--mut);border-radius:50%;width:22px;height:22px;min-width:22px;padding:0;font-size:12px;font-weight:700;line-height:20px;cursor:pointer;text-align:center;align-self:center;position:relative}
+.q::after{content:'';position:absolute;inset:-8px}
 .q:hover{border-color:var(--ac);color:var(--ac)}
 .q[aria-expanded=true]{background:var(--ac);color:var(--acf);border-color:var(--ac)}
-.hx{font-size:13.5px;color:var(--mut);background:var(--card);border:1px solid var(--ln);border-left:3px solid var(--ac);border-radius:8px;padding:10px 12px;margin:0 0 12px}
+.hx{font-size:14px;line-height:1.55;color:var(--ink);background:var(--raise);border:1px solid var(--ln);border-left:3px solid var(--ac);border-radius:var(--r2);padding:12px 14px;margin:0 0 14px}
 .hx[hidden]{display:none}
-.hx p{margin:0 0 7px}.hx p:last-child{margin:0}
+.hx p{margin:0 0 8px;max-width:72ch}.hx p:last-child{margin:0}
 .hx b{color:var(--ink)}
-.hx a{color:var(--ac)}
-#helpTop{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
-#helpTop a,#helpTop button{flex:1;text-align:center;border:1px solid var(--ln);background:transparent;color:var(--ink);border-radius:8px;padding:9px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;text-decoration:none}
-#helpTop a:hover,#helpTop button:hover{border-color:var(--ac);color:var(--ac)}
-#refList div.out #refName::after{content:' — outlier';color:var(--warn)}
-#refList{font-size:14px;margin:8px 0 0}
-#refList div{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--ln)}
-#refList span{color:var(--mut);font-size:13px;white-space:nowrap}
-#refList button{border:0;background:transparent;color:var(--warn);font:inherit;font-size:13px;cursor:pointer;padding:2px 4px}
-#refName{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sdist{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin:2px 0 10px;font-size:14px}.sdist label{display:flex;justify-content:space-between;align-items:center;gap:8px}.sdist select{font:inherit;padding:4px 6px;border:1px solid var(--ln);border-radius:6px;background:var(--card);color:var(--ink)}
-.srow{display:grid;grid-template-columns:34px 62px 1fr 56px 30px 30px;gap:8px;align-items:center;margin-top:8px;font-size:14px}
-.sbtn{width:34px;height:34px;border:1px solid var(--ln);border-radius:50%;background:var(--card);color:var(--ink);font:inherit;font-size:13px;cursor:pointer;padding:0;line-height:1}
+/* Stems */
+.sdist{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin:2px 0 10px;font-size:15px}.sdist label{display:flex;justify-content:space-between;align-items:center;gap:8px}
+@media(max-width:480px){.sdist{grid-template-columns:1fr}}
+.sdist select{min-width:0;max-width:60%}
+textarea{max-width:100%}
+.srow{display:grid;grid-template-columns:36px 64px 1fr 60px 32px 32px;gap:8px;align-items:center;margin-top:10px;font-size:15px}
+.sbtn{width:36px;height:36px;border:1px solid var(--ln2);border-radius:50%;background:var(--card);color:var(--ink);font-size:13px;cursor:pointer;padding:0;line-height:1}
+.sbtn:hover{border-color:var(--ac)}
 .sbtn[aria-pressed=true]{background:var(--ac);color:var(--acf);border-color:var(--ac)}
 .swr{grid-column:1/-1;display:flex;align-items:center;gap:8px}
-.sw{position:relative;flex:1;height:42px;cursor:pointer;border-radius:6px;background:var(--bg);overflow:hidden}
+.sw{position:relative;flex:1;height:44px;cursor:pointer;border-radius:var(--r1);background:var(--sunk);overflow:hidden;border:1px solid var(--ln)}
 .sw canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-.sw .ph{position:absolute;top:0;bottom:0;width:2px;left:0;background:var(--warn);pointer-events:none}
-.sdl{flex:0 0 auto;border:1px solid var(--ln);border-radius:8px;background:var(--card);color:var(--ink);font:inherit;font-size:13px;font-weight:600;padding:8px 10px;cursor:pointer}
-.sdl:hover{border-color:var(--ac)}
-.ssel{display:flex;flex-wrap:wrap;gap:6px 16px;margin:0 0 10px;font-size:14px}
+.sw .ph{position:absolute;top:0;bottom:0;width:2px;left:0;background:var(--vu);pointer-events:none}
+.sdl{flex:0 0 auto;font-size:13px;padding:8px 10px}
+.ssel{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin:0 0 12px;font-size:15px}
 .ssel label{display:flex;gap:6px;align-items:center;cursor:pointer}
-.ssel input{accent-color:var(--ac);width:16px;height:16px}
-.sp{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0 4px}
-.sp button{width:auto;padding:9px 14px;font-size:14px;flex:0 0 auto}
-#spTime{font-variant-numeric:tabular-nums;color:var(--mut);font-size:13px}
+.ssel input[type=checkbox]{accent-color:var(--ac);width:18px;height:18px}
+.ssel .k{color:var(--mut)}
+.ssel .n{color:var(--mut);font-size:14px}
+.ssel .pair{display:flex;gap:6px;align-items:center}
+.sp{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:14px 0 4px}
+.sp button{width:auto;padding:9px 14px;font-size:15px;flex:0 0 auto;min-height:40px}
+#spTime{color:var(--ink);font-size:14px}
 #spSeek{width:100%;margin:0 0 4px}
 .srow b{font-weight:600;text-transform:capitalize}
 .srow input[type=range]{margin:0;width:100%}
-.srow span{text-align:right;color:var(--mut)}
-.msb{width:30px;height:30px;border:1px solid var(--ln);border-radius:6px;background:var(--card);color:var(--ink);font:inherit;font-size:13px;font-weight:700;cursor:pointer;padding:0;line-height:1}
-.msb.m[aria-pressed=true]{background:#d9534f;border-color:#d9534f;color:#fff}
-.msb.s[aria-pressed=true]{background:#e0a800;border-color:#e0a800;color:#222}
-.spw{margin-top:16px;border-top:1px solid var(--ln);padding-top:14px}
-.spw svg{width:100%;height:auto;display:block}
-.sg{stroke:var(--ln);stroke-width:1}.sb{fill:none;stroke:var(--mut);stroke-width:2}.sa{fill:none;stroke:var(--ac);stroke-width:2.5}
-.st{fill:var(--mut);font-size:11px}.up{fill:var(--ac)}.dn{fill:var(--warn)}
-.hint{color:var(--mut);font-size:13px;margin:10px 0 0}
-.eq{display:grid;grid-template-columns:24px repeat(9,minmax(0,1fr));gap:0 2px;margin:4px 0 10px;font-size:13px;position:relative;isolation:isolate}
-.eq .sc{grid-row:1;grid-column:1;display:flex;flex-direction:column;justify-content:space-between;height:160px;padding:0;line-height:16px;margin-top:20px;color:var(--mut);font-size:10.5px;text-align:right;font-variant-numeric:tabular-nums}
+.srow span{text-align:right;color:var(--ink);font-size:14px}
+.msb{width:32px;height:32px;border:1px solid var(--ln2);border-radius:var(--r1);background:var(--card);color:var(--ink);font-size:13px;font-weight:700;cursor:pointer;padding:0;line-height:1}
+.msb:hover{border-color:var(--ac)}
+.msb.m[aria-pressed=true]{background:var(--mute);border-color:var(--mute);color:#fff}
+.msb.s[aria-pressed=true]{background:var(--solo);border-color:var(--solo);color:#1b1300}
+/* Tone EQ */
+.eq{display:grid;grid-template-columns:28px repeat(9,minmax(0,1fr));gap:0 2px;margin:6px 0 10px;font-size:13px;position:relative;isolation:isolate;background:var(--sunk);border:1px solid var(--ln);border-radius:var(--r2);padding:8px 6px 10px 2px}
+.eq .sc{grid-row:1;grid-column:1;display:flex;flex-direction:column;justify-content:space-between;height:160px;padding:0;line-height:16px;margin-top:20px;color:var(--mut);font:500 12px/16px var(--mono);text-align:right}
 .eq .bd{grid-row:1;display:flex;flex-direction:column;align-items:center;min-width:0;position:relative}
-.eq .bd span{height:20px;font-weight:700;font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap;letter-spacing:-.02em}
+.eq .bd span{height:20px;font:600 13px/20px var(--mono);white-space:nowrap;letter-spacing:-.03em;color:var(--ink)}
 .eq .bd input[type=range]{writing-mode:vertical-lr;direction:rtl;width:100%;max-width:32px;height:160px;margin:0;padding:0;-webkit-appearance:none;appearance:none;background:transparent;cursor:pointer}
-.eq .bd input[type=range]::-webkit-slider-runnable-track{width:4px;height:100%;margin:0 auto;background:color-mix(in srgb,var(--ln) 80%,transparent);border-radius:2px}
+.eq .bd input[type=range]::-webkit-slider-runnable-track{width:4px;height:100%;margin:0 auto;background:var(--ln);border-radius:2px}
 .eq .bd input[type=range]::-moz-range-track{width:4px;height:100%;background:var(--ln);border-radius:2px}
-.eq .bd input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:22px;height:16px;margin-left:-9px;border-radius:5px;background:var(--ac);border:2px solid var(--card);box-shadow:0 0 0 1px var(--ac)}
-.eq .bd input[type=range]::-moz-range-thumb{width:18px;height:12px;border-radius:5px;background:var(--ac);border:2px solid var(--card);box-shadow:0 0 0 1px var(--ac)}
+.eq .bd input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:24px;height:14px;margin-left:-10px;border-radius:4px;background:var(--ac);border:2px solid var(--sunk);box-shadow:0 0 0 1px var(--ac)}
+.eq .bd input[type=range]::-moz-range-thumb{width:20px;height:10px;border-radius:4px;background:var(--ac);border:2px solid var(--sunk);box-shadow:0 0 0 1px var(--ac)}
 .eq .bd input[type=range]:focus-visible{outline:2px solid var(--ac);outline-offset:2px;border-radius:6px}
-.eq .bd b{margin-top:6px;font-size:12.5px;white-space:nowrap}
+.eq .bd b{margin-top:6px;font:600 13px/1.2 var(--mono);white-space:nowrap}
 .eq svg{grid-row:1;grid-column:2/-1;align-self:start;margin-top:20px;width:100%;height:160px;z-index:-1;pointer-events:none;overflow:visible}
-.eq .cz{stroke:var(--ln);stroke-dasharray:3 3}.eq .cg{stroke:var(--ln);opacity:.45}
-.eq .cf{fill:var(--ac);opacity:.13}.eq .cl{fill:none;stroke:var(--ac);stroke-width:2;opacity:.75}
+.eq .cz{stroke:var(--ln2);stroke-dasharray:3 3}.eq .cg{stroke:var(--ln);opacity:.8}
+.eq .cf{fill:var(--ac);opacity:.14}.eq .cl{fill:none;stroke:var(--ac);stroke-width:2;opacity:.85}
 .eq.byp .cf,.eq.byp .cl{opacity:.2}
-.eqi{margin-top:4px;width:18px;height:18px;padding:0;border:1px solid var(--ln);border-radius:50%;background:transparent;color:var(--mut);font:italic 700 11px/16px Georgia,serif;cursor:help;position:relative}
+.eqi{margin-top:6px;width:22px;height:22px;padding:0;border:1px solid var(--ln2);border-radius:50%;background:var(--card);color:var(--mut);font:italic 700 12px/20px Georgia,serif;cursor:help;position:relative}
 .eqi:hover,.eqi:focus-visible,.eqi[aria-expanded=true]{border-color:var(--ac);color:var(--ac)}
 .eqi::after{content:'';position:absolute;top:100%;left:50%;margin:2px 0 0 -6px;border:6px solid transparent;border-bottom-color:var(--ink);opacity:0;visibility:hidden;z-index:16}
-.eqt{position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);z-index:15;width:220px;padding:9px 11px;border-radius:8px;background:var(--ink);color:var(--bg);font-size:12.5px;line-height:1.4;text-align:left;box-shadow:0 6px 18px rgba(0,0,0,.22);opacity:0;visibility:hidden;transition:opacity .12s;pointer-events:none}
-.eqt b{display:block;margin-bottom:3px;font-size:12.5px}
+.eqt{position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);z-index:15;width:240px;max-width:calc(100vw - 48px);padding:10px 12px;border-radius:var(--r2);background:var(--ink);color:var(--bg);font-size:14px;line-height:1.45;text-align:left;box-shadow:var(--pop);opacity:0;visibility:hidden;transition:opacity .12s;pointer-events:none}
+.eqt b{display:block;margin-bottom:3px;font-size:14px}
 .eq .bd:nth-child(-n+4) .eqt{left:0;transform:none}
 .eq .bd:nth-child(n+8) .eqt{left:auto;right:0;transform:none}
 .eqi:hover::after,.eqi:focus-visible::after,.eqi[aria-expanded=true]::after,.eqi:hover+.eqt,.eqi:focus-visible+.eqt,.eqi[aria-expanded=true]+.eqt{opacity:1;visibility:visible}
-@media(max-width:480px){.eq .bd span{font-size:10.5px}.eq .bd b{font-size:11px}}
-.eqb{display:flex;gap:8px;align-items:center;margin:0 0 18px}
-.eqb button{border:1px solid var(--ln);background:transparent;color:var(--ink);border-radius:8px;padding:6px 10px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
-.eqb button[aria-pressed=true]{background:var(--ac);color:var(--acf);border-color:var(--ac)}
+@media(max-width:480px){.eq{grid-template-columns:24px repeat(9,minmax(0,1fr));padding-right:2px}.eq .sc{font-size:11px}.eq .bd span{font-size:11px;letter-spacing:-.06em}.eq .bd b{font-size:12px}.eqi{width:20px;height:20px;line-height:18px}}
+.eqb{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 4px}
 #eqApply{width:100%;margin:10px 0 0}
+@media(max-width:560px){select,input[type=text],input[type=url],input[type=password],textarea,.ti,.rr select,.rr .req select,.rr .rst select{font-size:16px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
 </style></head>
-<body><main>
-<h1>GP Mastering <small style="font-size:13px;color:var(--mut);font-weight:400">v67</small></h1>
-<p class="sub">Upload a track, pick a loudness target and a format. Everything runs in your browser; the audio is never uploaded unless you use the optional Gemini suggestions.</p>
-<p class="sub" style="margin-top:-12px">Rebalance the mix before mastering with Stem balance below, or use it just to split the song and download each stem as a WAV.</p>
+<body><a class="skip" href="#songCard">Skip to the app</a>
+<header class="bar0"><div class="in"><div class="brand"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="1" y="1" width="26" height="26" rx="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 18v-5M12 20V8M16 17v-6M20 19V10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><h1>GP Mastering <small>v68</small></h1></div>
+<nav id="helpTop" aria-label="Help and info"><a href="help.html">Guide</a><a href="changelog.html">Changelog</a><a href="help.html#credits">Credits</a><a href="https://gp-songtools.github.io/toolsmenu/privacy.html">Privacy</a><button type="button" id="helpAll">Show all hints</button></nav></div></header>
+<main id="main">
+<div class="intro"><p class="sub">Load a song, hear the master next to the original, adjust, then save. Everything runs in your browser; the audio is uploaded only if you use the optional server or Gemini suggestions.</p><p class="sub">Stem balance splits the song into vocals, drums, bass and other, to rebalance them before mastering or just to download them as WAV files.</p></div>
 
-<div id="helpTop"><a href="help.html">Full guide</a><a href="changelog.html">Changelog</a><a href="help.html#credits">Credits</a><a href="https://gp-songtools.github.io/toolsmenu/privacy.html">Privacy</a><button type="button" id="helpAll">Show all hints</button></div>
-
+<div id="topRow"></div>
 <div class="cols"><div class="colL">
-<div class="drop"><span id="fl">Tap to choose an audio file</span><input type="file" id="file" accept="audio/*" aria-label="Choose an audio file"></div>
-<p class="hint" style="margin:10px 0 0">Nothing happens when you tap the box? Use this picker instead:<br><input type="file" id="file2" accept="audio/*" style="margin-top:6px;max-width:100%;font:inherit;color:var(--ink)"></p>
-<div id="inStats"></div>
+<section class="card" id="songCard">
+ <h2 class="lbl" data-n="1">Song</h2>
+ <div class="drop" id="drop"><span id="fl">Choose an audio file</span><small id="flSub">or drop it here. MP3, WAV, M4A or FLAC</small><input type="file" id="file" accept="audio/*" aria-label="Choose an audio file"></div>
+ <div id="inStats"></div>
+ <div class="songAlt"><button type="button" class="btn" id="demoBtn">Try the demo song</button><span class="hint">A 32-second track made in your browser, to see every step before you load your own.</span></div>
+ <details class="hint" style="margin-top:12px"><summary>Nothing happens when you tap the box?</summary><input type="file" id="file2" accept="audio/*" aria-label="Choose an audio file (fallback picker)" style="margin-top:8px;max-width:100%;font:inherit;color:var(--ink)"></details>
+</section>
 
 <section class="card" id="lisCard" hidden>
- <span class="lbl">Listen</span>
+ <h2 class="lbl" data-n="2">Listen</h2>
  <p class="hint" style="margin:0 0 10px">Plays the song with everything on this page applied: your settings, region levels, the stem balance and the Tone EQ. Switch to Mastered, or press Apply to preview next to any setting, to hear the master. Click the waveform to move the playhead.</p>
  <canvas id="wav" height="104" aria-label="Waveform — drag to select a region"></canvas>
  <div class="zbar"><button type="button" id="zOut" aria-label="Zoom out" title="Zoom out">&minus;</button><button type="button" id="zIn" aria-label="Zoom in" title="Zoom in">+</button><button type="button" id="zFit" title="Show the whole song">Fit</button><button type="button" id="zSel" title="Zoom to the selected region">Zoom to region</button><span id="zInfo">Whole song</span></div>
@@ -287,7 +368,7 @@ body.mini main{padding-bottom:84px}
 </section>
 
 <section class="card" id="arrCard" hidden>
- <span class="lbl">Arrangement</span>
+ <h2 class="lbl">Arrangement <span class="opt">(optional)</span></h2>
  <p class="hint" style="margin:0 0 10px">Repeat, cut or move bars. Your file is never changed: the app keeps a list of which parts play in which order, joins them with short crossfades, and everything else (regions, stems, the preview and the master) follows the new timeline. Bar numbers come from the Tempo grid under Volume automation, so check the bar lines first.</p>
  <div id="arrList" class="arrl"></div>
  <div class="rform"><span>Bars</span><input class="ti" id="aF" inputmode="numeric" aria-label="First bar" style="width:52px"><span>to</span><input class="ti" id="aT" inputmode="numeric" aria-label="Last bar" style="width:52px"><button type="button" id="aSel" title="Use the bars covered by the selected region">From region</button></div>
@@ -296,7 +377,7 @@ body.mini main{padding-bottom:84px}
 </section>
 
 <section class="card" id="regCard" hidden>
- <span class="lbl">Volume automation</span>
+ <h2 class="lbl">Volume automation <span class="opt">(optional)</span></h2>
  <p class="hint" style="margin:0 0 10px">Drag across the waveform above to select a part of the song (zoom in for precision, or type exact times below), then choose what happens there: a level change, extra dynamic taming, or no tone processing at all. Everything outside your regions is mastered normally.</p>
  <div class="rform" id="gridRow"><span>Tempo:</span><label><input class="ti" id="gBpm" inputmode="decimal" aria-label="Tempo in beats per minute" style="width:62px">BPM</label><label>Bar 1 at <input class="ti" id="gT0" inputmode="decimal" aria-label="Time of a bar start"></label><button type="button" id="gNow" title="Put a bar start at the playhead">Now</button><button type="button" id="gHalf" title="Half the tempo">&divide;2</button><button type="button" id="gDbl" title="Double the tempo">&times;2</button><button type="button" id="gBeat" title="Move bar 1 one beat later">Beat +1</button><button type="button" id="gDet" title="Detect the tempo again">Detect</button><label><input type="checkbox" id="gSnap" checked>Snap new regions to beats</label></div>
  <div class="rform"><button type="button" id="gFind" title="Look for places where the beat shifts and add markers there">Find tempo changes</button><button type="button" id="gMk" title="Start a new grid section at the downbeat under the playhead">Marker here</button><button type="button" id="gTrk" title="Track every beat, for songs whose tempo wanders">Follow the beat</button></div>
@@ -309,7 +390,7 @@ body.mini main{padding-bottom:84px}
 </section>
 
 <section class="card" id="aiCard">
- <span class="lbl">AI suggestions <span style="font-weight:400;color:var(--mut)">(optional, Gemini)</span></span>
+ <h2 class="lbl">AI suggestions <span class="opt">(optional, Gemini)</span></h2>
  <p class="hint" style="margin:0 0 10px">Gemini listens to the song and suggests edits for exact time ranges. You review each one; accepted edits become regions you can hear, adjust and undo. <b>This uploads a compressed copy of the song to Google</b> using your own API key, and only when you press Analyze.</p>
  <div class="airow"><input type="password" id="aiKey" placeholder="Gemini API key" autocomplete="off" spellcheck="false" aria-label="Gemini API key"><button type="button" class="btn" id="aiForget">Forget</button></div>
  <label class="chk" style="margin:8px 0 10px"><input type="checkbox" id="aiRemember"><span>Remember the key on this device<small>Saved in this browser&rsquo;s storage, readable by anything that can read this site&rsquo;s data. Unchecked, the key is kept only until you close the page.</small></span></label>
@@ -326,19 +407,19 @@ body.mini main{padding-bottom:84px}
 
 </div><div class="colR">
 <section class="card" id="stems">
- <span class="lbl">Stem balance <span style="font-weight:400;color:var(--mut)">(optional)</span></span>
+ <h2 class="lbl" data-n="3">Stem balance <span class="opt">(optional)</span></h2>
  <p class="hint" style="margin:0 0 10px">Splits the song into vocals, drums, bass and other, shows each stem's waveform, lets you listen to them, download them as WAV files, and rebalance them before mastering. Separating is slow and downloads 123 MB of models the first time, so start with the 30-second section.</p>
- <div class="ssel" id="ssel"><span style="color:var(--mut)">Separate:</span><label><input type="checkbox" id="ss-vocals" checked>Vocals</label><label><input type="checkbox" id="ss-drums" checked>Drums</label><label><input type="checkbox" id="ss-bass" checked>Bass</label><span style="color:var(--mut);font-size:13px">Anything you skip stays in Other, and fewer stems finish sooner.</span></div>
- <div class="ssel"><label for="sepOn" style="color:var(--mut)">Separate on:</label><select id="sepOn" aria-label="Where to separate" style="font:inherit;padding:4px 6px;border:1px solid var(--ln);border-radius:6px;background:var(--card);color:var(--ink)"><option value="browser">This browser</option><option value="server">My server</option></select></div>
+ <div class="ssel" id="ssel"><span class="k">Separate:</span><label><input type="checkbox" id="ss-vocals" checked>Vocals</label><label><input type="checkbox" id="ss-drums" checked>Drums</label><label><input type="checkbox" id="ss-bass" checked>Bass</label><span class="n">Anything you skip stays in Other, and fewer stems finish sooner.</span></div>
+ <div class="ssel"><label for="sepOn"  class="k">Separate on:</label><select id="sepOn" aria-label="Where to separate"><option value="browser">This browser</option><option value="server">My server</option></select></div>
  <div id="srvBox" hidden>
   <div class="airow" style="margin-bottom:6px"><input type="url" id="srvUrl" placeholder="Server address, e.g. https://you--gpm-sep-web.modal.run" autocomplete="off" spellcheck="false" aria-label="Separation server address"></div>
   <div class="airow"><input type="password" id="srvTok" placeholder="Access token" autocomplete="off" spellcheck="false" aria-label="Separation server access token"><button type="button" class="btn" id="srvTest">Test</button><button type="button" class="btn" id="srvForget">Forget</button></div>
-  <div class="ssel" style="margin:8px 0 0;align-items:center"><span style="color:var(--mut)">Models:</span><span style="display:flex;gap:6px;align-items:center"><label for="srvM-vocals" style="color:var(--mut)">Vocals</label><select id="srvM-vocals" aria-label="Model for the vocals stem" style="font:inherit;padding:4px 6px;border:1px solid var(--ln);border-radius:6px;background:var(--card);color:var(--ink)"><option value="mdx">Standard</option><option value="roformer">RoFormer</option><option value="demucs">Demucs</option></select></span><span style="display:flex;gap:6px;align-items:center"><label for="srvM-drums" style="color:var(--mut)">Drums</label><select id="srvM-drums" aria-label="Model for the drums stem" style="font:inherit;padding:4px 6px;border:1px solid var(--ln);border-radius:6px;background:var(--card);color:var(--ink)"><option value="mdx">Standard</option><option value="demucs">Demucs</option></select></span><span style="display:flex;gap:6px;align-items:center"><label for="srvM-bass" style="color:var(--mut)">Bass</label><select id="srvM-bass" aria-label="Model for the bass stem" style="font:inherit;padding:4px 6px;border:1px solid var(--ln);border-radius:6px;background:var(--card);color:var(--ink)"><option value="mdx">Standard</option><option value="demucs">Demucs</option></select></span><span style="display:flex;gap:6px;align-items:center"><label for="srvM-other" style="color:var(--mut)">Other</label><select id="srvM-other" aria-label="Model for the other stem" style="font:inherit;padding:4px 6px;border:1px solid var(--ln);border-radius:6px;background:var(--card);color:var(--ink)"><option value="mdx">Standard</option><option value="demucs">Demucs</option></select></span></div>
+  <div class="ssel" style="margin:8px 0 0;align-items:center"><span class="k">Models:</span><span class="pair"><label for="srvM-vocals"  class="k">Vocals</label><select id="srvM-vocals" aria-label="Model for the vocals stem"><option value="mdx">Standard</option><option value="roformer">RoFormer</option><option value="demucs">Demucs</option></select></span><span class="pair"><label for="srvM-drums"  class="k">Drums</label><select id="srvM-drums" aria-label="Model for the drums stem"><option value="mdx">Standard</option><option value="demucs">Demucs</option></select></span><span class="pair"><label for="srvM-bass"  class="k">Bass</label><select id="srvM-bass" aria-label="Model for the bass stem"><option value="mdx">Standard</option><option value="demucs">Demucs</option></select></span><span class="pair"><label for="srvM-other"  class="k">Other</label><select id="srvM-other" aria-label="Model for the other stem"><option value="mdx">Standard</option><option value="demucs">Demucs</option></select></span></div>
   <label class="chk" style="margin:8px 0 6px"><input type="checkbox" id="srvRemember"><span>Remember the token on this device<small>Unchecked, it is kept only until you close the page.</small></span></label>
   <p class="hint" id="srvMsg" role="status" style="margin:0 0 4px">Runs the same models on your own server, for example a free Modal GPU. The section you separate is uploaded to that server.</p>
   <p class="hint" style="margin:0 0 10px">No server yet? <button type="button" class="btn" id="srvKit">⬇ Server kit</button> sets one up on Modal in a few commands; its README explains each step.</p>
  </div>
- <div class="ssel" id="wsel"><label for="wk" style="color:var(--mut)">Workers:</label><select id="wk" aria-label="Number of parallel workers" style="font:inherit;padding:4px 6px;border:1px solid var(--ln);border-radius:6px;background:var(--card);color:var(--ink)"></select><span id="wkHint" style="color:var(--mut);font-size:13px"></span></div>
+ <div class="ssel" id="wsel"><label for="wk"  class="k">Workers:</label><select id="wk" aria-label="Number of parallel workers"></select><span id="wkHint" class="n"></span></div>
  <div class="two" style="margin-bottom:8px">
   <button class="go alt" id="sepPv" disabled>Separate 30 s section</button>
   <button class="go alt" id="sepAll" disabled>Separate whole song</button>
@@ -348,7 +429,7 @@ body.mini main{padding-bottom:84px}
  <p class="hint" id="sSaved" style="margin:6px 0 0"></p>
  <div id="mix" hidden>
   <div id="mixRows"></div>
-  <div id="leftRow" hidden style="margin:2px 0 10px"><div class="ssel" style="margin:0;align-items:center"><label for="leftAmt" style="color:var(--mut)">Leftovers in Other</label><input type="range" id="leftAmt" min="0" max="100" step="5" value="0" aria-label="Leftovers added to the Demucs Other stem" style="flex:1;min-width:70px"><span id="leftV" style="min-width:2.6em;text-align:right">0%</span></div>
+  <div id="leftRow" hidden style="margin:2px 0 10px"><div class="ssel" style="margin:0;align-items:center"><label for="leftAmt"  class="k">Leftovers in Other</label><input type="range" id="leftAmt" min="0" max="100" step="5" value="0" aria-label="Leftovers added to the Demucs Other stem" style="flex:1;min-width:70px"><span id="leftV" style="min-width:2.6em;text-align:right">0%</span></div>
   <p class="hint" style="margin:2px 0 0">Demucs Other leaves out anything no model caught, such as a falsetto line the vocal model missed. This adds that back: 0% is pure Demucs Other, 100% is the same as Standard Other (the song minus the other stems), drum residue included.</p></div>
   <div class="sp"><button type="button" class="go alt" id="spMix" aria-pressed="false">▶ Play all stems</button><span id="spTime">0:00 / 0:00</span></div>
   <input type="range" id="spSeek" min="0" max="1" step="0.1" value="0" aria-label="Stem player position">
@@ -356,30 +437,35 @@ body.mini main{padding-bottom:84px}
   <div id="sugg"></div>
   <label class="chk" style="margin:10px 0 0"><input type="checkbox" id="useStems" checked><span>Master the rebalanced mix<small>Uncheck to master the original audio instead.</small></span></label>
   <label class="chk" style="margin:0"><input type="checkbox" id="perStem" checked><span>Master each stem separately, then recombine<small>Each stem gets its own EQ and compression before they are summed. The limiter always runs last on the combined mix, so the stems stay in balance.</small></span></label>
-  <span class="lbl" style="margin-top:14px">Vocal doubler <span style="font-weight:400;color:var(--mut)">(thickens the vocal stem)</span></span>
+  <span class="lbl" style="margin-top:14px">Vocal doubler <span class="opt">(thickens the vocal stem)</span></span>
   <div class="chips" id="db"><button type="button" data-v="0" aria-pressed="true">Off</button><button type="button" data-v="1" aria-pressed="false">Light</button><button type="button" data-v="2" aria-pressed="false">Medium</button><button type="button" data-v="3" aria-pressed="false">Thick</button></div>
   <p class="hint" style="margin:-6px 0 4px">Adds two slightly detuned, delayed copies of the vocal, one leaning left and one right, like a double-tracked take. Works on the separated vocal only.</p>
-  <span class="lbl" style="margin-top:14px">Stem distortion <span style="font-weight:400;color:var(--mut)">(per stem, type set under Distortion)</span></span>
+  <span class="lbl" style="margin-top:14px">Stem distortion <span class="opt">(per stem, type set under Distortion)</span></span>
   <div class="sdist"><label>Vocals<select id="sd-vocals" aria-label="Distort vocals"><option value="0">Off</option><option value="1">Light</option><option value="2">Medium</option><option value="3">Heavy</option></select></label><label>Drums<select id="sd-drums" aria-label="Distort drums"><option value="0">Off</option><option value="1">Light</option><option value="2">Medium</option><option value="3">Heavy</option></select></label><label>Bass<select id="sd-bass" aria-label="Distort bass"><option value="0">Off</option><option value="1">Light</option><option value="2">Medium</option><option value="3">Heavy</option></select></label><label>Other<select id="sd-other" aria-label="Distort other"><option value="0">Off</option><option value="1">Light</option><option value="2">Medium</option><option value="3">Heavy</option></select></label></div>
  </div>
 </section>
 
 <section class="card">
- <span class="lbl">Reference tracks <span style="font-weight:400;color:var(--mut)">(optional)</span></span>
+ <h2 class="lbl">Reference tracks <span class="opt">(optional)</span></h2>
  <p class="hint" style="margin:0 0 10px">Load one or more songs whose balance you like. The app measures their tone and stereo width and aims for that instead of its own built-in target. Only the measurements are kept — the audio is analyzed and discarded.</p>
  <div class="drop" style="padding:14px"><span id="refFl">Add reference tracks</span><input type="file" id="refFile" accept="audio/*" multiple aria-label="Add reference tracks"></div>
  <div id="refList"></div>
  <div id="refAgree"></div>
  <div id="refSaved"></div>
  <label class="chk" id="refRow" style="margin:10px 0 0" hidden><input type="checkbox" id="useRef" checked><span>Match tone and width to the references<small>Replaces the built-in target curve. Uncheck to use the genre target instead.</small></span></label>
- <hr style="border:0;border-top:1px solid var(--ln);margin:16px 0">
+ <div class="grp">
  <span class="lbl">Saved setups</span>
  <p class="hint" style="margin:0 0 10px">A setup stores the loaded reference measurements together with every setting on this page, under a name you choose. Export writes them to a file you can keep or move to another computer.</p>
  <div id="setList"></div>
  <div class="setRow"><input type="text" id="setName" placeholder="Name this setup" maxlength="60"><button class="btn" id="setSave">Save</button></div>
  <div class="setRow"><button class="btn" id="setExport">Export to file</button><button class="btn" id="setImport">Import from file</button><input type="file" id="setFile" accept=".json,application/json" hidden></div>
  <div id="ioMsg"></div>
- <hr style="border:0;border-top:1px solid var(--ln);margin:16px 0">
+ </div>
+</section>
+
+<section class="card" id="soundCard">
+ <h2 class="lbl" data-n="4">Sound</h2>
+ <p class="hint" style="margin:0 0 16px">How loud the master is, its tone, and its character. Press Apply to preview next to any setting to hear it in the Listen player.</p>
  <span class="lbl">Genre preset</span>
  <div class="chips" id="gen">
   <button type="button" data-g="auto" aria-pressed="true">Auto</button><button type="button" data-g="rock" aria-pressed="false">Rock</button><button type="button" data-g="pop" aria-pressed="false">Pop</button><button type="button" data-g="hiphop" aria-pressed="false">Hip-hop</button><button type="button" data-g="electronic" aria-pressed="false">Electronic</button><button type="button" data-g="acoustic" aria-pressed="false">Acoustic</button><button type="button" data-g="voice" aria-pressed="false">Voice</button>
@@ -392,7 +478,8 @@ body.mini main{padding-bottom:84px}
   <button type="button" data-v="-11">-11 loud</button>
   <button type="button" data-v="-9">-9 very loud</button>
  </div>
- <span class="lbl">Tone EQ <span style="font-weight:400;color:var(--mut)">(live while you listen)</span></span>
+ <div class="grp">
+ <span class="lbl">Tone EQ <span class="opt">(live while you listen)</span></span>
  <div class="eq" id="eqBox">
   <div class="sc" aria-hidden="true"><span>+15</span><span>+10</span><span>+5</span><span>0</span><span>−5</span><span>−10</span><span>−15</span></div>
   <div class="bd" style="grid-column:2"><span id="eqv-f63">0</span><input type="range" id="eq-f63" min="-15" max="15" step="0.5" value="0" aria-label="63 Hz, low shelf, dB"><b>63</b><button type="button" class="eqi" aria-label="About the 63 Hz slider" aria-describedby="eqt-f63" aria-expanded="false">i</button><div class="eqt" role="tooltip" id="eqt-f63"><b>63 Hz · Low shelf</b>Sub-bass, and the weight of kick and bass that you feel more than hear. Boost for size; cut to tighten a boomy low end. Boosts here make the limiter work much harder.</div></div>
@@ -407,46 +494,47 @@ body.mini main{padding-bottom:84px}
   <svg id="eqCurve" viewBox="0 0 900 160" preserveAspectRatio="none" aria-hidden="true"></svg>
  </div>
  <div class="eqb"><button type="button" id="eqByp" aria-pressed="false">Bypass</button><button type="button" id="eqReset">Reset</button><span class="hint" id="eqMsg" style="margin:0"></span></div>
- <span class="lbl">Output format</span>
- <div class="seg">
-  <label><input type="radio" name="f" value="wav" checked>WAV<small>24-bit</small></label>
-  <label><input type="radio" name="f" value="mp3">MP3<small>320 kbps</small></label>
-  <label><input type="radio" name="f" value="m4a">M4A<small>AAC 256k</small></label>
  </div>
+ <div class="grp">
  <span class="lbl">Processing amount</span>
  <div class="chips" id="amt">
   <button type="button" data-v="gentle" aria-pressed="true">Gentle</button><button type="button" data-v="standard" aria-pressed="false">Standard</button><button type="button" data-v="strong" aria-pressed="false">Strong</button>
  </div>
- <p class="hint" style="margin:-6px 0 18px">Scales every automatic move: tone correction, compression, dynamic EQ, de-essing, saturation, clarity and auto width. Gentle also makes the dynamic EQ and de-esser react only to clear problems rather than running constantly.</p>
+ <p class="hint" style="margin:-6px 0 20px">Scales every automatic move: tone correction, compression, dynamic EQ, de-essing, saturation, clarity and auto width. Gentle also makes the dynamic EQ and de-esser react only to clear problems rather than running constantly.</p>
  <span class="lbl">Transients</span>
  <div class="chips" id="tr">
   <button type="button" data-v="-3">Soften</button><button type="button" data-v="0" aria-pressed="true">Off</button><button type="button" data-v="3">Punchy</button><button type="button" data-v="6">Very punchy</button>
  </div>
- <p class="hint" style="margin:-6px 0 18px">Brings percussive hits forward relative to sustained sounds, or pushes them back. Measurable but subtle on already-compressed material — see the guide for what it can and cannot do.</p>
+ <p class="hint" style="margin:-6px 0 20px">Brings percussive hits forward relative to sustained sounds, or pushes them back. Measurable but subtle on already-compressed material — see the guide for what it can and cannot do.</p>
  <span class="lbl">Saturation</span>
  <div class="chips" id="sa"><button type="button" data-v="auto" aria-pressed="true">Auto</button><button type="button" data-v="off" aria-pressed="false">Off</button><button type="button" data-v="1" aria-pressed="false">Light</button><button type="button" data-v="2" aria-pressed="false">Medium</button><button type="button" data-v="3" aria-pressed="false">Heavy</button></div>
  <div class="chips" id="sc"><button type="button" data-v="tape" aria-pressed="true">Tape</button><button type="button" data-v="tube" aria-pressed="false">Tube</button><button type="button" data-v="crunch" aria-pressed="false">Crunch</button></div>
- <p class="hint" style="margin:-6px 0 18px">Auto keeps the gentle peak soft-clipping your amount setting controls. Light, Medium and Heavy add real harmonic saturation of the chosen character on top. Full master only.</p>
+ <p class="hint" style="margin:-6px 0 20px">Auto keeps the gentle peak soft-clipping your amount setting controls. Light, Medium and Heavy add real harmonic saturation of the chosen character on top. Full master only.</p>
  <span class="lbl">Distortion</span>
  <div class="chips" id="ds"><button type="button" data-v="0" aria-pressed="true">Off</button><button type="button" data-v="1" aria-pressed="false">Light</button><button type="button" data-v="2" aria-pressed="false">Medium</button><button type="button" data-v="3" aria-pressed="false">Heavy</button></div>
  <div class="chips" id="dt"><button type="button" data-v="od" aria-pressed="true">Overdrive</button><button type="button" data-v="fz" aria-pressed="false">Fuzz</button><button type="button" data-v="cr" aria-pressed="false">Crush</button></div>
- <p class="hint" style="margin:-6px 0 18px">Blends a deliberately distorted copy under the whole mix. A creative effect, not a corrective one. Full master only. After separating stems you can distort individual stems instead, or as well.</p>
+ <p class="hint" style="margin:-6px 0 20px">Blends a deliberately distorted copy under the whole mix. A creative effect, not a corrective one. Full master only. After separating stems you can distort individual stems instead, or as well.</p>
  <span class="lbl">Noise reduction</span>
  <div class="chips" id="nr">
   <button type="button" data-v="0" aria-pressed="true">Off</button><button type="button" data-v="6">Light</button><button type="button" data-v="12">Medium</button><button type="button" data-v="20">Strong</button>
  </div>
- <p class="hint" id="nrHint" style="margin:-6px 0 18px">Removes steady hiss, hum and background noise. Mark a quiet passage with a Noise profile region above for the most reliable result, otherwise the noise floor is estimated from the whole song.</p>
- <span class="lbl">Clarity <span style="font-weight:400;color:var(--mut)">(low-mid cleanup)</span></span>
+ <p class="hint" id="nrHint" style="margin:-6px 0 20px">Removes steady hiss, hum and background noise. Mark a quiet passage with a Noise profile region above for the most reliable result, otherwise the noise floor is estimated from the whole song.</p>
+ <span class="lbl">Clarity <span class="opt">(low-mid cleanup)</span></span>
  <div class="chips" id="cl">
   <button type="button" data-c="auto" aria-pressed="true">Auto</button><button type="button" data-c="0" aria-pressed="false">Off</button><button type="button" data-c="0.2" aria-pressed="false">Light</button><button type="button" data-c="0.4" aria-pressed="false">Medium</button><button type="button" data-c="1" aria-pressed="false">Strong</button>
  </div>
- <span class="lbl">Stereo width <span style="font-weight:400;color:var(--mut)">(mids and highs; bass stays mono)</span></span>
+ <span class="lbl">Stereo width <span class="opt">(mids and highs; bass stays mono)</span></span>
  <div class="chips" id="wd"><button type="button" data-v="auto" aria-pressed="true">Auto</button><button type="button" data-v="0.7" aria-pressed="false">Narrow</button><button type="button" data-v="1" aria-pressed="false">Normal</button><button type="button" data-v="1.2" aria-pressed="false">Wide</button><button type="button" data-v="1.4" aria-pressed="false">Extra wide</button></div>
- <span class="lbl">Vocal enhancer <span style="font-weight:400;color:var(--mut)">(centre channel presence, air and leveling)</span></span>
+ <span class="lbl">Vocal enhancer <span class="opt">(centre channel presence, air and leveling)</span></span>
  <div class="chips" id="vc"><button type="button" data-v="0" aria-pressed="true">Off</button><button type="button" data-v="1" aria-pressed="false">Light</button><button type="button" data-v="2" aria-pressed="false">Medium</button><button type="button" data-v="3" aria-pressed="false">Strong</button></div>
- <span class="lbl">Pumper <span style="font-weight:400;color:var(--mut)">(kick ducks the mids and highs)</span></span>
+ <span class="lbl">Pumper <span class="opt">(kick ducks the mids and highs)</span></span>
  <div class="chips" id="pu"><button type="button" data-v="0" aria-pressed="true">Off</button><button type="button" data-v="2" aria-pressed="false">Light</button><button type="button" data-v="4" aria-pressed="false">Medium</button><button type="button" data-v="6" aria-pressed="false">Heavy</button></div>
- <p class="hint" style="margin:0 0 18px">Clarity, width, vocal enhancer and pumper only apply in Full master.</p>
+ <p class="hint" style="margin:0">Clarity, width, vocal enhancer and pumper only apply in Full master.</p>
+ </div>
+</section>
+
+<section class="card" id="masterCard">
+ <h2 class="lbl" data-n="5">Master</h2>
  <span class="lbl">Processing mode</span>
  <div class="seg" style="margin-bottom:8px">
   <label><input type="radio" name="p" value="full" checked>Full master<small>listens to the song</small></label>
@@ -454,10 +542,17 @@ body.mini main{padding-bottom:84px}
   <label><input type="radio" name="p" value="none">Loudness only<small>no tone changes</small></label>
  </div>
  <p class="hint" style="margin:0 0 18px">Full master analyzes the track, corrects its tone, tames boomy, muddy and harsh spots with dynamic EQ, balances lows, mids and highs with multiband compression, keeps the bass centered, adds light saturation, then true-peak limits to your target.</p>
+ <span class="lbl">Output format</span>
+ <div class="seg">
+  <label><input type="radio" name="f" value="wav" checked>WAV<small>24-bit</small></label>
+  <label><input type="radio" name="f" value="mp3">MP3<small>320 kbps</small></label>
+  <label><input type="radio" name="f" value="m4a">M4A<small>AAC 256k</small></label>
+ </div>
  <div class="two"><button class="go alt" id="pv" disabled>Preview 30 s</button><button class="go" id="go" disabled>Master full song</button></div>
  <div id="st" role="status"></div>
 </section>
-<section class="card" id="res" hidden>
+<section class="card" id="res" hidden aria-labelledby="resH">
+ <h2 class="lbl" id="resH">Result</h2>
  <div class="meter" id="mt" aria-hidden="true"></div>
  <dl id="dl"></dl>
  <div class="spw">
@@ -801,12 +896,45 @@ function zip(nm,d){
 const sync=v=>{$('lufs').value=v;$('tv').textContent=(+v).toFixed(1).replace(/\.0$/,'')+' LUFS'};
 $('lufs').oninput=e=>sync(e.target.value);
 $('file2').onchange=e=>$('file').onchange(e);
+/* Demo song: 32 s, 120 BPM, made here so every step can be tried without a file.
+   Kick, snare, hats, bass, chords and a lead line in A minor, written as a WAV
+   and loaded through the normal file path. */
+function demoSong(){
+ const sr=44100,bpm=120,bt=60/bpm,bars=16,n=Math.round(bars*4*bt*sr),L=new Float32Array(n),R=new Float32Array(n);
+ let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647*2-1;
+ const add=(t0,len,f,pan=0)=>{const a=Math.round(t0*sr),m=Math.min(n-a,Math.round(len*sr)),gl=Math.cos((pan+1)*Math.PI/4),gr=Math.sin((pan+1)*Math.PI/4);for(let i=0;i<m;i++){const v=f(i/sr,i);L[a+i]+=v*gl;R[a+i]+=v*gr}};
+ const hz=m=>440*Math.pow(2,(m-69)/12),prog=[[57,60,64],[53,57,60],[48,52,55],[55,59,62]],bassN=[45,41,36,43];
+ const lead=[76,74,72,74,76,76,76,null,74,74,74,null,76,79,79,null,76,74,72,74,76,76,76,76,74,74,76,74,72,null,null,null];
+ for(let bar=0;bar<bars;bar++){
+  const t=bar*4*bt,ch=prog[bar%4],sec=bar<4?0:bar<12?1:2;
+  for(let b=0;b<4;b++){const tb=t+b*bt;
+   if(sec>0||b%2===0)add(tb,.35,(x)=>.9*Math.sin(2*Math.PI*(48*x+90*(1-Math.exp(-x*30))/30))*Math.exp(-x*9));
+   if(b%2===1&&sec>0)add(tb,.22,(x)=>.45*(rnd()*.8+.2*Math.sin(2*Math.PI*190*x))*Math.exp(-x*18),.05);
+   for(let k=0;k<2;k++)add(tb+k*bt/2,.06,(x)=>(sec===2?.16:.1)*rnd()*Math.exp(-x*70),.35);
+   const bn=hz(bassN[bar%4]);add(tb,bt*.9,(x)=>.42*Math.tanh(2.2*Math.sin(2*Math.PI*bn*x))*Math.min(1,x*200)*Math.exp(-x*1.8));
+  }
+  ch.forEach((m,j)=>{const f=hz(m);add(t,4*bt,(x)=>{const e=Math.min(1,x*4)*Math.min(1,(4*bt-x)*6);let v=0;for(let h=1;h<6;h++)v+=Math.sin(2*Math.PI*f*h*x*(1+.002*j))/h;return .045*e*v},j===0?-.45:j===2?.45:0)});
+  if(sec>0)for(let k=0;k<2;k++){const m=lead[(bar%8)*4+k*2]??lead[(bar%8)*4+k*2+1];if(m==null)continue;const f=hz(m);add(t+k*2*bt,2*bt*.95,(x)=>{const vib=1+.006*Math.sin(2*Math.PI*5.5*x)*Math.min(1,x*3),e=Math.min(1,x*12)*Math.exp(-x*.6);let v=0;for(let h=1;h<5;h++)v+=Math.sin(2*Math.PI*f*h*x*vib)*(h===1?1:.5/h);return .17*e*v},0)}
+ }
+ let pk=0;for(let i=0;i<n;i++)pk=Math.max(pk,Math.abs(L[i]),Math.abs(R[i]));const g=.7/pk;
+ const buf=new ArrayBuffer(44+n*4),d=new DataView(buf),w=(o,t)=>{for(let i=0;i<t.length;i++)d.setUint8(o+i,t.charCodeAt(i))};
+ w(0,'RIFF');d.setUint32(4,36+n*4,true);w(8,'WAVEfmt ');d.setUint32(16,16,true);d.setUint16(20,1,true);d.setUint16(22,2,true);d.setUint32(24,sr,true);d.setUint32(28,sr*4,true);d.setUint16(32,4,true);d.setUint16(34,16,true);w(36,'data');d.setUint32(40,n*4,true);
+ for(let i=0,o=44;i<n;i++,o+=4){d.setInt16(o,Math.max(-1,Math.min(1,L[i]*g))*32767,true);d.setInt16(o+2,Math.max(-1,Math.min(1,R[i]*g))*32767,true)}
+ return new File([buf],'Demo song - Night Drive.wav',{type:'audio/wav'});
+}
+const DEMO_AI={summary:'A clean electronic loop with a sparse intro, a lead from bar 5 and a busier last section. The intro sits low next to the rest, the low-mids build up once the lead enters, and the last four bars could lift more.',
+ edits:[{start:0,end:8,section:'Intro',action:'level',gain_db:1.5,reason:'Bars 1 to 4 have no snare or lead and measure about 3 LU under the rest, so the start feels quieter than intended.'},
+ {start:8,end:24,section:'Lead',action:'eq',freq_hz:320,gain_db:-2,shape:'bell',reason:'Bass, chords and lead overlap around 300 Hz once the lead enters, which clouds the kick.'},
+ {start:20,end:24,section:'Build',action:'riser',riser_type:'noise',level:40,reason:'A short noise riser into bar 13 signals the last section.'},
+ {start:24,end:32,section:'Outro',action:'reverb',mix:25,size:'hall',target:'mix',reason:'The last section is the busiest; a little hall space makes it feel bigger than the verse.'}],
+ advice:[{start:0,end:32,section:'Whole song',text:'The kick carries most of the low end. A Standard master at -12 LUFS keeps it punchy; -9 starts to flatten it.'}]};
+$('demoBtn').onclick=async()=>{const b=$('demoBtn');b.disabled=true;b.textContent='Making the demo…';await tick();try{await $('file').onchange({target:{files:[demoSong()]}});if(src){$('aiJson').value=JSON.stringify(DEMO_AI,null,1);$('aiPaste').open=true;aiSay('Sample suggestions for the demo song are ready under Paste suggestions. Press Import to review them.')}}finally{b.disabled=false;b.textContent='Try the demo song'}};
 $('chips').onclick=e=>{const v=e.target.dataset?.v;if(v)sync(v)};
 
 $('file').onchange=async e=>{
  const f=e.target.files[0];if(!f)return;try{e.target.value=''}catch(_){}
  name=(f.name.replace(/\.[^.]+$/,'').replace(/[^\w\- ]+/g,'_').trim())||'audio';
- $('fl').textContent=f.name;stopP();lastFin=null;$('go').disabled=true;$('pv').disabled=true;$('res').hidden=true;say('Decoding…');await tick();
+ $('fl').textContent=f.name;$('flSub').textContent='Choose or drop another file to replace it';$('drop').classList.add('has');stopP();lastFin=null;$('go').disabled=true;$('pv').disabled=true;$('res').hidden=true;say('Decoding…');await tick();
  try{
   const ab=await f.arrayBuffer(),gen=++fileGen,fp=await fpOf(ab);let ctx;
   try{ctx=new AudioContext({sampleRate:44100})}catch{ctx=new AudioContext()}
@@ -1147,8 +1275,8 @@ function drawWave(){
   const sp=vw.b-vw.a,x0=(r.s/n-vw.a)/sp*W,x1=(r.e/n-vw.a)/sp*W;
   if(x1<0||x0>W)return;
   g.fillStyle=RFILL[r.mode]||RFILL.gain;g.fillRect(x0,0,Math.max(1,x1-x0),H);
-  if(GENM[r.mode]){g.save();g.font='600 10px system-ui,sans-serif';g.fillStyle=cs0.getPropertyValue(genWait(r)?'--warn':'--ink').trim()||'#333';g.fillText(genName(r)+(genWait(r)?' (waiting)':''),x0+3,11);g.restore()}
-  if(isStemEdit(r)){const w=stemWait(r);g.save();g.font='600 10px system-ui,sans-serif';g.fillStyle=cs0.getPropertyValue(w?'--warn':'--ink').trim()||'#333';g.fillText(r.stem+(w?' (waiting)':''),x0+3,11);
+  if(GENM[r.mode]){g.save();g.font='600 11px "Instrument Sans",system-ui,sans-serif';g.fillStyle=cs0.getPropertyValue(genWait(r)?'--warn':'--ink').trim()||'#333';g.fillText(genName(r)+(genWait(r)?' (waiting)':''),x0+3,11);g.restore()}
+  if(isStemEdit(r)){const w=stemWait(r);g.save();g.font='600 11px "Instrument Sans",system-ui,sans-serif';g.fillStyle=cs0.getPropertyValue(w?'--warn':'--ink').trim()||'#333';g.fillText(r.stem+(w?' (waiting)':''),x0+3,11);
    if(w){g.setLineDash([4,3]);g.strokeStyle=g.fillStyle;g.lineWidth=1;g.strokeRect(x0+.5,.5,Math.max(1,x1-x0-1),H-1)}g.restore()}
   if(k===regSel){
    g.strokeStyle=cs0.getPropertyValue('--ac').trim()||'#0a8';g.lineWidth=2;g.strokeRect(x0+1,1,Math.max(2,x1-x0-2),H-2)}
@@ -1164,11 +1292,11 @@ function drawWave(){
  }
  if(grid){
   const dur=src.duration,sp=(vw.b-vw.a)*dur,X=t=>(t/dur-vw.a)/(vw.b-vw.a)*W;
-  g.save();g.font='9px system-ui,sans-serif';
+  g.save();g.font='600 11px "JetBrains Mono",ui-monospace,monospace';
   gridBeats(vw.a*dur,vw.b*dur,(t,bar,n,mk)=>{
    const bpx=60/bpmAt(t)/sp*W;if(bpx<2||(!bar&&bpx<7))return;const x=X(t);
    g.strokeStyle=cs0.getPropertyValue(bar?'--ac':'--ln').trim()||'#999';g.globalAlpha=bar?.45:.7;g.lineWidth=1;g.beginPath();g.moveTo(x+.5,0);g.lineTo(x+.5,HW);g.stroke();
-   if(bar&&bpx*4>=26){g.globalAlpha=.8;g.fillStyle=g.strokeStyle;g.fillText(String(n),x+2,9)}
+   if(bar&&bpx*4>=26){g.globalAlpha=.8;g.fillStyle=g.strokeStyle;g.fillText(String(n),x+3,11)}
   });
   for(const q of beatMode()?(grid.secs||[]).map(m=>({t:grid.bt[bNear(m.t)],bpm:'bar 1'})):gSecs().slice(1)){const x=X(q.t);if(x<0||x>W)continue;g.globalAlpha=.9;g.strokeStyle=cs0.getPropertyValue('--warn').trim()||'#c33';g.lineWidth=2;g.setLineDash([3,3]);g.beginPath();g.moveTo(x+.5,0);g.lineTo(x+.5,HW);g.stroke();g.setLineDash([]);g.fillStyle=g.strokeStyle;g.fillText('\u2192'+q.bpm,x+3,HW-4)}
   g.restore();
@@ -1184,11 +1312,11 @@ function drawWave(){
  // time ruler
  const dur=src.duration,spanS=(vw.b-vw.a)*dur,steps=[.1,.2,.5,1,2,5,10,15,30,60,120,300,600];
  let st=steps[steps.length-1];for(const q of steps){if(q/spanS*W>=64){st=q;break}}
- g.fillStyle=cs.getPropertyValue('--mut').trim()||'#777';g.font='10px system-ui,sans-serif';g.textBaseline='bottom';g.textAlign='left';
+ g.fillStyle=cs.getPropertyValue('--mut').trim()||'#777';g.font='500 11px "JetBrains Mono",ui-monospace,monospace';g.textBaseline='bottom';g.textAlign='left';
  g.strokeStyle=cs.getPropertyValue('--ln').trim()||'#ccc';g.beginPath();
  for(let t=Math.ceil(vw.a*dur/st)*st;t<=vw.b*dur+1e-9;t+=st){
   const x=(t/dur-vw.a)/(vw.b-vw.a)*W;g.moveTo(x+.5,HW);g.lineTo(x+.5,H-11);
-  g.fillText(st<1?tcf(t):tc(t),x+3,H-1);
+  {const lb=st<1?tcf(t):tc(t);if(x+3+g.measureText(lb).width<=W)g.fillText(lb,x+3,H-1)}
  }
  g.stroke();
 }
@@ -2141,10 +2269,10 @@ function swDraw(s){
  g.fillStyle=cs.getPropertyValue('--ac').trim()||'#00796b';g.globalAlpha=audible(s)?.9:.25;
  const B=P.mx.length;
  for(let x=0;x<W;x++){const k=Math.min(B-1,Math.floor(x*B/W)),h=Math.max(1,(P.mx[k]/(P.pk||1))*(H/2-2));g.fillRect(x,H/2-h,1,h*2)}
- g.globalAlpha=1;g.font='11px system-ui,sans-serif';
+ g.globalAlpha=1;g.font='500 12px "JetBrains Mono",ui-monospace,monospace';
  const lab='peak '+(20*Math.log10(P.pk+1e-9)).toFixed(1)+' dB',tw=g.measureText(lab).width;
- g.fillStyle=cs.getPropertyValue('--card').trim()||'#f7f9fa';g.globalAlpha=.88;g.fillRect(2,2,tw+8,15);
- g.globalAlpha=1;g.fillStyle=cs.getPropertyValue('--ink').trim()||'#11161b';g.fillText(lab,6,13);
+ g.fillStyle=cs.getPropertyValue('--card').trim()||'#f7f9fa';g.globalAlpha=.88;g.fillRect(2,2,tw+8,17);
+ g.globalAlpha=1;g.fillStyle=cs.getPropertyValue('--ink').trim()||'#11161b';g.fillText(lab,6,14);
 }
 function swAll(){HAVE().forEach(swDraw)}
 function swHead(pos){const d=spDur()||1;HAVE().forEach(s=>{const e=$('ph-'+s);if(e)e.style.left=(Math.min(1,pos/d)*100)+'%'})}
@@ -3124,9 +3252,9 @@ $('unBtn').onclick=undo;$('reBtn').onclick=redo;$('rsBtn').onclick=resetSettings
    the column, between the file picker and Arrangement. */
 const mqWide=matchMedia('(min-width:1080px)');
 function lisPlace(){
- const c=$('lisCard'),cols=document.querySelector('.cols');
- if(mqWide.matches){if(c.nextElementSibling!==cols)cols.parentNode.insertBefore(c,cols)}
- else if(c.parentNode!==document.querySelector('.colL'))document.querySelector('.colL').insertBefore(c,$('arrCard'));
+ const c=$('lisCard'),sg=$('songCard'),top=$('topRow'),L=document.querySelector('.colL');
+ if(mqWide.matches){if(c.parentNode!==top){top.appendChild(sg);top.appendChild(c)}}
+ else if(c.parentNode!==L){L.insertBefore(sg,L.firstChild);L.insertBefore(c,$('arrCard'))}
  drawWave();
 }
 (mqWide.addEventListener?mqWide.addEventListener('change',lisPlace):mqWide.addListener(lisPlace));lisPlace();
@@ -3271,13 +3399,13 @@ function ltas(A,B,fs){
  }
  return Array.from(P,p=>10*Math.log10(p/Math.max(c,1)+1e-20));
 }
-let spD=null,spMode='s';
+let spD=null,spMode='s',spW=0;if(window.ResizeObserver)new ResizeObserver(e=>{const w=Math.round(e[0].contentRect.width);if(w&&w!==spW){spW=w;paintSpec()}}).observe($('sp'));
 const sg=v=>Math.abs(v)<.05?'0.0':(v>0?'+':'')+v.toFixed(1);
 const fq=f=>f>=1000?(f/1000).toFixed(1)+' kHz':Math.round(f)+' Hz';
 function drawSpec(ob,o){const a=chans(ob);spD={a:ltas(a[0],a[1],ob.sampleRate),b:ltas(o[0],o[1],ob.sampleRate)};paintSpec()}
 function paintSpec(){
  if(!spD)return;
- const W=560,H=230,L=34,R=8,T=8,B=22,iw=W-L-R,ih=H-T-B,n=SPC.length,x=i=>L+i/(n-1)*iw;
+ const W=Math.max(300,Math.min(900,Math.round($('sp').clientWidth||560))),H=Math.max(190,Math.round(W*.41)),L=34,R=8,T=8,B=22,iw=W-L-R,ih=H-T-B,n=SPC.length,x=i=>L+i/(n-1)*iw;
  let a=spD.a,b=spD.b,rf=null;
  if($('sp-m').checked){let s=0;for(let i=5;i<25;i++)s+=b[i]-a[i];const off=s/20;b=b.map(v=>v-off)}
  let rfi=null;
@@ -3308,7 +3436,7 @@ function paintSpec(){
   d.forEach((v,i)=>{s+='<rect class="'+(v>=0?'up':'dn')+'"'+(aud[i]?'':' opacity="0.3"')+' x="'+(x(i)-bw/2).toFixed(1)+'" y="'+Math.min(y(v),y(0)).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(1,Math.abs(y(v)-y(0))).toFixed(1)+'"/>'});
   s+='<text class="st" x="'+(W-R)+'" y="'+(T+12)+'" text-anchor="end">dB change, after minus before</text>';
  }
- $('sp').innerHTML=s;
+ $('sp').setAttribute('viewBox','0 0 '+W+' '+H);$('sp').innerHTML=s;
  let mi=audIdx[0],ma=audIdx[0];
  for(const i of audIdx){if(d[i]>d[ma])ma=i;if(d[i]<d[mi])mi=i}
  const quiet=d.map((_,i)=>i).filter(i=>!aud[i]&&Math.abs(d[i])>3);
@@ -3464,9 +3592,9 @@ $('gen').onclick=e=>{const g=e.target.dataset&&e.target.dataset.g;if(!g)return;g
 function show(i,t,o,pk,fmt,size,mono,notes,pv,keep){
  lastShow=notes;notes=(notes||[]).concat(eqZero(eqBaked)?[]:[['Tone EQ',eqTxt(eqBaked)]]);
  const lo=-24,hi=-6,x=v=>(Math.max(lo,Math.min(hi,v))-lo)/(hi-lo)*100+'%';
- let h='<div class="tr"></div>';
+ let h='<div class="sc0"><div class="zn" style="left:'+x(-9)+';right:0"></div><div class="tr"></div>';
  for(let v=-24;v<=-6;v+=3)h+='<span class="tk" style="left:'+x(v)+'">'+v+'</span>';
- h+='<div class="m t" style="left:'+x(t)+'"><i></i></div><div class="m in" style="left:'+x(i)+'">before<i></i></div><div class="m o" style="left:'+x(o)+'">after<i></i></div>';
+ h+='<div class="m t" style="left:'+x(t)+'"><i></i><b>target</b></div><div class="m in" style="left:'+x(i)+'">before<i></i></div><div class="m o" style="left:'+x(o)+'">after<i></i></div></div><span class="un">LUFS</span>';
  $('mt').innerHTML=h;
  const rows=[['Loudness before',i.toFixed(1)+' LUFS'],['Loudness after',o.toFixed(1)+' LUFS (target '+t+')'],['True peak (est.)',pk.toFixed(1)+' dBTP'],['Mono fold',mono.drop.toFixed(1)+' dB quieter'+(mono.drop>1.2?' — check mono':'')]].concat(pv?[]:[['File size',(size/1048576).toFixed(1)+' MB']]);
  $('dl').innerHTML=rows.concat(notes||[]).map(r=>'<dt>'+r[0]+'</dt><dd>'+r[1]+'</dd>').join('');

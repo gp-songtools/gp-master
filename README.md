@@ -15,7 +15,11 @@ main page also has a `?` button with a summary, and "Show all hints" expands
 them all at once.
 
 Load an audio file, choose a loudness target and output format, then preview or
-master the whole song.
+master the whole song. No file to hand? **Try the demo song** loads a 32-second
+track made in the browser, with sample AI suggestions, so every step can be tried.
+
+The page follows the work in order: 1 Song, 2 Listen, 3 Stem balance, 4 Sound,
+5 Master. Its look is defined in `design-system/gp-mastering/MASTER.md`.
 
 ## What it does
 
@@ -201,7 +205,7 @@ Separation runs in parallel. `sep-pool.js` cuts the song into independent chunks
 ## Credits
 - **Stem separation models:** `Kim_Vocal_2` by [Kimberley Jensen](https://github.com/KimberleyJensen); `kuielab_a_drums` and `kuielab_a_bass` from [KUIELab-MDX-Net](https://github.com/kuielab/mdx-net) by KUIELab, trained on the MUSDB18-HQ research dataset. Distributed by [Ultimate Vocal Remover](https://github.com/Anjok07/ultimatevocalremovergui) (Anjok07 and aufr33). The model files carry no licence of their own; GP Mastering uses them with credit, free of charge, and never in anything paid.
 - **Libraries:** [ONNX Runtime Web](https://github.com/microsoft/onnxruntime) 1.20.1 (MIT, bundled in `ort/`), [lamejs](https://github.com/zhuker/lamejs) 1.2.1 (LGPL-3.0, from cdnjs), [mp4-muxer](https://github.com/Vanilagy/mp4-muxer) 5.1.3 (MIT, from jsDelivr).
-- **Font:** [Instrument Sans](https://fonts.google.com/specimen/Instrument+Sans) (SIL Open Font License) via Google Fonts.
+- **Fonts:** [Instrument Sans](https://fonts.google.com/specimen/Instrument+Sans) and [JetBrains Mono](https://fonts.google.com/specimen/JetBrains+Mono) (SIL Open Font License) via Google Fonts.
 
 The full list is in the help page under "Credits and licences".
 

@@ -3,6 +3,22 @@
 All notable changes to GP Mastering, newest first. The version number is the small tag beside the app's title.
 This file mirrors `changelog.html`, which is the version shown in the app; keep the two in step.
 
+## v68 — Nov 20
+
+### Added
+
+- **Try the demo song**, under Song: a 32-second track at 120 BPM, made in your browser, so you can try every step (the waveform and tempo grid, stems, mastering, the results) before loading your own file. It comes with sample AI suggestions under Paste suggestions, to see how reviewing them works without a Gemini key.
+
+### Changed
+
+- A new look for the app, the guide and this changelog. The page is now a numbered sequence: **1 Song**, **2 Listen**, **3 Stem balance**, **4 Sound** and **5 Master**, with Arrangement, Volume automation and AI suggestions marked optional. On wide screens Song and Listen sit side by side at the top. Settings that were one long card are now split into Reference tracks, Sound and Master.
+- Easier to read numbers and small text: times, loudness, BPM, EQ gains and other live values use a monospaced font (JetBrains Mono) so digits don't jump while they change; help text is larger; buttons and switches are at least 36 px tall (40 px on phones); the waveform and stem labels are bigger.
+- The results open with a loudness scale that shows the original, the master and your target on one meter, with the very loud range (above -9 LUFS) marked. The spectrum view now redraws to fit the screen, so its labels stay readable on a phone.
+
+### Fixed
+
+- The guide no longer scrolls sideways on phones: wide tables now scroll inside their own box.
+
 ## v67 — Nov 16
 
 ### Added
