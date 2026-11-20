@@ -43,7 +43,7 @@
   - State in `lp` (cache, per-settings gain `lp.g`, mode) and `wp` (scheduled segments, two buses `og`/`mg`)
   - Chunks: `SEG`=5 s on a fixed grid from the play-range start, `PRE`=2 s pre-roll, `XF` crossfade; cache key = `lpSig()` hash + grid span
   - Any new setting that changes the sound must be in `getCfg()`; `lpSig()` and undo `snap()` read it
-  - "Apply to preview" buttons are attached by label text in the IIFE at the end of the script; add new setting labels to its `keys` list
+  - "Apply to preview" buttons are attached to card titles (`h2.lbl`: Stem balance, Reference tracks, Sound, Master) by the IIFE at the end of the script; a new settings card that the preview renders goes in its `keys` list
 - **Settings, undo, storage**
   - Persist via `getCfg()`/`applyCfg()` (validate every field in `applyCfg`); `DEFCFG` is captured before `cfgLoad()`
   - localStorage keys: `gpmaster.cfg.v1`, `gpmaster.refs.v1`, `gpmaster.setups.v1`, `gpmaster.workers.v1`, `gpmaster.sepsrv.v1` (Separate on, server URL, per-stem `models`, stem `ticks`; token only when Remember is ticked), `gpmaster.ai.v1`, `gpmaster.aikey.v1` (only when Remember is ticked), `gpmaster.ui.v1` (snap); never change a key's format without migration

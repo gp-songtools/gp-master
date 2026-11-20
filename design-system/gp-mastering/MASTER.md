@@ -105,6 +105,16 @@ never in `--mut` when they are the value the user is reading.
 - **Help bubble** (`.hx`): accent left rule on `--raise`.
 - **Focus**: 2 px `--ac` outline, 2 px offset, on every interactive element (`:focus-visible`).
 
+### Rules added after the impeccable critique (v68)
+
+- **Solid teal fill only for the primary actions** (`#go` Master full song, `#save` Save file, `#mGo` Master song). Selected chips, segments and toggles use `--sel` (teal 18% over the card), a teal border and ink text. Play buttons are ink-filled (`--ink` on `--card`) so they never read as a selected option.
+- **Optional cards fold** (`.card.folded`): Arrangement, Volume automation, AI suggestions, Reference tracks start as their title plus a one-line state summary (`.fsum`) and a Show/Hide pill (`.fold`). They open themselves when they gain content (a region, AI suggestions).
+- **One Apply to preview per settings card**, in the card title.
+- **No one-sided accent bars** on rounded boxes (`.hx`, `.aic`, `.note`): use a full tinted border and a 5–6% accent wash.
+- **Icons are authored SVG** (`ICO` in the script, 16 px box, 1.6 px stroke, `currentColor`), never Unicode glyphs.
+- **Measure**: hints `min(68ch,38em)`, guide prose `min(66ch,36em)`, `text-wrap:pretty` on prose and `balance` on headings.
+- **Targets**: at least 24 px for every control (help `?` and EQ `i` buttons are 24 px); inputs are 16 px on phones.
+
 ## 6. Layout and breakpoints
 
 - Mobile first, single column, 16 px gutters, max 560 px reading width. Inputs are 16 px under 560 px so iOS does not zoom.

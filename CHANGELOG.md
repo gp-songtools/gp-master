@@ -8,15 +8,20 @@ This file mirrors `changelog.html`, which is the version shown in the app; keep 
 ### Added
 
 - **Try the demo song**, under Song: a 32-second track at 120 BPM, made in your browser, so you can try every step (the waveform and tempo grid, stems, mastering, the results) before loading your own file. It comes with sample AI suggestions under Paste suggestions, to see how reviewing them works without a Gemini key.
+- **Master song** in the mini player that appears when you scroll, so you can master without scrolling to the bottom. Keys: **Space** plays or pauses the Listen player and **A** switches Original and Master. The page asks before you leave with a master you have not saved, and before deleting a saved setup or the saved stems.
 
 ### Changed
 
 - A new look for the app, the guide and this changelog. The page is now a numbered sequence: **1 Song**, **2 Listen**, **3 Stem balance**, **4 Sound** and **5 Master**, with Arrangement, Volume automation and AI suggestions marked optional. On wide screens Song and Listen sit side by side at the top. Settings that were one long card are now split into Reference tracks, Sound and Master.
 - Easier to read numbers and small text: times, loudness, BPM, EQ gains and other live values use a monospaced font (JetBrains Mono) so digits don't jump while they change; help text is larger; buttons and switches are at least 36 px tall (40 px on phones); the waveform and stem labels are bigger.
+- Optional tools stay out of the way: **Arrangement**, **Volume automation**, **AI suggestions** and **Reference tracks** fold to one line that says what is in them, with **Show** to open them. Volume automation opens by itself when you add a region, and AI suggestions when there are suggestions to review.
+- One **Apply to preview** per card (Stem balance, Reference tracks, Sound and Master) instead of one beside every setting; each still applies every setting. Settings that only work in Full master (saturation, distortion, clarity, width, vocal enhancer, pumper) dim and say "Full master only" when another processing mode is chosen.
+- Players use one vocabulary, **Original** and **Master**, and every loudness-match switch is called **Match loudness**. The Result player says it plays the finished file. Teal fill now marks only the main actions (Master full song, Save file); selected options get a teal outline.
 - The results open with a loudness scale that shows the original, the master and your target on one meter, with the very loud range (above -9 LUFS) marked. The spectrum view now redraws to fit the screen, so its labels stay readable on a phone.
 
 ### Fixed
 
+- A harmless browser notice no longer shows as a red "Error" after mastering, and real errors now say what to do instead of showing raw error text.
 - The guide no longer scrolls sideways on phones: wide tables now scroll inside their own box.
 
 ## v67 — Nov 16

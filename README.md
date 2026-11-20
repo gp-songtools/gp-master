@@ -93,8 +93,10 @@ mastering chain but before loudness matching and the limiter. After a render,
 **Top player preview** — the player under the waveform switches between the
 original and a mastered preview, rendered with the real chain about five
 seconds at a time ahead of the playhead. Click (a metronome on the beat grid) checks the tempo by ear; on wide screens
-the player spans the full width above the settings. "Apply to preview" buttons next to each setting
-apply a change from the current spot; Loop repeats the selected region.
+the player spans the full width above the settings. "Apply to preview" (in the title of the Stem balance, Reference tracks,
+Sound and Master cards) applies a change from the current spot; the mini player that appears when
+you scroll has Master song; Space plays or pauses and A switches
+Original / Master; Loop repeats the selected region.
 Undo / Redo (Ctrl or Cmd + Z) cover settings, EQ, regions and stem levels, and
 Reset settings returns to the defaults. On wide screens the page splits into two
 columns with the player kept in view on the left; on narrow screens a small
@@ -114,7 +116,7 @@ de-essing, then recombine. The app measures each stem against the full mix and
 suggests level moves for the chosen genre (rules of thumb, not reference-matched). The limiter always runs last on the summed mix, so
 the balance you set is the balance you hear. Separation runs in the browser, or
 on your own server with **Separate on: My server** (for example a free Modal GPU;
-the section is uploaded there). **⬇ Server kit** in the app downloads a zip that sets one up; a server
+the section is uploaded there). **Server kit** in the app downloads a zip that sets one up; a server
 can run Demucs (Meta's htdemucs_ft) or, for vocals, BS-RoFormer instead of the browser's models, chosen per stem;
 developers can deploy from [`server/README.md`](server/README.md).
 

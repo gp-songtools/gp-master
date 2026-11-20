@@ -11,7 +11,7 @@
 <style>
 /* Design system: design-system/gp-mastering/MASTER.md + pages/plan.md */
 :root{--bg:#eceff2;--card:#fff;--raise:#f3f5f7;--sunk:#e3e8ed;--ln:#d6dde3;--ln2:#7a8793;--ink:#101820;--mut:#4b5864;--ac:#00766a;--acf:#fff;--warn:#b3261e;--vu:#a86400;--mute:#c0392b;--solo:#c98a00;--face:#f3ecd6;--faceink:#2b2418;--facemut:#6b5d44;
---acw:color-mix(in srgb,var(--ac) 11%,transparent);--shadow:0 1px 2px rgb(16 24 32/.05),0 6px 20px rgb(16 24 32/.05);--pop:0 10px 30px rgb(16 24 32/.18);
+--acw:color-mix(in srgb,var(--ac) 11%,transparent);--sel:color-mix(in srgb,var(--ac) 18%,var(--card));--shadow:0 1px 2px rgb(16 24 32/.05),0 6px 20px rgb(16 24 32/.05);--pop:0 10px 30px rgb(16 24 32/.18);
 --sans:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;--r1:6px;--r2:10px;--r3:14px;
 color-scheme:light dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141a21;--card:#1b232c;--raise:#222b35;--sunk:#0f141a;--ln:#2c3742;--ln2:#66788a;--ink:#eaf0f5;--mut:#a3b1bd;--ac:#45d3c1;--acf:#04221e;--warn:#ff8a7a;--vu:#e9a83a;--mute:#ff6b5e;--solo:#f2b84b;--face:#efe6cc;--shadow:none;--pop:0 12px 32px rgb(0 0 0/.45)}}
@@ -19,8 +19,8 @@ color-scheme:light dark;box-sizing:border-box;padding-top:env(safe-area-inset-to
 :root[data-theme="dark"]{color-scheme:dark;--bg:#141a21;--card:#1b232c;--raise:#222b35;--sunk:#0f141a;--ln:#2c3742;--ln2:#66788a;--ink:#eaf0f5;--mut:#a3b1bd;--ac:#45d3c1;--acf:#04221e;--warn:#ff8a7a;--vu:#e9a83a;--mute:#ff6b5e;--solo:#f2b84b;--face:#efe6cc;--shadow:none;--pop:0 12px 32px rgb(0 0 0/.45)}
 *,*::before,*::after{box-sizing:inherit}
 html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--sans);-webkit-text-size-adjust:100%;text-rendering:optimizeLegibility}
-button,input,select,textarea{font:inherit;color:inherit}
-button{touch-action:manipulation}
+button,input,select,textarea{font:inherit;color:inherit;box-sizing:border-box}
+button{touch-action:manipulation;-webkit-tap-highlight-color:color-mix(in srgb,var(--ac) 20%,transparent)}
 a{color:var(--ac);text-underline-offset:2px}
 :focus-visible{outline:2px solid var(--ac);outline-offset:2px}
 .skip{position:absolute;left:12px;top:-60px;z-index:30;background:var(--ac);color:var(--acf);padding:10px 14px;border-radius:var(--r2);font-weight:600;text-decoration:none}
@@ -39,7 +39,7 @@ h1 small{font:500 13px/1 var(--mono);color:var(--mut);margin-left:6px;letter-spa
 #helpTop button{border-color:var(--ln2)}
 main{max-width:560px;margin:0 auto;padding:16px 16px 48px}
 .intro{margin:4px 0 16px}
-.sub{color:var(--mut);margin:0 0 6px;font-size:15px;max-width:70ch}
+.sub{color:var(--mut);margin:0 0 6px;font-size:15px;max-width:min(70ch,40em)}
 .colL,.colR,#topRow{display:contents}
 @media(min-width:1080px){
  .bar0 .in{max-width:1280px;padding:12px 24px}
@@ -68,7 +68,8 @@ h2.lbl[data-n]::before{content:attr(data-n);display:inline-grid;place-items:cent
 .grp{border-top:1px solid var(--ln);margin:22px -20px 0;padding:20px 20px 0}
 @media(max-width:480px){.grp{margin:20px -16px 0;padding:18px 16px 0}}
 .grp>.lbl:first-child{margin-top:0}
-.hint{color:var(--mut);font-size:14px;line-height:1.5;margin:10px 0 0;max-width:72ch}
+.hint{color:var(--mut);font-size:14px;line-height:1.5;margin:10px 0 0;max-width:min(68ch,38em);text-wrap:pretty}
+.sub,.hx p,.chk span{text-wrap:pretty}h1,h2{text-wrap:balance}
 .hint b{color:var(--ink);font-weight:600}
 hr{border:0;border-top:1px solid var(--ln);margin:20px 0}
 /* Song (drop zone) */
@@ -94,14 +95,16 @@ input[type=range]{width:100%;margin:12px 0 8px;accent-color:var(--ac);height:28p
 .chips button,.seg label,.om button,.abb,.ppb,.eqb button,.zbar button,.rform button,.hrow button,#aiCard .btn,.btn,.sdl,.gmk button,.aic .ab button,#applyS{min-height:36px;border:1px solid var(--ln2);background:var(--card);color:var(--ink);border-radius:var(--r2);padding:7px 12px;font-size:14px;font-weight:600;line-height:1.2;cursor:pointer;transition:background .14s,border-color .14s,color .14s}
 .chips button{border-radius:999px;padding:7px 14px}
 .chips button:hover,.seg label:hover,.om button:hover,.abb:hover,.ppb:hover,.eqb button:hover,.zbar button:hover:not(:disabled),.rform button:hover,.hrow button:hover:not(:disabled),.btn:hover:not(:disabled),.sdl:hover,.gmk button:hover,.aic .ab button:hover{border-color:var(--ac);color:var(--ink)}
-.chips button[aria-pressed=true],.om button[aria-pressed=true],.ppb[aria-pressed=true],.abb[aria-pressed=true],.eqb button[aria-pressed=true],.seg label:has(input:checked){background:var(--ac);color:var(--acf);border-color:var(--ac)}
+.chips button[aria-pressed=true],.om button[aria-pressed=true],.ppb[aria-pressed=true],.abb[aria-pressed=true],.eqb button[aria-pressed=true],.seg label:has(input:checked){background:var(--sel);color:var(--ink);border-color:var(--ac);box-shadow:inset 0 0 0 1px var(--ac)}
+.om button[aria-pressed=true]{box-shadow:inset 0 0 0 2px var(--ac)}
 @media(max-width:560px){.chips button,.seg label,.om button,.abb,.ppb,.zbar button,.rform button,.hrow button,.btn,.eqb button{min-height:40px}}
 .lbl{display:flex}
 .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:16px}
 .seg label{display:block;padding:9px 6px;text-align:center;line-height:1.25}
 .seg input{position:absolute;opacity:0;pointer-events:none}
 .seg label:has(input:focus-visible){outline:2px solid var(--ac);outline-offset:2px}
-.seg small{display:block;font-weight:500;font-size:13px;opacity:.85;margin-top:2px}
+.seg small{display:block;font-weight:500;font-size:13px;color:var(--mut);margin-top:2px}
+.seg label:has(input:checked) small{color:var(--ink)}
 .chk{display:flex;gap:10px;align-items:flex-start;font-size:15px;margin-bottom:16px;cursor:pointer;line-height:1.4}
 .chk input{margin-top:2px;accent-color:var(--ac);width:18px;height:18px;flex:0 0 auto}
 .chk span small{display:block;color:var(--mut);font-size:14px;margin-top:2px}
@@ -159,7 +162,8 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right;padding-left:16
 #zInfo{font-size:13px;color:var(--mut);margin-left:auto}
 #zPan{width:100%;margin:8px 0 0}
 .wprow{margin-top:12px!important;gap:8px}
-#wpBtn,#pp{min-width:84px;background:var(--ac);color:var(--acf);border-color:var(--ac);font-size:15px}
+#wpBtn,#pp{min-width:84px;background:var(--ink);color:var(--card);border-color:var(--ink);font-size:15px}
+#wpBtn:hover,#pp:hover{background:var(--ink);color:var(--card);border-color:var(--ac);box-shadow:0 0 0 2px var(--ac)}
 #wpTime{font-size:14px!important;color:var(--ink)!important;text-align:right}
 .hrow{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 .hrow #rsBtn{margin-left:auto}
@@ -168,12 +172,15 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right;padding-left:16
 #mini[hidden]{display:none}
 #mini .mi{max-width:560px;margin:0 auto;display:flex;gap:6px;align-items:center}
 #mini .ppb{padding:8px 10px;font-size:15px;flex:0 0 auto;min-width:44px;min-height:44px}
-#mini #mPlay{min-width:68px;background:var(--ac);color:var(--acf);border-color:var(--ac)}
+#mini #mPlay{min-width:68px;background:var(--ink);color:var(--card);border-color:var(--ink)}
+#mini #mGo{background:var(--ac);color:var(--acf);border-color:var(--ac);min-width:76px}
+#mini #mGo:disabled{opacity:.4;cursor:not-allowed}
 #mini .om{flex:0 0 auto}
 #mini .ppb:disabled{opacity:.4;cursor:not-allowed}
 #mini .om button{padding:8px 10px;min-height:44px}
 #mTime{flex:1;text-align:center;font-size:14px;color:var(--ink);min-width:0}
-@media(max-width:400px){#mTime{display:none}#mini .mi{justify-content:space-between;gap:4px}#mini .ppb{padding:8px 8px}#mini .om button{padding:8px 8px;font-size:13px}}
+@media(max-width:480px){#mTime,#mUn,#mRe,#mLoop{display:none}#mini .mi{justify-content:space-between;gap:6px}#mini .ppb{padding:8px 10px}#mini .om button{padding:8px 10px}}
+@media(max-width:360px){#mini #mGo{min-width:0}#mini .om button{padding:8px 7px}}
 body.mini main{padding-bottom:92px}
 /* Apply to preview */
 .pvw{margin-left:auto}
@@ -258,22 +265,22 @@ body.mini main{padding-bottom:92px}
 #aiCard textarea{width:100%;margin:12px 0;resize:vertical;font-size:15px;line-height:1.45}
 #aiCard details{margin-top:14px;font-size:15px}#aiCard summary{cursor:pointer;color:var(--ink);font-weight:600;padding:6px 0}
 .aisum{font-size:15px;margin:14px 0 10px}
-.aic{border:1px solid var(--ln);border-left:3px solid var(--ac);border-radius:var(--r2);padding:12px 14px;margin:0 0 10px;font-size:15px;background:var(--card)}
+.aic{border:1px solid color-mix(in srgb,var(--ac) 45%,var(--ln));border-radius:var(--r2);padding:12px 14px;margin:0 0 10px;font-size:15px;background:color-mix(in srgb,var(--ac) 5%,var(--card))}
 .aic .ah{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
 .aic .ah b{font-size:15px}.aic .ah span{color:var(--ink);font-family:var(--mono);font-size:13px}
 .aic .aw{color:var(--mut);margin:6px 0 0;font-size:14px}
 .aic .ab{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
-.aic .ab .ok{border-color:var(--ac);background:var(--ac);color:var(--acf)}
-.aic.done{opacity:.6;border-left-color:var(--ln)}
+.aic .ab .ok{border-color:var(--ac);background:var(--sel);color:var(--ink)}
+.aic.done{opacity:.7;border-color:var(--ln);background:var(--card)}
 .aiwarn{font-size:14px;border:1px solid var(--warn);border-radius:var(--r2);padding:10px 12px;margin:0 0 10px}.aic .rw{color:var(--warn)}
 .aiadv{font-size:15px;margin:10px 0 0;padding-left:20px}.aiadv li{margin:0 0 6px}
 #aiAll{margin:0 0 10px}
 /* Help bubbles */
-.q{border:1px solid var(--ln2);background:transparent;color:var(--mut);border-radius:50%;width:22px;height:22px;min-width:22px;padding:0;font-size:12px;font-weight:700;line-height:20px;cursor:pointer;text-align:center;align-self:center;position:relative}
+.q{border:1px solid var(--ln2);background:transparent;color:var(--mut);border-radius:50%;width:24px;height:24px;min-width:24px;padding:0;font-size:13px;font-weight:700;line-height:22px;cursor:pointer;text-align:center;align-self:center;position:relative}
 .q::after{content:'';position:absolute;inset:-8px}
 .q:hover{border-color:var(--ac);color:var(--ac)}
 .q[aria-expanded=true]{background:var(--ac);color:var(--acf);border-color:var(--ac)}
-.hx{font-size:14px;line-height:1.55;color:var(--ink);background:var(--raise);border:1px solid var(--ln);border-left:3px solid var(--ac);border-radius:var(--r2);padding:12px 14px;margin:0 0 14px}
+.hx{font-size:14px;line-height:1.55;color:var(--ink);background:color-mix(in srgb,var(--ac) 6%,var(--card));border:1px solid color-mix(in srgb,var(--ac) 35%,var(--ln));border-radius:var(--r2);padding:12px 14px;margin:0 0 14px}
 .hx[hidden]{display:none}
 .hx p{margin:0 0 8px;max-width:72ch}.hx p:last-child{margin:0}
 .hx b{color:var(--ink)}
@@ -309,7 +316,7 @@ textarea{max-width:100%}
 .msb.m[aria-pressed=true]{background:var(--mute);border-color:var(--mute);color:#fff}
 .msb.s[aria-pressed=true]{background:var(--solo);border-color:var(--solo);color:#1b1300}
 /* Tone EQ */
-.eq{display:grid;grid-template-columns:28px repeat(9,minmax(0,1fr));gap:0 2px;margin:6px 0 10px;font-size:13px;position:relative;isolation:isolate;background:var(--sunk);border:1px solid var(--ln);border-radius:var(--r2);padding:8px 6px 10px 2px}
+.eq{display:grid;grid-template-columns:28px repeat(9,minmax(0,1fr));gap:0 2px;margin:6px 0 10px;font-size:13px;position:relative;isolation:isolate;background:var(--sunk);border:1px solid var(--ln);border-radius:var(--r2);padding:12px 12px 14px 10px}
 .eq .sc{grid-row:1;grid-column:1;display:flex;flex-direction:column;justify-content:space-between;height:160px;padding:0;line-height:16px;margin-top:20px;color:var(--mut);font:500 12px/16px var(--mono);text-align:right}
 .eq .bd{grid-row:1;display:flex;flex-direction:column;align-items:center;min-width:0;position:relative}
 .eq .bd span{height:20px;font:600 13px/20px var(--mono);white-space:nowrap;letter-spacing:-.03em;color:var(--ink)}
@@ -324,7 +331,7 @@ textarea{max-width:100%}
 .eq .cz{stroke:var(--ln2);stroke-dasharray:3 3}.eq .cg{stroke:var(--ln);opacity:.8}
 .eq .cf{fill:var(--ac);opacity:.14}.eq .cl{fill:none;stroke:var(--ac);stroke-width:2;opacity:.85}
 .eq.byp .cf,.eq.byp .cl{opacity:.2}
-.eqi{margin-top:6px;width:22px;height:22px;padding:0;border:1px solid var(--ln2);border-radius:50%;background:var(--card);color:var(--mut);font:italic 700 12px/20px Georgia,serif;cursor:help;position:relative}
+.eqi{margin-top:6px;width:24px;height:24px;padding:0;border:1px solid var(--ln2);border-radius:50%;background:var(--card);color:var(--mut);font:italic 700 13px/22px Georgia,serif;cursor:help;position:relative}
 .eqi:hover,.eqi:focus-visible,.eqi[aria-expanded=true]{border-color:var(--ac);color:var(--ac)}
 .eqi::after{content:'';position:absolute;top:100%;left:50%;margin:2px 0 0 -6px;border:6px solid transparent;border-bottom-color:var(--ink);opacity:0;visibility:hidden;z-index:16}
 .eqt{position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);z-index:15;width:240px;max-width:calc(100vw - 48px);padding:10px 12px;border-radius:var(--r2);background:var(--ink);color:var(--bg);font-size:14px;line-height:1.45;text-align:left;box-shadow:var(--pop);opacity:0;visibility:hidden;transition:opacity .12s;pointer-events:none}
@@ -332,14 +339,39 @@ textarea{max-width:100%}
 .eq .bd:nth-child(-n+4) .eqt{left:0;transform:none}
 .eq .bd:nth-child(n+8) .eqt{left:auto;right:0;transform:none}
 .eqi:hover::after,.eqi:focus-visible::after,.eqi[aria-expanded=true]::after,.eqi:hover+.eqt,.eqi:focus-visible+.eqt,.eqi[aria-expanded=true]+.eqt{opacity:1;visibility:visible}
-@media(max-width:480px){.eq{grid-template-columns:24px repeat(9,minmax(0,1fr));padding-right:2px}.eq .sc{font-size:11px}.eq .bd span{font-size:11px;letter-spacing:-.06em}.eq .bd b{font-size:12px}.eqi{width:20px;height:20px;line-height:18px}}
+@media(max-width:480px){.eq{grid-template-columns:26px repeat(9,minmax(0,1fr));gap:0;margin:6px -10px 10px;padding:12px 4px 14px 2px}.eq .sc{font-size:12px}.eq .bd span{font-size:12px;letter-spacing:-.07em}.eq .bd b{font-size:12px;letter-spacing:-.04em}}
 .eqb{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 4px}
 #eqApply{width:100%;margin:10px 0 0}
 @media(max-width:560px){select,input[type=text],input[type=url],input[type=password],textarea,.ti,.rr select,.rr .req select,.rr .rst select{font-size:16px}}
+.ic{width:16px;height:16px;flex:0 0 auto;vertical-align:-3px;margin-right:6px}
+.ppb .ic,.zbar .ic,.hrow .ic,.btn .ic,.go .ic,.pvb .ic,.sbtn .ic,.sdl .ic,.gmk .ic,.rr .ic,.aic .ic{display:inline-block}
+.gmk .ic{margin:0 2px}.rr .rp .ic{margin:0 0 0 1px;width:12px;height:12px}.rr .rp{display:inline-grid;place-items:center}
+.sbtn .ic,#mini .ppb[aria-label] .ic{margin:0}
+.pvb .ic{width:12px;height:12px;margin-right:4px;vertical-align:-1px}
+.sbtn{display:inline-grid;place-items:center}
+.fold{margin-left:auto;display:inline-flex;align-items:center;gap:4px;border:1px solid var(--ln2);background:var(--card);color:var(--ink);border-radius:999px;padding:4px 12px 4px 8px;font-size:14px;font-weight:600;min-height:32px;cursor:pointer;align-self:center}
+.fold:hover{border-color:var(--ac)}
+.fold .ic{margin:0;transition:transform .14s}
+.card.folded .fold .ic{transform:rotate(-90deg)}
+.fsum{display:none;margin:0;color:var(--mut);font-size:14px}
+.card.folded>.fsum{display:block}
+.card.folded>:not(h2):not(.fsum){display:none!important}
+.card.folded{padding-top:14px;padding-bottom:14px}
+.card.folded>h2.lbl{margin-bottom:2px}
+.foOff{opacity:.45}
+.lbl.foOff{opacity:1;color:var(--mut)}
+.lbl.foOff::after{content:'Full master only';font:600 12px/1 var(--sans);color:var(--ink);border:1px solid var(--ln2);border-radius:999px;padding:3px 8px;opacity:1}
+#foHint.foWarn{color:var(--ink)}
+::selection{background:color-mix(in srgb,var(--ac) 30%,transparent)}
+input,textarea{caret-color:var(--ac)}
+html{scrollbar-color:var(--ln2) var(--bg)}
+.colL{scrollbar-color:var(--ln2) transparent}
+html:has(body.mini){scroll-padding-bottom:96px}
+@media(min-width:1080px){#mini .mi{max-width:1280px;padding:0 8px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
 </style></head>
 <body><a class="skip" href="#songCard">Skip to the app</a>
-<header class="bar0"><div class="in"><div class="brand"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="1" y="1" width="26" height="26" rx="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 18v-5M12 20V8M16 17v-6M20 19V10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><h1>GP Mastering <small>v68</small></h1></div>
+<header class="bar0"><div class="in"><div class="brand"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="1" y="1" width="26" height="26" rx="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 18v-5M12 20V8M16 17v-6M20 19V10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><h1><span translate="no">GP Mastering</span> <small>v68</small></h1></div>
 <nav id="helpTop" aria-label="Help and info"><a href="help.html">Guide</a><a href="changelog.html">Changelog</a><a href="help.html#credits">Credits</a><a href="https://gp-songtools.github.io/toolsmenu/privacy.html">Privacy</a><button type="button" id="helpAll">Show all hints</button></nav></div></header>
 <main id="main">
 <div class="intro"><p class="sub">Load a song, hear the master next to the original, adjust, then save. Everything runs in your browser; the audio is uploaded only if you use the optional server or Gemini suggestions.</p><p class="sub">Stem balance splits the song into vocals, drums, bass and other, to rebalance them before mastering or just to download them as WAV files.</p></div>
@@ -356,14 +388,14 @@ textarea{max-width:100%}
 
 <section class="card" id="lisCard" hidden>
  <h2 class="lbl" data-n="2">Listen</h2>
- <p class="hint" style="margin:0 0 10px">Plays the song with everything on this page applied: your settings, region levels, the stem balance and the Tone EQ. Switch to Mastered, or press Apply to preview next to any setting, to hear the master. Click the waveform to move the playhead.</p>
+ <p class="hint" style="margin:0 0 10px">Plays the song with everything on this page applied: your settings, region levels, the stem balance and the Tone EQ. Switch to Master, or press Apply to preview (in the Sound and Master titles), to hear the master. Click the waveform to move the playhead.</p>
  <canvas id="wav" height="104" aria-label="Waveform — drag to select a region"></canvas>
  <div class="zbar"><button type="button" id="zOut" aria-label="Zoom out" title="Zoom out">&minus;</button><button type="button" id="zIn" aria-label="Zoom in" title="Zoom in">+</button><button type="button" id="zFit" title="Show the whole song">Fit</button><button type="button" id="zSel" title="Zoom to the selected region">Zoom to region</button><span id="zInfo">Whole song</span></div>
  <input type="range" id="zPan" min="0" max="1000" value="0" hidden aria-label="Scroll the zoomed waveform">
- <div class="prow wprow" style="margin-top:8px"><button class="ppb" id="wpBtn">Play</button><div class="om" role="group" aria-label="What the top player plays"><button type="button" id="wpO" aria-pressed="true">Original</button><button type="button" id="wpM" aria-pressed="false">Mastered</button></div><button type="button" class="ppb" id="wpLoop" aria-pressed="false" title="Repeat the selected region, or the whole song if none is selected">&#10227; Loop</button><button type="button" class="ppb" id="wpClick" aria-pressed="false" title="Metronome: a click on every beat of the tempo grid, higher on beat 1">&#9833; Click</button><span id="wpTime" style="flex:1;font-size:13px;color:var(--mut);font-variant-numeric:tabular-nums">0:00 / 0:00</span></div>
- <label class="chk" style="margin:8px 0 0"><input type="checkbox" id="wpMatch" checked><span>Match levels when switching<small>Turns the louder one down so you compare the sound, not the volume.</small></span></label>
+ <div class="prow wprow" style="margin-top:8px"><button class="ppb" id="wpBtn">Play</button><div class="om" role="group" aria-label="What the top player plays"><button type="button" id="wpO" aria-pressed="true">Original</button><button type="button" id="wpM" aria-pressed="false">Master</button></div><button type="button" class="ppb" id="wpLoop" aria-pressed="false" title="Repeat the selected region, or the whole song if none is selected"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 7.5a5 5 0 0 1 8.6-3.4L13 5.5M13 2.5v3h-3M13 8.5a5 5 0 0 1-8.6 3.4L3 10.5M3 13.5v-3h3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Loop</button><button type="button" class="ppb" id="wpClick" aria-pressed="false" title="Metronome: a click on every beat of the tempo grid, higher on beat 1"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2.5h4l2.5 11h-9zM8 10.5l3.5-6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>Click</button><span id="wpTime" style="flex:1;font-size:13px;color:var(--mut);font-variant-numeric:tabular-nums">0:00 / 0:00</span></div>
+ <label class="chk" style="margin:8px 0 0"><input type="checkbox" id="wpMatch" checked><span>Match loudness when switching<small>Turns the louder one down so you compare the sound, not the volume.</small></span></label>
  <p class="hint" id="wpMsg" role="status" style="margin:4px 0 0"></p>
- <div class="hrow"><button type="button" id="unBtn" disabled title="Undo (Ctrl or Cmd + Z)">&#8630; Undo</button><button type="button" id="reBtn" disabled title="Redo (Ctrl or Cmd + Shift + Z)">&#8631; Redo</button><button type="button" id="rsBtn" title="Put every setting below back to its default. Regions, stems and references are kept.">Reset settings</button></div>
+ <div class="hrow"><button type="button" id="unBtn" disabled title="Undo (Ctrl or Cmd + Z)"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 3 2.5 6l3 3M3 6h6.5a4 4 0 0 1 0 8H7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Undo</button><button type="button" id="reBtn" disabled title="Redo (Ctrl or Cmd + Shift + Z)"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 3l3 3-3 3M13 6H6.5a4 4 0 0 0 0 8H9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Redo</button><button type="button" id="rsBtn" title="Put every setting below back to its default. Regions, stems and references are kept.">Reset settings</button></div>
  <p class="hint" id="hMsg" role="status" style="margin:6px 0 0"></p>
 </section>
 
@@ -371,19 +403,19 @@ textarea{max-width:100%}
  <h2 class="lbl">Arrangement <span class="opt">(optional)</span></h2>
  <p class="hint" style="margin:0 0 10px">Repeat, cut or move bars. Your file is never changed: the app keeps a list of which parts play in which order, joins them with short crossfades, and everything else (regions, stems, the preview and the master) follows the new timeline. Bar numbers come from the Tempo grid under Volume automation, so check the bar lines first.</p>
  <div id="arrList" class="arrl"></div>
- <div class="rform"><span>Bars</span><input class="ti" id="aF" inputmode="numeric" aria-label="First bar" style="width:52px"><span>to</span><input class="ti" id="aT" inputmode="numeric" aria-label="Last bar" style="width:52px"><button type="button" id="aSel" title="Use the bars covered by the selected region">From region</button></div>
- <div class="rform"><button type="button" id="aRep">Repeat</button><button type="button" id="aCut">Cut</button><button type="button" id="aMov">Move before bar</button><input class="ti" id="aTo" inputmode="numeric" aria-label="Move before this bar" style="width:52px"><button type="button" id="aRst">Back to the original</button></div>
+ <div class="rform"><span>Bars</span><input class="ti" id="aF" name="aF" autocomplete="off" inputmode="numeric" aria-label="First bar" style="width:52px"><span>to</span><input class="ti" id="aT" name="aT" autocomplete="off" inputmode="numeric" aria-label="Last bar" style="width:52px"><button type="button" id="aSel" title="Use the bars covered by the selected region">From region</button></div>
+ <div class="rform"><button type="button" id="aRep">Repeat</button><button type="button" id="aCut">Cut</button><button type="button" id="aMov">Move before bar</button><input class="ti" id="aTo" name="aTo" autocomplete="off" inputmode="numeric" aria-label="Move before this bar" style="width:52px"><button type="button" id="aRst">Back to the original</button></div>
  <p class="hint" id="aMsg" role="status" style="margin:6px 0 0"></p>
 </section>
 
 <section class="card" id="regCard" hidden>
  <h2 class="lbl">Volume automation <span class="opt">(optional)</span></h2>
  <p class="hint" style="margin:0 0 10px">Drag across the waveform above to select a part of the song (zoom in for precision, or type exact times below), then choose what happens there: a level change, extra dynamic taming, or no tone processing at all. Everything outside your regions is mastered normally.</p>
- <div class="rform" id="gridRow"><span>Tempo:</span><label><input class="ti" id="gBpm" inputmode="decimal" aria-label="Tempo in beats per minute" style="width:62px">BPM</label><label>Bar 1 at <input class="ti" id="gT0" inputmode="decimal" aria-label="Time of a bar start"></label><button type="button" id="gNow" title="Put a bar start at the playhead">Now</button><button type="button" id="gHalf" title="Half the tempo">&divide;2</button><button type="button" id="gDbl" title="Double the tempo">&times;2</button><button type="button" id="gBeat" title="Move bar 1 one beat later">Beat +1</button><button type="button" id="gDet" title="Detect the tempo again">Detect</button><label><input type="checkbox" id="gSnap" checked>Snap new regions to beats</label></div>
+ <div class="rform" id="gridRow"><span>Tempo:</span><label><input class="ti" id="gBpm" name="gBpm" autocomplete="off" inputmode="decimal" aria-label="Tempo in beats per minute" style="width:62px">BPM</label><label>Bar 1 at <input class="ti" id="gT0" name="gT0" autocomplete="off" inputmode="decimal" aria-label="Time of a bar start"></label><button type="button" id="gNow" title="Put a bar start at the playhead">Now</button><button type="button" id="gHalf" title="Half the tempo">&divide;2</button><button type="button" id="gDbl" title="Double the tempo">&times;2</button><button type="button" id="gBeat" title="Move bar 1 one beat later">Beat +1</button><button type="button" id="gDet" title="Detect the tempo again">Detect</button><label><input type="checkbox" id="gSnap" checked>Snap new regions to beats</label></div>
  <div class="rform"><button type="button" id="gFind" title="Look for places where the beat shifts and add markers there">Find tempo changes</button><button type="button" id="gMk" title="Start a new grid section at the downbeat under the playhead">Marker here</button><button type="button" id="gTrk" title="Track every beat, for songs whose tempo wanders">Follow the beat</button></div>
  <div id="gMarks"></div>
  <p class="hint" id="gMsg" style="margin:4px 0 0"></p>
- <div class="rform"><span>Add by time:</span><label>Start <input class="ti" id="rtS" inputmode="decimal" placeholder="0:00.0" aria-label="Region start time"></label><button type="button" id="rtSn" title="Use the playhead position">Now</button><label>End <input class="ti" id="rtE" inputmode="decimal" placeholder="0:10.0" aria-label="Region end time"></label><button type="button" id="rtEn" title="Use the playhead position">Now</button><button type="button" id="rtAdd">Add region</button></div>
+ <div class="rform"><span>Add by time:</span><label>Start <input class="ti" id="rtS" name="rtS" autocomplete="off" inputmode="decimal" placeholder="0:00.0" aria-label="Region start time"></label><button type="button" id="rtSn" title="Use the playhead position">Now</button><label>End <input class="ti" id="rtE" name="rtE" autocomplete="off" inputmode="decimal" placeholder="0:10.0" aria-label="Region end time"></label><button type="button" id="rtEn" title="Use the playhead position">Now</button><button type="button" id="rtAdd">Add region</button></div>
  <p class="hint" id="regMsg" role="status" style="margin:6px 0 0"></p>
  <div id="regList"></div>
  <p class="hint" id="regHint" style="margin:10px 0 0">No regions yet. Drag across the waveform above to add one.</p>
@@ -392,16 +424,16 @@ textarea{max-width:100%}
 <section class="card" id="aiCard">
  <h2 class="lbl">AI suggestions <span class="opt">(optional, Gemini)</span></h2>
  <p class="hint" style="margin:0 0 10px">Gemini listens to the song and suggests edits for exact time ranges. You review each one; accepted edits become regions you can hear, adjust and undo. <b>This uploads a compressed copy of the song to Google</b> using your own API key, and only when you press Analyze.</p>
- <div class="airow"><input type="password" id="aiKey" placeholder="Gemini API key" autocomplete="off" spellcheck="false" aria-label="Gemini API key"><button type="button" class="btn" id="aiForget">Forget</button></div>
+ <div class="airow"><input type="password" id="aiKey" name="gemini-key" placeholder="Paste your Gemini API key…" autocomplete="off" spellcheck="false" aria-label="Gemini API key"><button type="button" class="btn" id="aiForget">Forget</button></div>
  <label class="chk" style="margin:8px 0 10px"><input type="checkbox" id="aiRemember"><span>Remember the key on this device<small>Saved in this browser&rsquo;s storage, readable by anything that can read this site&rsquo;s data. Unchecked, the key is kept only until you close the page.</small></span></label>
  <div class="airow"><label for="aiModel" style="font-size:14px;color:var(--mut)">Model</label><select id="aiModel" aria-label="Gemini model"></select><button type="button" class="btn" id="aiModels">Refresh list</button></div>
- <textarea id="aiAsk" rows="3" placeholder="Optional: what you want, e.g. &ldquo;make the chorus hit harder, the verses feel crowded&rdquo;" aria-label="Instructions for Gemini"></textarea>
+ <textarea id="aiAsk" rows="3" placeholder="Optional: what you want, e.g. &ldquo;make the chorus hit harder, the verses feel crowded&rdquo;…" aria-label="Instructions for Gemini"></textarea>
  <button class="go alt" id="aiGo" disabled>Analyze with Gemini</button>
  <p class="hint" id="aiMsg" role="status"></p>
  <div id="aiOut"></div>
  <details id="aiPaste"><summary>Paste suggestions from another tool</summary>
   <textarea id="aiJson" rows="4" placeholder='{"summary":"…","edits":[{"start":62.4,"end":70.1,"action":"eq","freq_hz":1500,"gain_db":-3,"reason":"…"}],"advice":[]}' aria-label="Suggestions as JSON"></textarea>
-  <button type="button" class="btn" id="aiImport">Import</button><span class="hint" style="margin-left:8px">Same format Gemini returns here; see the guide.</span>
+  <button type="button" class="btn" id="aiImport">Import</button><span class="hint" style="display:block;margin-top:8px">Same format Gemini returns here; see the guide.</span>
  </details>
 </section>
 
@@ -412,12 +444,12 @@ textarea{max-width:100%}
  <div class="ssel" id="ssel"><span class="k">Separate:</span><label><input type="checkbox" id="ss-vocals" checked>Vocals</label><label><input type="checkbox" id="ss-drums" checked>Drums</label><label><input type="checkbox" id="ss-bass" checked>Bass</label><span class="n">Anything you skip stays in Other, and fewer stems finish sooner.</span></div>
  <div class="ssel"><label for="sepOn"  class="k">Separate on:</label><select id="sepOn" aria-label="Where to separate"><option value="browser">This browser</option><option value="server">My server</option></select></div>
  <div id="srvBox" hidden>
-  <div class="airow" style="margin-bottom:6px"><input type="url" id="srvUrl" placeholder="Server address, e.g. https://you--gpm-sep-web.modal.run" autocomplete="off" spellcheck="false" aria-label="Separation server address"></div>
-  <div class="airow"><input type="password" id="srvTok" placeholder="Access token" autocomplete="off" spellcheck="false" aria-label="Separation server access token"><button type="button" class="btn" id="srvTest">Test</button><button type="button" class="btn" id="srvForget">Forget</button></div>
+  <div class="airow" style="margin-bottom:6px"><input type="url" id="srvUrl" name="server-url" placeholder="Server address, e.g. https://you--gpm-sep-web.modal.run…" autocomplete="off" spellcheck="false" aria-label="Separation server address"></div>
+  <div class="airow"><input type="password" id="srvTok" name="server-token" placeholder="Access token…" autocomplete="off" spellcheck="false" aria-label="Separation server access token"><button type="button" class="btn" id="srvTest">Test</button><button type="button" class="btn" id="srvForget">Forget</button></div>
   <div class="ssel" style="margin:8px 0 0;align-items:center"><span class="k">Models:</span><span class="pair"><label for="srvM-vocals"  class="k">Vocals</label><select id="srvM-vocals" aria-label="Model for the vocals stem"><option value="mdx">Standard</option><option value="roformer">RoFormer</option><option value="demucs">Demucs</option></select></span><span class="pair"><label for="srvM-drums"  class="k">Drums</label><select id="srvM-drums" aria-label="Model for the drums stem"><option value="mdx">Standard</option><option value="demucs">Demucs</option></select></span><span class="pair"><label for="srvM-bass"  class="k">Bass</label><select id="srvM-bass" aria-label="Model for the bass stem"><option value="mdx">Standard</option><option value="demucs">Demucs</option></select></span><span class="pair"><label for="srvM-other"  class="k">Other</label><select id="srvM-other" aria-label="Model for the other stem"><option value="mdx">Standard</option><option value="demucs">Demucs</option></select></span></div>
   <label class="chk" style="margin:8px 0 6px"><input type="checkbox" id="srvRemember"><span>Remember the token on this device<small>Unchecked, it is kept only until you close the page.</small></span></label>
   <p class="hint" id="srvMsg" role="status" style="margin:0 0 4px">Runs the same models on your own server, for example a free Modal GPU. The section you separate is uploaded to that server.</p>
-  <p class="hint" style="margin:0 0 10px">No server yet? <button type="button" class="btn" id="srvKit">⬇ Server kit</button> sets one up on Modal in a few commands; its README explains each step.</p>
+  <p class="hint" style="margin:0 0 10px">No server yet? <button type="button" class="btn" id="srvKit"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M3 13.5h10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Server kit</button> sets one up on Modal in a few commands; its README explains each step.</p>
  </div>
  <div class="ssel" id="wsel"><label for="wk"  class="k">Workers:</label><select id="wk" aria-label="Number of parallel workers"></select><span id="wkHint" class="n"></span></div>
  <div class="two" style="margin-bottom:8px">
@@ -431,9 +463,9 @@ textarea{max-width:100%}
   <div id="mixRows"></div>
   <div id="leftRow" hidden style="margin:2px 0 10px"><div class="ssel" style="margin:0;align-items:center"><label for="leftAmt"  class="k">Leftovers in Other</label><input type="range" id="leftAmt" min="0" max="100" step="5" value="0" aria-label="Leftovers added to the Demucs Other stem" style="flex:1;min-width:70px"><span id="leftV" style="min-width:2.6em;text-align:right">0%</span></div>
   <p class="hint" style="margin:2px 0 0">Demucs Other leaves out anything no model caught, such as a falsetto line the vocal model missed. This adds that back: 0% is pure Demucs Other, 100% is the same as Standard Other (the song minus the other stems), drum residue included.</p></div>
-  <div class="sp"><button type="button" class="go alt" id="spMix" aria-pressed="false">▶ Play all stems</button><span id="spTime">0:00 / 0:00</span></div>
+  <div class="sp"><button type="button" class="go alt" id="spMix" aria-pressed="false"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 3v10l8-5z" fill="currentColor"/></svg>Play all stems</button><span id="spTime">0:00 / 0:00</span></div>
   <input type="range" id="spSeek" min="0" max="1" step="0.1" value="0" aria-label="Stem player position">
-  <p class="hint" style="margin:0 0 6px">The round ▶ buttons play one stem alone, leveled up so quiet stems are audible. <b>Play all stems</b> mixes them at the levels you set and follows the sliders and switches as you listen. Only the separated section plays; switching buttons keeps your place.</p>
+  <p class="hint" style="margin:0 0 6px">The round play buttons play one stem alone, leveled up so quiet stems are audible. <b>Play all stems</b> mixes them at the levels you set and follows the sliders and switches as you listen. Only the separated section plays; switching buttons keeps your place.</p>
   <div id="sugg"></div>
   <label class="chk" style="margin:10px 0 0"><input type="checkbox" id="useStems" checked><span>Master the rebalanced mix<small>Uncheck to master the original audio instead.</small></span></label>
   <label class="chk" style="margin:0"><input type="checkbox" id="perStem" checked><span>Master each stem separately, then recombine<small>Each stem gets its own EQ and compression before they are summed. The limiter always runs last on the combined mix, so the stems stay in balance.</small></span></label>
@@ -445,7 +477,7 @@ textarea{max-width:100%}
  </div>
 </section>
 
-<section class="card">
+<section class="card" id="refCard">
  <h2 class="lbl">Reference tracks <span class="opt">(optional)</span></h2>
  <p class="hint" style="margin:0 0 10px">Load one or more songs whose balance you like. The app measures their tone and stereo width and aims for that instead of its own built-in target. Only the measurements are kept — the audio is analyzed and discarded.</p>
  <div class="drop" style="padding:14px"><span id="refFl">Add reference tracks</span><input type="file" id="refFile" accept="audio/*" multiple aria-label="Add reference tracks"></div>
@@ -457,7 +489,7 @@ textarea{max-width:100%}
  <span class="lbl">Saved setups</span>
  <p class="hint" style="margin:0 0 10px">A setup stores the loaded reference measurements together with every setting on this page, under a name you choose. Export writes them to a file you can keep or move to another computer.</p>
  <div id="setList"></div>
- <div class="setRow"><input type="text" id="setName" placeholder="Name this setup" maxlength="60"><button class="btn" id="setSave">Save</button></div>
+ <div class="setRow"><input type="text" id="setName" name="setup-name" autocomplete="off" aria-label="Setup name" placeholder="Name this setup, e.g. Loud pop…" maxlength="60"><button class="btn" id="setSave">Save</button></div>
  <div class="setRow"><button class="btn" id="setExport">Export to file</button><button class="btn" id="setImport">Import from file</button><input type="file" id="setFile" accept=".json,application/json" hidden></div>
  <div id="ioMsg"></div>
  </div>
@@ -465,7 +497,7 @@ textarea{max-width:100%}
 
 <section class="card" id="soundCard">
  <h2 class="lbl" data-n="4">Sound</h2>
- <p class="hint" style="margin:0 0 16px">How loud the master is, its tone, and its character. Press Apply to preview next to any setting to hear it in the Listen player.</p>
+ <p class="hint" style="margin:0 0 16px">How loud the master is, its tone, and its character. Apply to preview masters from the Listen player&rsquo;s position with every setting on the page, so you hear changes there. The Tone EQ is heard live.</p>
  <span class="lbl">Genre preset</span>
  <div class="chips" id="gen">
   <button type="button" data-g="auto" aria-pressed="true">Auto</button><button type="button" data-g="rock" aria-pressed="false">Rock</button><button type="button" data-g="pop" aria-pressed="false">Pop</button><button type="button" data-g="hiphop" aria-pressed="false">Hip-hop</button><button type="button" data-g="electronic" aria-pressed="false">Electronic</button><button type="button" data-g="acoustic" aria-pressed="false">Acoustic</button><button type="button" data-g="voice" aria-pressed="false">Voice</button>
@@ -529,7 +561,7 @@ textarea{max-width:100%}
  <div class="chips" id="vc"><button type="button" data-v="0" aria-pressed="true">Off</button><button type="button" data-v="1" aria-pressed="false">Light</button><button type="button" data-v="2" aria-pressed="false">Medium</button><button type="button" data-v="3" aria-pressed="false">Strong</button></div>
  <span class="lbl">Pumper <span class="opt">(kick ducks the mids and highs)</span></span>
  <div class="chips" id="pu"><button type="button" data-v="0" aria-pressed="true">Off</button><button type="button" data-v="2" aria-pressed="false">Light</button><button type="button" data-v="4" aria-pressed="false">Medium</button><button type="button" data-v="6" aria-pressed="false">Heavy</button></div>
- <p class="hint" style="margin:0">Clarity, width, vocal enhancer and pumper only apply in Full master.</p>
+ <p class="hint" id="foHint" style="margin:0">Saturation, distortion, clarity, width, vocal enhancer and pumper only apply in Full master (set under Master).</p>
  </div>
 </section>
 
@@ -558,14 +590,15 @@ textarea{max-width:100%}
  <div class="spw">
   <div class="abrow"><button class="abb" id="sp-s" aria-pressed="true">Spectrum</button><button class="abb" id="sp-d" aria-pressed="false">Difference</button></div>
   <svg id="sp" viewBox="0 0 560 230" role="img" aria-label="Spectrum before and after mastering"></svg>
-  <label class="chk" style="margin:8px 0 0"><input type="checkbox" id="sp-m" checked><span>Match levels (compare tone, not loudness)</span></label>
+  <label class="chk" style="margin:8px 0 0"><input type="checkbox" id="sp-m" checked><span>Match loudness (compare tone, not volume)</span></label>
   <p class="hint" id="sp-n"></p>
  </div>
  <div class="pl">
-  <div class="abrow"><button class="abb" id="ab-o" aria-pressed="false">A: Original</button><button class="abb" id="ab-m" aria-pressed="true">B: Master</button></div>
+  <p class="hint" style="margin:0 0 10px">This player plays the finished file, exactly as Save file writes it. The Listen player above keeps playing the rolling preview.</p>
+  <div class="abrow"><button class="abb" id="ab-o" aria-pressed="false">Original</button><button class="abb" id="ab-m" aria-pressed="true">Master</button></div>
   <button class="abb" id="monoBtn" aria-pressed="false" style="width:100%;margin-bottom:10px">Listen in mono</button>
   <div class="prow"><button class="ppb" id="pp">Play</button><input type="range" id="seek" min="0" max="1" step="0.1" value="0" aria-label="Seek"><span id="tm">0:00</span></div>
-  <label class="chk" style="margin:10px 0 0"><input type="checkbox" id="lm" checked><span>Match loudness for a fair comparison</span></label>
+  <label class="chk" style="margin:10px 0 0"><input type="checkbox" id="lm" checked><span>Match loudness when switching<small>Turns the louder one down so you compare the sound, not the volume.</small></span></label>
   <button class="go alt" id="eqApply" hidden>Apply EQ to the master</button>
  </div>
  <button class="save" id="save">Save file</button>
@@ -573,13 +606,14 @@ textarea{max-width:100%}
 </section>
 </div></div>
 </main>
-<div id="mini" hidden><div class="mi"><button type="button" class="ppb" id="mPlay">Play</button><div class="om" role="group" aria-label="What the player plays"><button type="button" id="mO" aria-pressed="true">Original</button><button type="button" id="mM" aria-pressed="false">Mastered</button></div><button type="button" class="ppb" id="mLoop" aria-pressed="false" aria-label="Loop" title="Loop">&#10227;</button><span id="mTime">0:00</span><button type="button" class="ppb" id="mUn" disabled aria-label="Undo" title="Undo">&#8630;</button><button type="button" class="ppb" id="mRe" disabled aria-label="Redo" title="Redo">&#8631;</button></div></div>
+<div id="mini" hidden><div class="mi"><button type="button" class="ppb" id="mPlay">Play</button><div class="om" role="group" aria-label="What the player plays"><button type="button" id="mO" aria-pressed="true">Original</button><button type="button" id="mM" aria-pressed="false">Master</button></div><button type="button" class="ppb" id="mLoop" aria-pressed="false" aria-label="Loop" title="Loop"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 7.5a5 5 0 0 1 8.6-3.4L13 5.5M13 2.5v3h-3M13 8.5a5 5 0 0 1-8.6 3.4L3 10.5M3 13.5v-3h3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span id="mTime">0:00</span><button type="button" class="ppb" id="mGo" disabled title="Master the full song with the current settings">Master song</button><button type="button" class="ppb" id="mUn" disabled aria-label="Undo" title="Undo"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 3 2.5 6l3 3M3 6h6.5a4 4 0 0 1 0 8H7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button type="button" class="ppb" id="mRe" disabled aria-label="Redo" title="Redo"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 3l3 3-3 3M13 6H6.5a4 4 0 0 0 0 8H9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></div>
 <script src="eta.js"></script>
 <script src="sep-pool.js"></script>
 <script src="sep-remote.js"></script>
 <script>
 let sayMute=false;
 const esc=t=>String(t??'').replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
+const ICO={play:'<svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 3v10l8-5z" fill="currentColor"/></svg>',stop:'<svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1" fill="currentColor"/></svg>',loop:'<svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 7.5a5 5 0 0 1 8.6-3.4L13 5.5M13 2.5v3h-3M13 8.5a5 5 0 0 1-8.6 3.4L3 10.5M3 13.5v-3h3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',click:'<svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2.5h4l2.5 11h-9zM8 10.5l3.5-6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>',undo:'<svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 3 2.5 6l3 3M3 6h6.5a4 4 0 0 1 0 8H7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',redo:'<svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 3l3 3-3 3M13 6H6.5a4 4 0 0 0 0 8H9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',down:'<svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M3 13.5h10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',l:'<svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3.5 5.5 8l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',r:'<svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',chev:'<svg class="ic chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'};
 const $=id=>document.getElementById(id), tick=()=>new Promise(r=>setTimeout(r,sayMute?0:15));
 let src=null,name='audio',res=null,url=null;
 const say=(t,e)=>{if(sayMute)return;$('st').textContent=t;$('st').className=e?'err':''};
@@ -928,13 +962,13 @@ const DEMO_AI={summary:'A clean electronic loop with a sparse intro, a lead from
  {start:20,end:24,section:'Build',action:'riser',riser_type:'noise',level:40,reason:'A short noise riser into bar 13 signals the last section.'},
  {start:24,end:32,section:'Outro',action:'reverb',mix:25,size:'hall',target:'mix',reason:'The last section is the busiest; a little hall space makes it feel bigger than the verse.'}],
  advice:[{start:0,end:32,section:'Whole song',text:'The kick carries most of the low end. A Standard master at -12 LUFS keeps it punchy; -9 starts to flatten it.'}]};
-$('demoBtn').onclick=async()=>{const b=$('demoBtn');b.disabled=true;b.textContent='Making the demo…';await tick();try{await $('file').onchange({target:{files:[demoSong()]}});if(src){$('aiJson').value=JSON.stringify(DEMO_AI,null,1);$('aiPaste').open=true;aiSay('Sample suggestions for the demo song are ready under Paste suggestions. Press Import to review them.')}}finally{b.disabled=false;b.textContent='Try the demo song'}};
+$('demoBtn').onclick=async()=>{const b=$('demoBtn');b.disabled=true;b.textContent='Making the demo…';await tick();try{await $('file').onchange({target:{files:[demoSong()]}});if(src){$('aiJson').value=JSON.stringify(DEMO_AI,null,1);$('aiPaste').open=true;window.foldOpen&&foldOpen('aiCard');aiSay('Sample suggestions for the demo song are ready under Paste suggestions. Press Import to review them.')}}finally{b.disabled=false;b.textContent=src&&/^Demo song/.test($('fl').textContent)?'Reload the demo song':'Try the demo song'}};
 $('chips').onclick=e=>{const v=e.target.dataset?.v;if(v)sync(v)};
 
 $('file').onchange=async e=>{
  const f=e.target.files[0];if(!f)return;try{e.target.value=''}catch(_){}
  name=(f.name.replace(/\.[^.]+$/,'').replace(/[^\w\- ]+/g,'_').trim())||'audio';
- $('fl').textContent=f.name;$('flSub').textContent='Choose or drop another file to replace it';$('drop').classList.add('has');stopP();lastFin=null;$('go').disabled=true;$('pv').disabled=true;$('res').hidden=true;say('Decoding…');await tick();
+ $('fl').textContent=f.name;$('demoBtn').textContent='Try the demo song';$('flSub').textContent='Choose or drop another file to replace it';$('drop').classList.add('has');stopP();lastFin=null;$('go').disabled=true;$('pv').disabled=true;$('res').hidden=true;say('Decoding…');await tick();
  try{
   const ab=await f.arrayBuffer(),gen=++fileGen,fp=await fpOf(ab);let ctx;
   try{ctx=new AudioContext({sampleRate:44100})}catch{ctx=new AudioContext()}
@@ -1120,7 +1154,7 @@ function wpStop(){
 }
 function wpRestart(){const p=wpPos();wpStop();wpOff=p;wpPlay()}
 function lpPreview(){if(!src)return;lp.active=true;lp.mode='m';lpUI();if(wpOn)wpRestart();else wpPlay()}
-function pvbUI(){document.querySelectorAll('.pvb').forEach(b=>{b.disabled=!src||lp.starting||mastering;b.textContent=lp.starting?'Applying…':'▶ Apply to preview'})}
+function pvbUI(){document.querySelectorAll('.pvb').forEach(b=>{b.disabled=!src||lp.starting||mastering;b.innerHTML=lp.starting?'Applying…':ICO.play+'Apply to preview'})}
 let mastering=false;
 function lpUI(){
  $('wpO').setAttribute('aria-pressed',!(lp.active&&lp.mode==='m'));$('wpM').setAttribute('aria-pressed',lp.active&&lp.mode==='m');
@@ -1133,12 +1167,12 @@ function lpMsg(){
  let t;
  if(lp.err)t='The preview could not be rendered: '+lp.err;
  else if(lp.starting)t='Mastering from '+tc(wpOff)+'…';
- else if(!lp.active)t='Playing the original. Press Mastered, or Apply to preview next to any setting, to hear the master here.';
- else if(!wpOn&&lp.mode==='m')t='Mastered is on. Press Play to hear it from the playhead; the first few seconds take a moment to render.';
- else if(lp.mode==='o')t='Original, untouched (no EQ). Mastered switches back instantly.';
+ else if(!lp.active)t='Playing the original. Press Master, or Apply to preview in a card title, to hear the master here.';
+ else if(!wpOn&&lp.mode==='m')t='Master is on. Press Play to hear it from the playhead; the first few seconds take a moment to render.';
+ else if(lp.mode==='o')t='Original, untouched (no EQ). Master switches back instantly.';
  else if(wpOn&&lp.miss==='raw')t='Catching up: this stretch is playing unprocessed.';
  else if(wpOn&&lp.miss==='old')t='Catching up: this stretch uses your previous settings.';
- else t='Mastered preview, rendered a few seconds ahead with your current settings. Loudness is close but approximate; Master full song gives the exact result.';
+ else t='Master preview, rendered a few seconds ahead with your current settings. Loudness is close but approximate; Master full song gives the exact result.';
  el.textContent=t+lr;
 }
 function wpTick(){if(!wpOn)return;
@@ -1331,8 +1365,8 @@ function regRender(){
    ?`<span class="amt req"><input class="ti" data-f="${i}" value="${Math.round(r.f||1000)}" inputmode="numeric" aria-label="EQ frequency in Hz" style="width:58px">Hz<select data-sh="${i}" aria-label="EQ shape">${Object.entries(RSH).map(([k,v])=>`<option value="${k}"${(r.sh||'bell')===k?' selected':''}>${v[2]}</option>`).join('')}</select><input type="range" data-g="${i}" min="-12" max="12" step="0.5" value="${r.amt}" aria-label="EQ boost or cut"><span class="val">${r.amt>0?'+':''}${r.amt} dB</span></span>`
    :FXM[r.mode]||GENM[r.mode]?`<span class="amt req">${fxCtl(r,i)}</span>${genWait(r)?`<span class="rw" style="grid-column:1/-1;order:6;font-size:13px">${esc(genWait(r))}</span>`:''}`
    :r.mode==='noise'?`<span class="amt val">learn</span>`:`<span class="amt val">—</span>`;
-  return `<div class="rr${i===regSel?' sel':''}${r.note?' ai':''}"${r.note?` title="${esc(r.note)}"`:''}><span class="tm" data-sel="${i}"><input class="ti" data-ts="${i}" value="${tcf(r.s/fs)}" inputmode="decimal" aria-label="Region ${i+1} start"> &ndash; <input class="ti" data-te="${i}" value="${tcf(r.e/fs)}" inputmode="decimal" aria-label="Region ${i+1} end"><button type="button" class="rp" data-rp="${i}" aria-label="Play from the start of region ${i+1}" title="Play from the start of this region">&#9654;</button></span>`+
-   `<select data-m="${i}">`+Object.entries(RMODE).map(([k,v])=>`<option value="${k}"${r.mode===k?' selected':''}>${v}</option>`).join('')+`</select>`+
+  return `<div class="rr${i===regSel?' sel':''}${r.note?' ai':''}"${r.note?` title="${esc(r.note)}"`:''}><span class="tm" data-sel="${i}"><input class="ti" data-ts="${i}" value="${tcf(r.s/fs)}" inputmode="decimal" aria-label="Region ${i+1} start"> &ndash; <input class="ti" data-te="${i}" value="${tcf(r.e/fs)}" inputmode="decimal" aria-label="Region ${i+1} end"><button type="button" class="rp" data-rp="${i}" aria-label="Play from the start of region ${i+1}" title="Play from the start of this region">${ICO.play}</button></span>`+
+   `<select data-m="${i}" aria-label="What happens in region ${i+1}">`+Object.entries(RMODE).map(([k,v])=>`<option value="${k}"${r.mode===k?' selected':''}>${v}</option>`).join('')+`</select>`+
    amt+`<button class="x" data-x="${i}" aria-label="Remove region">Remove</button>`
    +(TARG[r.mode]?`<div class="rst"><label>Applies to <select data-st="${i}" aria-label="Region ${i+1} applies to"><option value="">Whole mix</option>${Object.entries(STEMN).map(([k,v])=>`<option value="${k}"${r.stem===k?' selected':''}>${v}</option>`).join('')}</select></label>${stemWait(r)?`<span class="rw">${esc(stemWait(r))}</span>`:isStemEdit(r)?`<span class="ok">Applied to the ${esc(r.stem)} stem.</span>`:''}</div>`:'')+`</div>`;
  }).join('');
@@ -1359,7 +1393,7 @@ function regRender(){
  $('regList').querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{
   const i=+b.dataset.x;if(regions[i].mode==='noise')noiseProf=null;regions.splice(i,1);if(regSel>=regions.length)regSel=regions.length-1;regRender();drawWave();
  });
- $('regList').querySelectorAll('[data-sel]').forEach(b=>b.onclick=()=>regPick(+b.dataset.sel));
+ $('regList').querySelectorAll('[data-sel]').forEach(b=>{b.onclick=()=>regPick(+b.dataset.sel);b.addEventListener('focusin',()=>{if(regSel!==+b.dataset.sel)regPick(+b.dataset.sel)})});
  $('regList').querySelectorAll('[data-ts]').forEach(i=>{i.onfocus=()=>{i.select();if(regSel!==+i.dataset.ts)regPick(+i.dataset.ts)};i.onchange=()=>setRegTime(+i.dataset.ts,'s',i.value)});
  $('regList').querySelectorAll('[data-te]').forEach(i=>{i.onfocus=()=>{i.select();if(regSel!==+i.dataset.te)regPick(+i.dataset.te)};i.onchange=()=>setRegTime(+i.dataset.te,'e',i.value)});
  $('regList').querySelectorAll('[data-rp]').forEach(b=>b.onclick=async e=>{e.stopPropagation();const r=regions[+b.dataset.rp];if(!r)return;regPick(+b.dataset.rp);vwShow(r.s/src.length);wpSeek(r.s/src.sampleRate);if(!wpOn)await wpPlay()});
@@ -2018,7 +2052,7 @@ function setupsRender(){
  names.forEach((n,i)=>{const el=$('setList').children[i];if(el)el.querySelector('.nm').textContent=n});
  $('setList').querySelectorAll('button[data-load]').forEach(b=>b.onclick=()=>setupLoad(decodeURIComponent(b.dataset.load)));
  $('setList').querySelectorAll('button[data-del]').forEach(b=>b.onclick=()=>{
-  const n=decodeURIComponent(b.dataset.del);delete setups[n];setupsSave();setupsRender();io('Deleted “'+n+'”.');
+  const n=decodeURIComponent(b.dataset.del);if(!confirm('Delete the setup “'+n+'”? This can\u2019t be undone.'))return;delete setups[n];setupsSave();setupsRender();io('Deleted “'+n+'”.');
  });
 }
 function setupLoad(n){
@@ -2209,8 +2243,8 @@ const sp={mode:null,off:0,t0:0,raf:0,srcs:[],gn:{}};
 const spDur=()=>src&&stemLen?stemLen/src.sampleRate:0;
 const spPos=()=>sp.mode?Math.min(spDur(),pc.currentTime-sp.t0):sp.off;
 function spLabels(){
- STEMS.forEach(s=>{const b=$('sp-'+s);if(!b)return;const on=sp.mode===s;b.textContent=on?'■':'▶';b.setAttribute('aria-pressed',on)});
- const m=$('spMix');if(m){const on=sp.mode==='mix';m.textContent=on?'■ Stop':'▶ Play all stems';m.setAttribute('aria-pressed',on)}
+ STEMS.forEach(s=>{const b=$('sp-'+s);if(!b)return;const on=sp.mode===s;b.innerHTML=on?ICO.stop:ICO.play;b.setAttribute('aria-pressed',on)});
+ const m=$('spMix');if(m){const on=sp.mode==='mix';m.innerHTML=on?ICO.stop+'Stop':ICO.play+'Play all stems';m.setAttribute('aria-pressed',on)}
  const t=$('spTime');if(t)t.textContent=tc(spPos())+' / '+tc(spDur());
  swHead(spPos());
 }
@@ -2318,7 +2352,7 @@ function leftApply(){
 }
 function mixRows(){
  const have=HAVE();
- $('mixRows').innerHTML=have.map(s=>`<div class="srow"><button type="button" class="sbtn" id="sp-${s}" aria-pressed="false" aria-label="Play ${s} alone" title="Play ${s} alone">▶</button><b>${s}</b><input type="range" id="sg-${s}" min="-24" max="12" step="0.5" value="${sgain[s]}" aria-label="${s} level"><span id="sv-${s}">${sgain[s]>0?'+':''}${sgain[s]} dB</span><button type="button" class="msb m" id="sm-${s}" aria-pressed="${!!smute[s]}" aria-label="Mute ${s}" title="Mute ${s}">M</button><button type="button" class="msb s" id="ss2-${s}" aria-pressed="${!!ssolo[s]}" aria-label="Solo ${s}" title="Solo ${s} (listening only)">S</button><div class="swr"><div class="sw" id="sw-${s}" title="Click to jump here"><canvas id="swc-${s}"></canvas><i class="ph" id="ph-${s}"></i></div><button type="button" class="sdl" id="dl-${s}" aria-label="Download ${s} as WAV">⬇ WAV</button></div></div>`).join('');
+ $('mixRows').innerHTML=have.map(s=>`<div class="srow"><button type="button" class="sbtn" id="sp-${s}" aria-pressed="false" aria-label="Play ${s} alone" title="Play ${s} alone">${ICO.play}</button><b>${s}</b><input type="range" id="sg-${s}" min="-24" max="12" step="0.5" value="${sgain[s]}" aria-label="${s} level"><span id="sv-${s}">${sgain[s]>0?'+':''}${sgain[s]} dB</span><button type="button" class="msb m" id="sm-${s}" aria-pressed="${!!smute[s]}" aria-label="Mute ${s}" title="Mute ${s}">M</button><button type="button" class="msb s" id="ss2-${s}" aria-pressed="${!!ssolo[s]}" aria-label="Solo ${s}" title="Solo ${s} (listening only)">S</button><div class="swr"><div class="sw" id="sw-${s}" title="Click to jump here"><canvas id="swc-${s}"></canvas><i class="ph" id="ph-${s}"></i></div><button type="button" class="sdl" id="dl-${s}" aria-label="Download ${s} as WAV">${ICO.down}WAV</button></div></div>`).join('');
  have.forEach(s=>{
   $('sg-'+s).oninput=e=>{sgain[s]=+e.target.value;$('sv-'+s).textContent=(sgain[s]>0?'+':'')+sgain[s]+' dB';spGains()};
   $('sm-'+s).onclick=()=>{smute[s]=!smute[s];msRefresh()};
@@ -2796,11 +2830,11 @@ function gRefine(E,base,marks){
 const secsOk=a=>Array.isArray(a)?a.filter(m=>m&&isNum(m.t)&&isNum(m.bpm)&&m.t>0&&m.bpm>=40&&m.bpm<=240).map(m=>({t:+m.t.toFixed(3),bpm:Math.round(m.bpm*100)/100})).sort((p,q)=>p.t-q.t).slice(0,64):[];
 function marksUI(){
  const el=$('gMarks');if(!el)return;
- if(beatMode()){const R=(grid.secs||[]);el.innerHTML=R.map((m,i)=>`<div class="gmk"><span>Bar 1 restarts at</span><b>${tcf(grid.bt[bNear(m.t)])}</b><button type="button" data-rn="${i}" data-d="-4">&#9664; bar</button><button type="button" data-rn="${i}" data-d="4">bar &#9654;</button><button type="button" data-rn="${i}" data-d="-1">&#9664; beat</button><button type="button" data-rn="${i}" data-d="1">beat &#9654;</button><button type="button" class="x" data-rx="${i}">Remove</button></div>`).join('');
+ if(beatMode()){const R=(grid.secs||[]);el.innerHTML=R.map((m,i)=>`<div class="gmk"><span>Bar 1 restarts at</span><b>${tcf(grid.bt[bNear(m.t)])}</b><button type="button" data-rn="${i}" data-d="-4">${ICO.l}bar</button><button type="button" data-rn="${i}" data-d="4">bar${ICO.r}</button><button type="button" data-rn="${i}" data-d="-1">${ICO.l} beat</button><button type="button" data-rn="${i}" data-d="1">beat ${ICO.play}</button><button type="button" class="x" data-rx="${i}">Remove</button></div>`).join('');
   el.querySelectorAll('[data-rn]').forEach(x=>x.onclick=()=>{const i=+x.dataset.rn,R2=grid.secs.map(m=>({...m})),j=Math.max(1,Math.min(grid.bt.length-1,bNear(R2[i].t)+(+x.dataset.d)));R2[i].t=grid.bt[j];gridSet({...grid,secs:R2})});
   el.querySelectorAll('[data-rx]').forEach(x=>x.onclick=()=>gridSet({...grid,secs:grid.secs.filter((_,k)=>k!==+x.dataset.rx)}));return}
  const S=gSecs().slice(1);
- el.innerHTML=S.map((q,i)=>`<div class="gmk"><span>Marker ${i+1}: bar ${q.F} at</span><input class="ti" data-mt="${i}" value="${tcf(q.t)}" inputmode="decimal" aria-label="Marker ${i+1} time"><input class="ti" data-mb="${i}" value="${q.bpm}" inputmode="decimal" aria-label="Marker ${i+1} tempo" style="width:62px"><span>BPM</span><button type="button" data-mn="${i}" data-d="-1" title="Move this marker one bar earlier">&#9664; bar</button><button type="button" data-mn="${i}" data-d="1" title="Move this marker one bar later">bar &#9654;</button><button type="button" data-mp="${i}" title="Play from just before this marker">Play</button><button type="button" class="x" data-mx="${i}">Remove</button></div>`).join('');
+ el.innerHTML=S.map((q,i)=>`<div class="gmk"><span>Marker ${i+1}: bar ${q.F} at</span><input class="ti" data-mt="${i}" value="${tcf(q.t)}" inputmode="decimal" aria-label="Marker ${i+1} time"><input class="ti" data-mb="${i}" value="${q.bpm}" inputmode="decimal" aria-label="Marker ${i+1} tempo" style="width:62px"><span>BPM</span><button type="button" data-mn="${i}" data-d="-1" title="Move this marker one bar earlier">${ICO.l}bar</button><button type="button" data-mn="${i}" data-d="1" title="Move this marker one bar later">bar${ICO.r}</button><button type="button" data-mp="${i}" title="Play from just before this marker">Play</button><button type="button" class="x" data-mx="${i}">Remove</button></div>`).join('');
  const upd=(i,f)=>{const m=(grid.secs||[]).map(x=>({...x}));f(m[i]);gridSet({...grid,secs:secsOk(m),src:'user'})};
  el.querySelectorAll('[data-mt]').forEach(x=>x.onchange=()=>{const t=parseT(x.value);if(t!==null&&t>0)upd(+x.dataset.mt,m=>m.t=t);else marksUI()});
  el.querySelectorAll('[data-mb]').forEach(x=>x.onchange=()=>{const v=parseFloat(x.value);if(v>=40&&v<=240)upd(+x.dataset.mb,m=>m.bpm=v);else marksUI()});
@@ -2896,7 +2930,7 @@ async function savedUI(justSaved){
  const st=all.filter(m=>m.stems),mb=st.reduce((a,m)=>a+m.stems.bytes,0)/1048576,cur=st.find(m=>m.fp===songFp);
  el.innerHTML=st.length?`${justSaved?'Saved. ':''}${cur?'This song&rsquo;s stems are saved on this device and come back automatically when you load the same file. ':''}Stems for ${st.length} song${st.length>1?'s':''} on this device (${mb.toFixed(0)} MB). <button type="button" class="btn" id="sForget" style="padding:3px 8px;font-size:12.5px">Forget saved stems</button>`
   :'';
- const b=$('sForget');if(b)b.onclick=async()=>{for(const m of all){await sdel('stems',m.fp).catch(()=>{});if(m.stems){delete m.stems;await sput('songs',m).catch(()=>{})}}savedUI();ssay('Saved stems removed from this device. The stems in this session still work until you reload.')};
+ const b=$('sForget');if(b)b.onclick=async()=>{if(!confirm('Remove the saved stems from this device? You can separate the song again later.'))return;for(const m of all){await sdel('stems',m.fp).catch(()=>{});if(m.stems){delete m.stems;await sput('songs',m).catch(()=>{})}}savedUI();ssay('Saved stems removed from this device. The stems in this session still work until you reload.')};
 }
 const regOk=r=>r&&isNum(r.s)&&isNum(r.e)&&r.e>r.s&&r.s>=0&&r.e<=src.length&&RMODE[r.mode]&&isNum(r.amt);
 async function songRestore(fp,gen){
@@ -2973,7 +3007,7 @@ function aiLoad(){
 }
 const aiCfgSave=()=>{try{localStorage.setItem(AICFG,JSON.stringify({model:ai.model,ask:$('aiAsk').value.slice(0,2000)}))}catch(_){}};
 function aiKeySave(){try{if($('aiRemember').checked&&ai.key)localStorage.setItem(AIKEY,ai.key);else localStorage.removeItem(AIKEY)}catch(_){}}
-function aiUI(){$('aiGo').disabled=!src||!ai.key&&!ai.busy;$('aiGo').textContent=ai.busy?'Cancel':'Analyze with Gemini';$('aiForget').disabled=!ai.key}
+function aiUI(){$('aiGo').disabled=!src||!ai.key&&!ai.busy;$('aiGo').textContent=ai.busy?'Cancel':'Analyze with Gemini';$('aiGo').title=!src?'Load a song first':!ai.key&&!ai.busy?'Enter your Gemini API key above first':'';$('aiForget').disabled=!ai.key}
 function aiModelsFill(list){
  const sel=$('aiModel'),all=[...new Set([ai.model,...list])];
  sel.innerHTML=all.map(m=>`<option value="${esc(m)}"${m===ai.model?' selected':''}>${esc(m)}</option>`).join('');
@@ -3151,7 +3185,7 @@ function aiShow(R){
   +`<div class="aw">${esc(x.reason)}</div>`
   +(x.act==='riser'||x.act==='downlifter'?(x.act==='riser'&&(x.fx.kind==='tape'||x.fx.kind==='pitch')&&x.fx.src!=='mix'?`<div class="aw">Uses the <b>${esc(x.fx.src)}</b> stem as its source.${stemData&&stemData[x.fx.src]?'':' <span class="rw">Needs the song separated into stems first.</span>'}</div>`:'')
   :x.target!=='mix'?`<div class="aw">${x.act==='bypass'?`Meant for the ${esc(x.target)}; no tone processing always applies to the whole mix.`:`Applies to the <b>${esc(x.target)}</b> stem only.`+(stemsWhole()?'':' <span class="rw">Needs the song separated into stems first.</span>')}</div>`:'')
-  +`<div class="ab">${x.st==='new'?`<button type="button" data-ail="${i}">&#9654; Listen</button><button type="button" class="ok" data-aia="${i}">Accept</button><button type="button" data-air="${i}">Skip</button>`:`<span class="aw" style="margin:0">${x.st==='ok'?(x.act==='repeat'||x.act==='cut'?'Applied to the arrangement.':'Added as a region.'):x.st==='gone'?'Its bars were cut from the arrangement.':'Skipped.'}</span>`}</div></div>`).join('');
+  +`<div class="ab">${x.st==='new'?`<button type="button" data-ail="${i}">${ICO.play}Listen</button><button type="button" class="ok" data-aia="${i}">Accept</button><button type="button" data-air="${i}">Skip</button>`:`<span class="aw" style="margin:0">${x.st==='ok'?(x.act==='repeat'||x.act==='cut'?'Applied to the arrangement.':'Added as a region.'):x.st==='gone'?'Its bars were cut from the arrangement.':'Skipped.'}</span>`}</div></div>`).join('');
  if(R.adv.length)h+=`<span class="lbl" style="margin:12px 0 4px">Advice the app cannot apply</span><ul class="aiadv">`+R.adv.map(a=>`<li>${a.s!=null&&a.e!=null?`<b>${esc(tcf2(a.s))}&ndash;${esc(tcf2(a.e))}</b> `:''}${a.section?esc(a.section)+': ':''}${esc(a.text)}</li>`).join('')+'</ul>';
  if(R.skipped)h+=`<p class="hint">${R.skipped} suggestion${R.skipped>1?'s were':' was'} left out because the time range or action could not be used.</p>`;
  if(!R.edits.length&&!R.adv.length)h+='<p class="hint">No edits suggested.</p>';
@@ -3399,7 +3433,7 @@ function ltas(A,B,fs){
  }
  return Array.from(P,p=>10*Math.log10(p/Math.max(c,1)+1e-20));
 }
-let spD=null,spMode='s',spW=0;if(window.ResizeObserver)new ResizeObserver(e=>{const w=Math.round(e[0].contentRect.width);if(w&&w!==spW){spW=w;paintSpec()}}).observe($('sp'));
+let spD=null,spMode='s',spW=0;if(window.ResizeObserver)new ResizeObserver(e=>{const w=Math.round(e[0].contentRect.width);if(w&&w!==spW){spW=w;requestAnimationFrame(paintSpec)}}).observe($('sp'));
 const sg=v=>Math.abs(v)<.05?'0.0':(v>0?'+':'')+v.toFixed(1);
 const fq=f=>f>=1000?(f/1000).toFixed(1)+' kHz':Math.round(f)+' Hz';
 function drawSpec(ob,o){const a=chans(ob);spD={a:ltas(a[0],a[1],ob.sampleRate),b:ltas(o[0],o[1],ob.sampleRate)};paintSpec()}
@@ -3664,13 +3698,13 @@ const HELP={
 'Noise reduction':`<p>Removes steady background noise — hiss, hum, room tone, and the warble AI generators sometimes leave behind. It measures the noise floor per frequency band, then attenuates each band when it drops toward that floor.</p>
 <p><b>Mark a quiet passage</b> with a Noise profile region on the waveform for the best result: that measures the actual noise rather than guessing. Without one, the floor is estimated from the quietest 5% of each frequency band across the song, which on a test with known added noise came within 0.5 dB of the region result.</p>
 <p>Light is 6 dB of reduction, Medium 12 dB, Strong 20 dB. It runs first, before any EQ or compression, so the chain never amplifies noise. Gains are smoothed across frequency and time to avoid the warbling that makes denoisers obvious, but strong settings on dense music can still sound watery — check on Preview.</p>`,
-'Listen':`<p>The player for everything on the page. <b>Original</b> is the untouched song. <b>Mastered</b> is the real mastering chain with your current settings, region levels, stem balance and Tone EQ, rendered a few seconds ahead of the playhead; switching between them is instant. <b>Loop</b> repeats the selected region, or the whole song. <b>Click</b> adds a metronome on the tempo grid, higher on beat 1, to check the grid by ear.</p>
-<p>Press <b>Apply to preview</b> next to any setting to hear a change from the current spot, usually within a second. Settings you have already heard play from memory.</p>
+'Listen':`<p>The player for everything on the page. <b>Original</b> is the untouched song. <b>Master</b> is the real mastering chain with your current settings, region levels, stem balance and Tone EQ, rendered a few seconds ahead of the playhead; switching between them is instant. <b>Loop</b> repeats the selected region, or the whole song. <b>Click</b> adds a metronome on the tempo grid, higher on beat 1, to check the grid by ear.</p>
+<p>Press <b>Apply to preview</b> (in the title of Stem balance, Reference tracks, Sound and Master) to hear a change from the current spot, usually within a second. Settings you have already heard play from memory.</p>
 <p><b>Undo</b> and <b>Redo</b> (Ctrl or Cmd + Z, and + Shift) step through every change to settings, EQ, regions and stem levels. <b>Reset settings</b> returns every setting to its default but keeps your regions, stems and references, and can itself be undone. When you scroll past this card, a small player stays pinned to the bottom of the screen.</p>`,
 'Arrangement':`<p>Rearranges the song by bars: <b>Repeat</b> plays bars again straight after themselves, <b>Cut</b> removes them, <b>Move before bar</b> takes them out and puts them back earlier or later. Type the first and last bar, or select a region and press <b>From region</b>. Bars are counted on the Tempo grid, so make sure the numbered bar lines sit on the downbeats first.</p>
 <p>The file itself is never changed: the app keeps a list of which parts play in which order and joins them with 20 ms crossfades. Regions follow (a region on repeated bars is copied, one on cut bars removed), stems are rearranged too without separating again, and the preview and the master play the new order. Every change is one undo step and is saved with the song; <b>Back to the original</b> undoes all of it. A sustained note or reverb tail crossing a join can still sound cut: listen to each join, and a riser or downlifter can cover a big jump.</p>`,
 'Volume automation':`<p>Drag across the waveform in the Listen card to select a part of the song. Besides level, EQ and taming, a region can hold an effect: <b>Filter sweep</b>, <b>Reverb</b> and <b>Delay</b> (both ring on after the region ends), or <b>Pan / width</b>; <b>Pitch shift</b> (semitones up or down, timing unchanged; blend it for a harmony); or add new sound: a <b>Riser</b> (noise, synth, tape: your own audio sped up, or pitch: your own audio pitched up with the timing kept) that ends at the region&rsquo;s end, or a <b>Downlifter</b> that falls away from its start. <b>Tempo</b> shows the detected BPM and bar start; bar lines are drawn on the waveform, delays follow the tempo and new regions snap to beats. If the bar lines miss, use \u00f72, \u00d72 or Beat +1. If the timing changes partway through (common in AI-made songs), <b>Find tempo changes</b> adds markers where the beat shifts, or press <b>Marker here</b> on a downbeat after the slip.</p><p> Clicking moves the playhead, and clicking inside a region also selects it.</p>
-<p><b>Zoom and exact times.</b> Under the waveform, <b>+</b> and <b>&minus;</b> zoom in and out (Ctrl or Cmd with the mouse wheel zooms at the pointer), <b>Fit</b> shows the whole song, and <b>Zoom to region</b> frames the selected region. When zoomed, a slider (or sideways scrolling) moves along the song, a time ruler appears, and the view follows the playhead while it plays. You can zoom in to about one second across. Every region's start and end are editable boxes in minutes and seconds with tenths, for example <code>1:23.5</code>, or just seconds like <code>83.5</code>. To add a region without dragging, type a start and end under <b>Add by time</b> (the <b>Now</b> buttons copy the playhead position). The round &#9654; on a region plays from its start.</p>
+<p><b>Zoom and exact times.</b> Under the waveform, <b>+</b> and <b>&minus;</b> zoom in and out (Ctrl or Cmd with the mouse wheel zooms at the pointer), <b>Fit</b> shows the whole song, and <b>Zoom to region</b> frames the selected region. When zoomed, a slider (or sideways scrolling) moves along the song, a time ruler appears, and the view follows the playhead while it plays. You can zoom in to about one second across. Every region's start and end are editable boxes in minutes and seconds with tenths, for example <code>1:23.5</code>, or just seconds like <code>83.5</code>. To add a region without dragging, type a start and end under <b>Add by time</b> (the <b>Now</b> buttons copy the playhead position). The round play button on a region plays from its start.</p>
 <p>Mastering normally applies one setting to the whole song, but problems are usually local — one chorus that jumps, one verse too quiet, an intro you want left alone. Drag across the waveform to select a part and choose what happens there.</p>
 <p><b>Level</b> rides the fader by up to ±12 dB <i>before</i> the mastering chain, so the compressors respond to the corrected balance rather than fighting it. <b>Tame dynamics</b> adds compression inside the region only. <b>No tone processing</b> keeps the original tone there but still applies the final loudness and limiting, so the level still matches the rest.</p>
 <p>Region edges get 20 ms fades so boundaries do not click. With a region selected, Preview renders around it instead of the middle of the song. Regions belong to the loaded file and are cleared when you load another.</p>`,
@@ -3688,7 +3722,7 @@ const HELP={
 <p>Separation downloads about 123 MB of models the first time and is slow — several times the length of the audio. <b>Use the 30-second option first</b>, and use a desktop browser: a full song needs more memory than most phones have.</p>
 <p><b>Separate once:</b> the stems are saved on this device with the song&rsquo;s regions and stem levels, and come back automatically when you load the same file again, even after a refresh. <b>Forget saved stems</b> removes them.</p>
 <p>Stems only apply to the section you separated. Separated audio carries artifacts; real stems from your session are always better if you have them.</p>
-<p><b>Separate on: My server</b> runs the same models on your own server (for example a free Modal GPU) instead of in this browser: much faster, but the section is uploaded to that server. Paste its address and access token and press Test. No server yet? <b>⬇ Server kit</b> downloads a small zip that sets one up on Modal; follow its README.txt. <b>Models</b> picks one per stem: Standard (the browser&rsquo;s), Demucs (Meta&rsquo;s htdemucs_ft, often crisper drums) or, for vocals, RoFormer (a newer, heavier vocal model). Other: Standard is the song minus the stems (adds up exactly, but collects their leftovers); Other: Demucs is Demucs&rsquo;s own, usually cleaner, Other model. With it, <b>Leftovers in Other</b> adds back what no model caught (0% pure Demucs, 100% the same as Standard). Mix and match, and compare on one song.</p>`,
+<p><b>Separate on: My server</b> runs the same models on your own server (for example a free Modal GPU) instead of in this browser: much faster, but the section is uploaded to that server. Paste its address and access token and press Test. No server yet? <b>Server kit</b> downloads a small zip that sets one up on Modal; follow its README.txt. <b>Models</b> picks one per stem: Standard (the browser&rsquo;s), Demucs (Meta&rsquo;s htdemucs_ft, often crisper drums) or, for vocals, RoFormer (a newer, heavier vocal model). Other: Standard is the song minus the stems (adds up exactly, but collects their leftovers); Other: Demucs is Demucs&rsquo;s own, usually cleaner, Other model. With it, <b>Leftovers in Other</b> adds back what no model caught (0% pure Demucs, 100% the same as Standard). Mix and match, and compare on one song.</p>`,
 'Processing mode':`<p><b>Full master</b> analyzes the song and adapts every stage to it. <b>Light polish</b> applies one fixed EQ and compressor, identical for every song. <b>Loudness only</b> changes no tone at all.</p>
 <p>Loudness only is the honest choice when you trust your mix. It is also the best way to hear what the other modes are doing: master once each way and compare.</p>
 <p>Clarity, width, the vocal enhancer, the pumper and the processing amount apply to Full master only.</p>`,
@@ -3703,7 +3737,7 @@ const HELP={
 <p>After raising width, check the Mono fold figure in the results and press "Listen in mono".</p>`,
 'Vocal enhancer':`<p>Centre-channel only, so it does not brighten what sits in the sides. Adds presence at 3 kHz (+1/+2/+3 dB), half that much air above 11 kHz, and levels the 1–4 kHz range when it lunges forward.</p>
 <p><b>Without separated stems it cannot tell a vocal from anything else centred</b> — it also lifts the snare crack, kick click and centred guitars. If it turns harsh, drop a level. For true vocal-only work, use Stem balance with per-stem mastering.</p>`,
-'Tone EQ':`<p>A nine-band graphic EQ, one slider per octave from 63 Hz to 16 kHz, ±15 dB each. You hear it <b>as you move it</b>: in the Listen player, in Play all stems, and on the B: Master side of the results player. 63 Hz and 16 kHz are shelves; the rest are one-octave bells. The curve behind the sliders is the combined shape you will hear. Hover over (or tap) the <b>i</b> under a slider for what that band does, and double-click a slider to zero it.</p>
+'Tone EQ':`<p>A nine-band graphic EQ, one slider per octave from 63 Hz to 16 kHz, ±15 dB each. You hear it <b>as you move it</b>: in the Listen player, in Play all stems, and on the Master side of the results player. 63 Hz and 16 kHz are shelves; the rest are one-octave bells. The curve behind the sliders is the combined shape you will hear. Hover over (or tap) the <b>i</b> under a slider for what that band does, and double-click a slider to zero it.</p>
 <p>It runs after the whole mastering chain but <b>before loudness matching and the limiter</b>, so the result still lands on your target and true-peak ceiling. Adding low end therefore makes the limiter work harder rather than making the song louder.</p>
 <p>After a render, moving it plays the change live on the master. <b>Apply EQ</b> then re-runs only the last stage (a few seconds, no re-analysis) so the saved file matches what you hear. Bypass is for listening only: renders always use the sliders.</p>`,
 'AI suggestions':`<p>Gemini listens to a compressed mono copy of the song together with the app&rsquo;s own measurements, and suggests edits for exact time ranges: level, EQ, taming, or no tone processing. Each comes with a reason. Press <b>Listen</b> to hear that spot, then <b>Accept</b> to turn it into a region, or <b>Skip</b>. Accepted edits can be adjusted in the region list and undone like any other change. Things the app cannot do, such as adding a riser or muting one instrument, are listed as advice.</p>
@@ -3737,17 +3771,44 @@ const HELP={
   $('helpAll').textContent=open?'Hide all hints':'Show all hints';
  };
 })();
-/* ---- Apply to preview buttons next to every setting the top player can render ---- */
+/* ---- Apply to preview: one button in each settings card title (each applies every setting) ---- */
 (()=>{
- const keys=['Stem balance','Vocal doubler','Stem distortion','Reference tracks','Genre preset','Target loudness','Processing amount','Transients','Saturation','Distortion','Noise reduction','Clarity','Stereo width','Vocal enhancer','Pumper','Processing mode'];
- document.querySelectorAll('.lbl').forEach(el=>{
+ const keys=['Stem balance','Reference tracks','Sound','Master'];
+ document.querySelectorAll('h2.lbl').forEach(el=>{
   const t=el.textContent.trim(),k=keys.find(x=>t.startsWith(x));if(!k)return;
-  const b=document.createElement('button');b.type='button';b.className='pvb';b.textContent='▶ Apply to preview';
+  const b=document.createElement('button');b.type='button';b.className='pvb';b.innerHTML=ICO.play+'Apply to preview';
   b.title='Master from the top player\u2019s position with the current settings and play it there';
   b.setAttribute('aria-label','Apply '+k+' and every other setting to the preview audio in the Listen card');
   b.onclick=lpPreview;const w=document.createElement('span');w.className='pvw';w.appendChild(b);el.appendChild(w);
  });
  lpUI();
 })();
-window.addEventListener('error',e=>say('Error: '+e.message,1));
+/* ---- optional cards fold to one line; Master in the mini player; mode-aware settings; keys ---- */
+(()=>{
+ const F={arrCard:()=>arr?'Rearranged: '+arr.length+' parts':'Original order. Repeat, cut or move bars.',regCard:()=>regions.length?regions.length+' region'+(regions.length>1?'s':'')+(grid?', '+(+grid.bpm).toFixed(1).replace(/\.0$/,'')+' BPM grid':''):(grid?'No regions. Tempo grid at '+(+grid.bpm).toFixed(1).replace(/\.0$/,'')+' BPM.':'No regions yet.'),aiCard:()=>ai.res?ai.res.edits.length+' suggestion'+(ai.res.edits.length===1?'':'s')+' to review':'Not used. Optional Gemini review of the song.',refCard:()=>refs.length?refs.length+' reference track'+(refs.length>1?'s':'')+' loaded':'None loaded. Built-in target curve.'};
+ const fold=(c,on)=>{c.classList.toggle('folded',on);const b=c.querySelector('.fold');b.setAttribute('aria-expanded',String(!on));b.lastChild.textContent=on?'Show':'Hide';sum()};
+ const sum=()=>{for(const id in F){const c=$(id),x=c&&c.querySelector('.fsum');if(x)try{x.textContent=F[id]()}catch(_){}}};
+ for(const id in F){const c=$(id);if(!c)continue;const h=c.querySelector('h2');
+  const b=document.createElement('button');b.type='button';b.className='fold';b.setAttribute('aria-controls',id);b.innerHTML=ICO.chev+'<span>Show</span>';b.onclick=()=>fold(c,!c.classList.contains('folded'));h.appendChild(b);
+  const p=document.createElement('p');p.className='fsum';h.after(p);fold(c,true)}
+ let nReg=0,aiR=null;
+ document.addEventListener('click',()=>setTimeout(()=>{sum();if(regions.length>nReg&&$('regCard').classList.contains('folded'))fold($('regCard'),false);nReg=regions.length;if(ai.res&&ai.res!==aiR&&$('aiCard').classList.contains('folded'))fold($('aiCard'),false);aiR=ai.res},0),true);
+ document.addEventListener('change',()=>setTimeout(sum,0),true);document.addEventListener('pointerup',()=>setTimeout(()=>{sum();if(regions.length>nReg)fold($('regCard'),false);nReg=regions.length},0),true);
+ window.foldOpen=id=>fold($(id),false);
+ const mg=$('mGo'),syncGo=()=>{mg.disabled=$('go').disabled};new MutationObserver(syncGo).observe($('go'),{attributes:true,attributeFilter:['disabled']});syncGo();
+ mg.onclick=()=>{$('go').click();$('masterCard').scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})};
+ const FO=['sa','sc','ds','dt','cl','wd','vc','pu'],modeUI=()=>{const full=(document.querySelector('input[name=p]:checked')||{}).value==='full';
+  FO.forEach(id=>{const el=$(id);el.classList.toggle('foOff',!full);const l=el.previousElementSibling&&el.previousElementSibling.classList.contains('lbl')?el.previousElementSibling:null;if(l)l.classList.toggle('foOff',!full)});
+  $('foHint').classList.toggle('foWarn',!full)};
+ document.querySelectorAll('input[name=p]').forEach(r=>r.addEventListener('change',modeUI));document.addEventListener('click',()=>setTimeout(modeUI,0));modeUI();
+ document.addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey||e.repeat)return;
+  if(e.target.closest&&e.target.closest('input,textarea,select,button,a,summary,[contenteditable]'))return;
+  if(e.key===' '&&src){e.preventDefault();$('wpBtn').click()}
+  else if((e.key==='a'||e.key==='A')&&src){e.preventDefault();($('wpO').getAttribute('aria-pressed')==='true'?$('wpM'):$('wpO')).click()}});
+})();
+/* Warn before leaving with a rendered master that was never saved. Settings, regions and stems are kept automatically. */
+(()=>{let unsaved=false;new MutationObserver(()=>{if(!$('res').hidden)unsaved=true}).observe($('res'),{attributes:true,attributeFilter:['hidden']});
+ $('save').addEventListener('click',()=>{unsaved=false});
+ addEventListener('beforeunload',e=>{if(unsaved&&!$('res').hidden){e.preventDefault();e.returnValue=''}})})();
+window.addEventListener('error',e=>{const m=String(e.message||'');if(/ResizeObserver loop/i.test(m))return;console.error(e.error||m);say('Something went wrong'+(mastering?' while mastering':'')+'. Try again; if it keeps happening, reload the page (your settings are kept). The browser console has the details.',1)});
 </script><!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "2c5b0c69f74b496998f02d0e1f651bd5"}'></script><!-- End Cloudflare Web Analytics --></body></html>
