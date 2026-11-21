@@ -3,6 +3,12 @@
 All notable changes to GP Mastering, newest first. The version number is the small tag beside the app's title.
 This file mirrors `changelog.html`, which is the version shown in the app; keep the two in step.
 
+## v69 — Nov 20
+
+### Fixed
+
+- The browser tab uses the same teal meter mark as the app header.
+
 ## v68 — Nov 20
 
 ### Added
