@@ -3,6 +3,13 @@
 All notable changes to GP Mastering, newest first. The version number is the small tag beside the app's title.
 This file mirrors `changelog.html`, which is the version shown in the app; keep the two in step.
 
+## v70 — Nov 24
+
+### Added
+
+- **Song spec** panel under Song (shared with the other GP Song Tools): see the song's title, BPM and key; **Save to Drive** and **Open from Drive…**. GP Mastering only reads the spec.
+- **Save to Google Drive too**, under Save file: saves the master into the song's audio folder in Google Drive, never overwriting; **Save last master to Drive** uploads it again. Google is contacted only after you click.
+
 ## v69 — Nov 20
 
 ### Fixed

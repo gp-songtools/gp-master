@@ -236,6 +236,9 @@ td:first-child{white-space:nowrap;font-weight:600}
 </table></div>
 <p>The lossy formats get 0.5 dB more headroom because encoders overshoot: the decoded file can peak higher than the file you fed in. Use WAV for anything you will distribute or process further, and the lossy formats for sharing and listening.</p>
 <p>Peak levels are measured as true peak with 4× sinc oversampling, so the number reported accounts for inter-sample peaks that a simple sample-peak meter misses.</p>
+<h3 id="drive">Song spec and Google Drive</h3>
+<p>Under <b>Song</b>, the <b>Song spec</b> panel shows the song file the GP Song Tools share in this browser. GP Mastering only reads it, for the song&rsquo;s title and, when another tool set them, its BPM and key; it writes no sections and does not change the tempo grid from them. The panel&rsquo;s <b>Save to Drive</b> and <b>Open from Drive…</b> buttons use your Google Drive.</p>
+<p>Tick <b>Save to Google Drive too</b> (under Save file) to upload each master you save to <code>GP Song Tools / song title / audio</code> in your Google Drive, as well as downloading it. An existing file is never overwritten; the new one is named &ldquo;(2)&rdquo;, &ldquo;(3)&rdquo;. <b>Save last master to Drive</b> uploads the last master saved in this session again, for example after a failed sign-in. If the song has no title, you are asked for one to name its folder. Google sign-in loads only after you click, and the app only sees files the GP Song Tools created (the <code>drive.file</code> permission).</p>
 <a class="top" href="#">↑ top</a>
 
 <h2 id="regions">8. The Listen card and volume automation</h2>

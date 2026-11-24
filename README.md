@@ -85,6 +85,12 @@ other) instead of the whole mix; stem edits need the song separated into stems
 under Stem balance first, and wait until then. Suggestions from other tools can be pasted in the same JSON format
 (documented in `help.html`).
 
+**Song spec and Google Drive (optional)** — the shared GP Song Tools song spec
+panel shows the song's title, BPM and key (read only; Save to Drive and Open
+from Drive… are in the panel). **Save to Google Drive too** also uploads each
+saved master to the song's `audio` folder in your Google Drive, never
+overwriting; **Save last master to Drive** repeats it.
+
 **Tone EQ** — a nine-band graphic EQ, one slider per octave from 63 Hz to
 16 kHz, ±15 dB each, with the combined curve drawn behind the sliders, heard live as you move them in every player. In a render it runs after the
 mastering chain but before loudness matching and the limiter. After a render,
@@ -165,13 +171,14 @@ for the lossy formats, leaving headroom for encoder overshoot.
 
 ## Stored data
 
-Audio never leaves the browser, except the compressed copy sent to Gemini when you press Analyze. Pages load Cloudflare Web Analytics, shared by all GP Song Tools, for anonymous visit counts (no cookies; it never sees audio, settings or keys); see [Privacy & credits](https://gp-songtools.github.io/toolsmenu/privacy.html). Three keys in `localStorage`:
+Audio never leaves the browser, except the compressed copy sent to Gemini when you press Analyze and the master you choose to save to your own Google Drive (Save to Google Drive too; Google sign-in and Drive load only after that click, `drive.file` permission only). Pages load Cloudflare Web Analytics, shared by all GP Song Tools, for anonymous visit counts (no cookies; it never sees audio, settings or keys); see [Privacy & credits](https://gp-songtools.github.io/toolsmenu/privacy.html). Keys in `localStorage`:
 
 | Key | Holds |
 | --- | --- |
 | `gpmaster.refs.v1` | the currently loaded reference measurements |
 | `gpmaster.cfg.v1` | last-used settings |
 | `gpmaster.setups.v1` | named setups |
+| `gpmaster.drive.v1` | whether Save to Google Drive too is ticked |
 
 Reference entries store only analysis results — octave-band curve, spectrum,
 stereo width, low-mid side energy, loudness — never audio. Stored and imported
