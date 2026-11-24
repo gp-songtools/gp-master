@@ -126,7 +126,7 @@ select{padding-right:28px;cursor:pointer}
 input::placeholder,textarea::placeholder{color:var(--mut);opacity:1}
 /* Status lines */
 #st{margin-top:12px;font-size:14px;color:var(--mut);min-height:20px}
-#st.err,#sst.err,#ioMsg.err{color:var(--warn)}
+#st.err,#drvMsg.err,#sst.err,#ioMsg.err{color:var(--warn)}
 /* Results: VU-style loudness scale */
 .meter{position:relative;height:96px;margin:0 0 18px;background:var(--face);color:var(--faceink);border-radius:var(--r2);border:1px solid color-mix(in srgb,var(--faceink) 18%,transparent);box-shadow:inset 0 1px 0 rgb(255 255 255/.5),inset 0 -10px 24px rgb(80 60 20/.08)}
 .meter .sc0{position:absolute;left:16px;right:16px;top:0;bottom:0}
@@ -371,7 +371,7 @@ html:has(body.mini){scroll-padding-bottom:96px}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
 </style></head>
 <body><a class="skip" href="#songCard">Skip to the app</a>
-<header class="bar0"><div class="in"><div class="brand"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="1" y="1" width="26" height="26" rx="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 18v-5M12 20V8M16 17v-6M20 19V10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><h1><span translate="no">GP Mastering</span> <small>v69</small></h1></div>
+<header class="bar0"><div class="in"><div class="brand"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="1" y="1" width="26" height="26" rx="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 18v-5M12 20V8M16 17v-6M20 19V10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><h1><span translate="no">GP Mastering</span> <small>v70</small></h1></div>
 <nav id="helpTop" aria-label="Help and info"><a href="help.html">Guide</a><a href="changelog.html">Changelog</a><a href="help.html#credits">Credits</a><a href="https://gp-songtools.github.io/toolsmenu/privacy.html">Privacy</a><button type="button" id="helpAll">Show all hints</button></nav></div></header>
 <main id="main">
 <div class="intro"><p class="sub">Load a song, hear the master next to the original, adjust, then save. Everything runs in your browser; the audio is uploaded only if you use the optional server or Gemini suggestions.</p><p class="sub">Stem balance splits the song into vocals, drums, bass and other, to rebalance them before mastering or just to download them as WAV files.</p></div>
@@ -384,6 +384,11 @@ html:has(body.mini){scroll-padding-bottom:96px}
  <div id="inStats"></div>
  <div class="songAlt"><button type="button" class="btn" id="demoBtn">Try the demo song</button><span class="hint">A 32-second track made in your browser, to see every step before you load your own.</span></div>
  <details class="hint" style="margin-top:12px"><summary>Nothing happens when you tap the box?</summary><input type="file" id="file2" accept="audio/*" aria-label="Choose an audio file (fallback picker)" style="margin-top:8px;max-width:100%;font:inherit;color:var(--ink)"></details>
+ <div id="specBox" hidden>
+  <span class="lbl" style="margin-top:18px">Song spec <span class="opt">(shared with the other GP Song Tools)</span></span>
+  <p class="hint" id="specNote" hidden></p>
+  <div id="specPanel" class="spec-panel"></div>
+ </div>
 </section>
 
 <section class="card" id="lisCard" hidden>
@@ -602,6 +607,12 @@ html:has(body.mini){scroll-padding-bottom:96px}
   <button class="go alt" id="eqApply" hidden>Apply EQ to the master</button>
  </div>
  <button class="save" id="save">Save file</button>
+ <div id="drvBox" hidden>
+  <span class="lbl" style="margin-top:18px">Google Drive <span class="opt">(optional)</span></span>
+  <label class="chk" style="margin:12px 0 0"><input type="checkbox" id="drvOn"><span>Save to Google Drive too<small>Also uploads the master to this song's audio folder in Google Drive.</small></span></label>
+  <button class="go alt" id="drvSave" disabled style="margin-top:10px">Save last master to Drive</button>
+  <p class="hint" id="drvMsg" role="status"></p>
+ </div>
  <p class="hint" id="hint"></p>
 </section>
 </div></div>
@@ -610,6 +621,8 @@ html:has(body.mini){scroll-padding-bottom:96px}
 <script src="eta.js"></script>
 <script src="sep-pool.js"></script>
 <script src="sep-remote.js"></script>
+<script src="songdrive.js"></script>
+<script src="songspec.js"></script>
 <script>
 let sayMute=false;
 const esc=t=>String(t??'').replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
@@ -3647,7 +3660,56 @@ function show(i,t,o,pk,fmt,size,mono,notes,pv,keep){
    claude.ai artifact host instead exposes a downloads capability whose dialog
    accepts only certain extensions, hence the zip wrapper there. */
 const hosted=()=>!!(window.claude&&window.claude.use);
-$('save').onclick=async()=>{
+/* ---- Song spec (read-only) and Google Drive (optional) ----
+   The spec supplies the title (and BPM/key to show); nothing is written except the title/drive_folder
+   when the person saves to Drive. Drive options are not sound settings: not in getCfg/lpSig/undo. */
+const SS=window.SongSpec||null,SD=window.SongDrive||null,DRVKEY='gpmaster.drive.v1';
+let lastMaster=null,drvBusy=false;
+const specDoc=()=>SS.parse(SS.store.load()||'');
+const dsay=(t,e)=>{$('st').textContent=t;$('st').className=e?'err':'';$('drvMsg').textContent=t;$('drvMsg').className='hint'+(e?' err':'')};
+function specNote(){
+ const n=$('specNote');if(!SS){return}
+ let t='';try{const d=specDoc(),ti=SS.setting(d,'title'),bp=SS.setting(d,'bpm'),ky=SS.setting(d,'key');
+  t=[ti&&'Song: '+ti,bp&&bp+' BPM',ky&&'Key '+ky].filter(Boolean).join(' · ')}catch{}
+ n.textContent=t?'From the song spec: '+t+'.':'';n.hidden=!t;
+}
+if(SS)try{
+ $('specBox').hidden=false;SS.mountPanel($('specPanel'),{onChange:specNote});specNote();
+ window.addEventListener('focus',specNote);
+}catch{$('specBox').hidden=true}
+const drvPref=v=>{try{if(v===undefined)return localStorage.getItem(DRVKEY)==='1';localStorage.setItem(DRVKEY,v?'1':'0')}catch{}return !!v};
+function drvUI(){$('drvSave').disabled=!lastMaster||drvBusy;$('drvSave').title=lastMaster?'Upload '+lastMaster.name+' to this song’s audio folder':'Save a master first'}
+if(SS&&SD){$('drvBox').hidden=false;$('drvOn').checked=drvPref();$('drvOn').onchange=()=>drvPref($('drvOn').checked);drvUI()}
+const MIMES={wav:'audio/wav',mp3:'audio/mpeg',m4a:'audio/mp4'};
+function uniqName(n,taken){
+ if(!taken.has(n))return n;
+ const d=n.lastIndexOf('.'),b=d>0?n.slice(0,d):n,x=d>0?n.slice(d):'';
+ for(let i=2;;i++){const c=b+' ('+i+')'+x;if(!taken.has(c))return c}
+}
+async function driveMaster(m,signing){
+ if(drvBusy){dsay('Another Google Drive action is still running.',1);return}
+ drvBusy=true;drvUI();let signErr=true;
+ try{
+  await signing;signErr=false;
+  let d=specDoc();
+  if(!SS.setting(d,'title').trim()&&!SS.setting(d,'drive_folder')){
+   const t=(prompt('Song title for the Drive folder',name)||'').trim();
+   if(!t){dsay('Not saved to Google Drive: the song needs a title for its folder. Use Save last master to Drive to try again.',1);return}
+   SS.store.update(x=>SS.setSetting(x,'title',t,{by:'person'}));d=specDoc();specNote();
+  }
+  const f=await SD.songFolder(d,{create:true,confirm:n=>confirm('A Drive folder named "'+n+'" already exists in GP Song Tools. Use it for this song? Cancel makes a new folder instead.')});
+  if(!SS.setting(specDoc(),'drive_folder')){try{SS.store.update(x=>SS.setSetting(x,'drive_folder',f.id,{by:'gp-master'}))}catch{}}
+  const dir=await SD.subfolder(f.id,'audio',{create:true});
+  const fn=uniqName(m.name,new Set((await SD.list(dir.id)).map(x=>x.name)));
+  dsay('Saving to Google Drive: 0%');
+  await SD.upload(dir.id,fn,m.blob,{mimeType:m.mime,onProgress:(a,t)=>dsay('Saving to Google Drive: '+(t?Math.round(a/t*100):100)+'%')});
+  dsay('Saved '+fn+' to Google Drive (GP Song Tools / '+f.name+' / audio).');
+ }catch(e){
+  dsay(!signErr&&e&&e.code==='auth'?'Google sign-in expired. Use Save last master to Drive to try again.':((e&&e.message)||'Google Drive failed.')+(signErr?' Use Save last master to Drive to try again.':''),1);
+ }finally{drvBusy=false;drvUI()}
+}
+$('drvSave').onclick=()=>{if(!lastMaster||!SD)return;const s=SD.signIn();driveMaster(lastMaster,s)};
+async function saveLocal(){
  if(!res)return;
  if(!hosted()){
   try{
@@ -3667,6 +3729,15 @@ $('save').onclick=async()=>{
   else{data=zip(name+'_master.'+res.fmt,new Uint8Array(await res.blob.arrayBuffer()));fn=name+'_master_'+res.fmt+'.zip'}
   await dl.save({filename:fn,data});say('Saved.');
  }catch(e){say(e&&e.code==='declined'?'Save cancelled.':'Couldn’t save the file ('+((e&&e.code)||'error')+').',1)}
+}
+$('save').onclick=async()=>{
+ if(!res)return;
+ const sg=SD&&SS&&$('drvOn').checked?SD.signIn():null;   // straight from the click, before any await
+ if(sg)sg.catch(()=>{});
+ const fe=res.fmt==='m4a'?'m4a':res.fmt;
+ lastMaster={blob:res.blob,name:name+'_master.'+fe,mime:MIMES[res.fmt]||'application/octet-stream'};drvUI();
+ await saveLocal();
+ if(sg)await driveMaster(lastMaster,sg);
 };
 $('useRef').onchange=()=>{refSave();cfgSave()};
 ['gen','cl','amt','wd','vc','pu','nr','tr','db','sa','sc','ds','dt'].forEach(id=>$(id).addEventListener('click',()=>setTimeout(cfgSave,0)));
@@ -3743,6 +3814,10 @@ const HELP={
 'AI suggestions':`<p>Gemini listens to a compressed mono copy of the song together with the app&rsquo;s own measurements, and suggests edits for exact time ranges: level, EQ, taming, or no tone processing. Each comes with a reason. Press <b>Listen</b> to hear that spot, then <b>Accept</b> to turn it into a region, or <b>Skip</b>. Accepted edits can be adjusted in the region list and undone like any other change. Things the app cannot do, such as adding a riser or muting one instrument, are listed as advice.</p>
 <p><b>Privacy:</b> pressing Analyze uploads that copy of the song to Google. Nothing is sent otherwise. The key goes only to Google. With <b>Remember</b> on it is saved in this browser&rsquo;s storage, so use a key made just for this app and restricted to the Gemini API. On Google&rsquo;s free tier, submitted content may be used to improve their products.</p>
 <p><b>Edits aimed at one instrument</b> (vocals, drums, bass or other) apply to that stem only, and <b>need the song separated into stems first</b>: under Stem balance press Separate whole song and keep Master the rebalanced mix on. Until then they wait in the region list. <b>Paste suggestions from another tool</b> imports the same JSON format without a key.</p>`,
+'Song spec':`<p>The song spec is a small file shared by the GP Song Tools: one song&rsquo;s title, lyrics, style and more, kept in this browser. GP Mastering only <b>reads</b> it: it shows the song&rsquo;s title and, when another tool set them, its BPM and key. It does not change the tempo grid from them, and it writes no sections.</p>
+<p>The panel also has <b>Open file…</b>, <b>Download</b>, and <b>Save to Drive</b> / <b>Open from Drive…</b> for the song&rsquo;s Google Drive folder. Google is contacted only after you click one of those.</p>`,
+'Google Drive':`<p>Tick <b>Save to Google Drive too</b> and every time you press Save file, the master is also uploaded to the <b>audio</b> folder of this song&rsquo;s folder in your Google Drive (GP Song Tools / song title / audio). The file is also downloaded as usual. If a file with that name is already there, the new one is named &ldquo;(2)&rdquo;, &ldquo;(3)&rdquo; and so on; nothing is overwritten.</p>
+<p><b>Save last master to Drive</b> uploads the last master you saved in this session again, or for the first time, without downloading. Use it if the sign-in failed. The first save asks for a song title if the song spec has none, and signs you in to Google. Only the files GP Song Tools create are visible to the app (the <code>drive.file</code> permission).</p>`,
 'Pumper':`<p>Ducks the mid and high bands each time the kick hits, for the rhythmic pumping common in dance music. Bass and kick stay at full level.</p>
 <p>It triggers from the kick itself rather than a tempo grid, so it needs no BPM and does not drift on loose timing. Maximum duck 2, 4 or 6 dB; attack 3 ms, release 150 ms.</p>
 <p>A creative effect, not a corrective one. Start at Light.</p>`};
